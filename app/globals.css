@@ -8,7 +8,7 @@
  * only a pre-hydration fallback so the first paint is never unstyled.
  */
 :root {
-  --accent: #31042f;
+  --accent: #C5A059;
   --accent-strong: color-mix(in srgb, var(--accent) 82%, #000000);
   --accent-soft: color-mix(in srgb, var(--accent) 22%, #ffffff);
   --accent-softer: color-mix(in srgb, var(--accent) 10%, #ffffff);
@@ -17,12 +17,213 @@
 
   --primary: var(--accent);
   --secondary: var(--accent);
-  --tertiary: #9a8c86;
+  --tertiary: #9e8e7a;
 }
 
 body {
   font-family: var(--font-poppins), system-ui, -apple-system, "Segoe UI", sans-serif;
-  background-color: #FFFFFF;
+  background-color: #0A0A0C;
+  color: #FAF7F2;
+}
+
+/*
+ * NIDHULAN Luxury POS Theming
+ * Deep Charcoal (#131317), Matte Black (#0A0A0C), Champagne Gold (#C5A059), Warm Ivory (#FAF7F2)
+ */
+.pos-dashboard {
+  background-color: #0A0A0C !important;
+  color: #FAF7F2 !important;
+  --accent-strong: #E5C378 !important;
+}
+
+/* Cards & Panels (excluding printable invoice sheets) */
+.pos-dashboard div.bg-white:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard div.bg-\[\#FFFFFF\]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard div.bg-\[\#FAFAFA\]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard div.bg-zinc-50:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard div.bg-gray-50:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class~="bg-white"]:not(.invoice-sheet, .invoice-sheet *, [class*="bg-white/"], [class*="from-"], [class*="bg-gradient-"], button, span, svg),
+.pos-dashboard [class~="bg-[#FFFFFF]"]:not(.invoice-sheet, .invoice-sheet *, [class*="bg-[#FFFFFF]/"], button, span) {
+  background-color: #131317 !important;
+  color: #FAF7F2 !important;
+  border-color: rgba(197, 160, 89, 0.22) !important;
+}
+
+/* Semi-transparent Cards & Table Ledgers */
+.pos-dashboard div:where(.bg-\[\#FFFFFF\]\/40, .bg-\[\#FFFFFF\]\/60, .bg-\[\#FFFFFF\]\/80, .bg-white\/60, .bg-white\/80, .bg-\[\#F4F4F5\]):not(.invoice-sheet, .invoice-sheet *) {
+  background-color: #181820 !important;
+  color: #FAF7F2 !important;
+  border-color: rgba(197, 160, 89, 0.22) !important;
+}
+
+/* Form Inputs, Selects, and Textareas */
+.pos-dashboard input:not([type="checkbox"]):not([type="radio"]):not(.invoice-sheet *),
+.pos-dashboard select:not(.invoice-sheet *),
+.pos-dashboard textarea:not(.invoice-sheet *) {
+  background-color: #181820 !important;
+  color: #FAF7F2 !important;
+  border-color: rgba(197, 160, 89, 0.28) !important;
+}
+
+.pos-dashboard input:focus:not(.invoice-sheet *),
+.pos-dashboard select:focus:not(.invoice-sheet *),
+.pos-dashboard textarea:focus:not(.invoice-sheet *) {
+  border-color: var(--accent) !important;
+  background-color: #1F1F28 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 1px var(--accent) !important;
+}
+
+.pos-dashboard input::placeholder,
+.pos-dashboard textarea::placeholder {
+  color: rgba(184, 181, 174, 0.45) !important;
+}
+
+.pos-dashboard select option {
+  background-color: #131317 !important;
+  color: #FAF7F2 !important;
+}
+
+/* Headings & High-contrast Text */
+.pos-dashboard h1:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard h2:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard h3:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard h4:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-black:not(.invoice-sheet, .invoice-sheet *, .text-\[\#0C0C0E\], [class*="from-\[var\(--accent\)\]"] *, [class*="bg-\[var\(--accent\)\]"] *),
+.pos-dashboard .\!text-black:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-\[\#000000\]:not(.invoice-sheet, .invoice-sheet *, .text-\[\#0C0C0E\], [class*="from-\[var\(--accent\)\]"] *, [class*="bg-\[var\(--accent\)\]"] *),
+.pos-dashboard .\!text-\[\#000000\]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class~="text-black"]:not(.invoice-sheet, .invoice-sheet *, .text-\[\#0C0C0E\], [class*="from-\[var\(--accent\)\]"] *, [class*="bg-\[var\(--accent\)\]"] *),
+.pos-dashboard [class~="text-[#000000]"]:not(.invoice-sheet, .invoice-sheet *, .text-\[\#0C0C0E\], [class*="from-\[var\(--accent\)\]"] *, [class*="bg-\[var\(--accent\)\]"] *),
+.pos-dashboard .text-zinc-900:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-gray-900:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-slate-900:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-neutral-900:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-gray-800:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-zinc-800:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class~="text-zinc-900"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class~="text-gray-900"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class~="text-slate-900"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class~="text-neutral-900"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class~="text-gray-800"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class~="text-zinc-800"]:not(.invoice-sheet, .invoice-sheet *) {
+  color: #FAF7F2 !important;
+}
+
+/* Secondary & Muted Labels */
+.pos-dashboard .text-gray-600:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-gray-500:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-zinc-600:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-zinc-500:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-slate-600:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-slate-500:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-neutral-600:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-neutral-500:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-black\/70:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-black\/60:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-black\/50:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .\!text-black\/60:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-black\/70"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-black\/60"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-black\/50"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-[#000000]/70"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-[#000000]/60"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-[#000000]/50"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class~="text-gray-600"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class~="text-gray-500"]:not(.invoice-sheet, .invoice-sheet *) {
+  color: #B8B5AE !important;
+}
+
+.pos-dashboard .text-gray-400:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-zinc-400:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-slate-400:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-black\/45:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-black\/40:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-black\/35:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard .text-black\/30:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-black\/45"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-black\/40"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-black\/35"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-black\/30"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-[#000000]/40"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-[#000000]/35"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="text-[#000000]/30"]:not(.invoice-sheet, .invoice-sheet *) {
+  color: rgba(184, 181, 174, 0.65) !important;
+}
+
+/* Borders & Dividers */
+.pos-dashboard [class*="border-black/10"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="border-black/15"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="border-black/20"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="border-black/5"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="border-gray-100"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="border-gray-200"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="border-gray-300"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="border-zinc-200"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="border-zinc-300"]:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard [class*="border-[#E4E4E7]"]:not(.invoice-sheet, .invoice-sheet *) {
+  border-color: rgba(197, 160, 89, 0.2) !important;
+}
+
+/* Interactive Hover States */
+.pos-dashboard [class*="hover:bg-gray-50"]:hover:not(.invoice-sheet *),
+.pos-dashboard [class*="hover:bg-black/5"]:hover:not(.invoice-sheet *),
+.pos-dashboard [class*="hover:bg-gray-100"]:hover:not(.invoice-sheet *),
+.pos-dashboard [class*="hover:bg-[#FFFFFF]"]:hover:not(.invoice-sheet *),
+.pos-dashboard [class*="hover:bg-white/10"]:hover:not(.invoice-sheet *),
+.pos-dashboard [class*="hover:bg-black/10"]:hover:not(.invoice-sheet *) {
+  background-color: #1F1F28 !important;
+}
+
+/* Dividers */
+.pos-dashboard [class*="divide-black/5"] > *:not(.invoice-sheet *),
+.pos-dashboard [class*="divide-black/10"] > *:not(.invoice-sheet *),
+.pos-dashboard [class*="divide-gray-100"] > *:not(.invoice-sheet *) {
+  border-color: rgba(197, 160, 89, 0.15) !important;
+}
+
+/* Modal Backdrops & Overlays */
+.pos-dashboard .backdrop-blur-sm,
+.pos-dashboard .backdrop-blur-md {
+  background-color: rgba(6, 6, 9, 0.85) !important;
+}
+
+/* Table Headers & Rows across all tabs */
+.pos-dashboard thead tr:not(.invoice-sheet, .invoice-sheet *),
+.pos-dashboard thead th:not(.invoice-sheet, .invoice-sheet *) {
+  background-color: #16161D !important;
+  color: #FAF7F2 !important;
+  border-color: rgba(197, 160, 89, 0.22) !important;
+}
+
+.pos-dashboard td:not(.invoice-sheet, .invoice-sheet *) {
+  border-color: rgba(197, 160, 89, 0.12) !important;
+  color: #FAF7F2 !important;
+}
+
+.pos-dashboard tbody tr:hover:not(.invoice-sheet, .invoice-sheet *) {
+  background-color: #191922 !important;
+}
+
+/* Secondary Buttons inside dashboard */
+.pos-dashboard button:where(.bg-white, .bg-\[\#FFFFFF\]):not(.invoice-sheet, .invoice-sheet *, [class*="bg-[var(--accent)]"], [class*="from-[var(--accent)]"]) {
+  background-color: #181820 !important;
+  border-color: rgba(197, 160, 89, 0.28) !important;
+  color: #FAF7F2 !important;
+}
+
+.pos-dashboard button:where(.bg-white, .bg-\[\#FFFFFF\]):hover:not(.invoice-sheet, .invoice-sheet *, [class*="bg-[var(--accent)]"], [class*="from-[var(--accent)]"]) {
+  background-color: #22222D !important;
+  border-color: var(--accent) !important;
+}
+
+/* Custom Scrollbar for POS Panels */
+.pos-dashboard ::-webkit-scrollbar-thumb {
+  background: rgba(197, 160, 89, 0.4);
+}
+
+.pos-dashboard ::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 /* Custom scrollbar */
@@ -49,7 +250,7 @@ body {
 
 @layer utilities {
   .minimal-input {
-    @apply w-full bg-transparent border-b border-black/10 py-2 text-[#000000] transition-colors placeholder:text-[#000000];
+    @apply w-full bg-transparent border-b border-[#C5A059]/25 py-2 text-[#FAF7F2] transition-colors placeholder:text-[#B8B5AE]/50;
     &:focus {
       outline: none;
       border-color: var(--accent);
@@ -83,7 +284,7 @@ input[type="number"] {
 @theme inline {
   --color-primary: var(--accent);
   --color-secondary: var(--accent);
-  --color-tertiary: #9a8c86;
+  --color-tertiary: #9e8e7a;
   --animate-float: float 3s ease-in-out infinite;
   --animate-swing: swing 2.5s ease-in-out infinite;
   --animate-pop: pop 2s ease-in-out infinite;
@@ -101,4 +302,18 @@ input[type="number"] {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
   }
+}
+
+/* =====================================================================
+   Date of Birth / Birthday Management Dashboard (Dark Theme)
+   ===================================================================== */
+.birthday-dashboard {
+  background-color: transparent !important;
+  color: #FAF7F2 !important;
+}
+
+.birthday-dashboard .birthday-preview {
+  background-color: #0D1812 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #D1FAE5 !important;
 }

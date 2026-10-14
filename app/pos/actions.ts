@@ -1,7 +1,12 @@
 "use server";
 
 import { dbStore } from "@/lib/dbStore";
-import { Product, OrderWithRelations, CartItem, Expense, PaymentMode, Category, AdvanceOrderWithRelations, AdvanceOrderStatus, ShopSettings, ItemType, Staff, AttendanceRecord, AttendanceStatus } from "@/lib/types";
+import {
+  checkDatabaseConnection,
+  getSanitizedSupabaseUrl,
+  isDatabaseConfigured,
+} from "@/lib/db";
+import { Product, OrderWithRelations, CartItem, Expense, PaymentMode, Category, AdvanceOrderWithRelations, AdvanceOrderStatus, ShopSettings, ItemType, Staff, AttendanceRecord, AttendanceStatus, Customer, Offer, BirthdaySettings, BirthdayLog } from "@/lib/types";
 import { getShopSettings, saveShopSettings, normalizeHex, DEFAULT_ACCENT } from "@/lib/shopSettings";
 
 // Helper to serialize Date objects from Postgres to strings
@@ -237,6 +242,7 @@ export async function updateShopSettings(data: ShopSettings): Promise<ShopSettin
     shop_name: data.shop_name.trim() || "My Shop",
     tagline: data.tagline.trim(),
     phone: data.phone.trim(),
+    owner_phone: data.owner_phone.trim(),
     email: data.email.trim(),
     address: data.address.trim(),
     location: data.location.trim(),
@@ -274,23 +280,77 @@ function cleanStaff(data: StaffInput): StaffInput {
 }
 
 export async function fetchStaff(): Promise<Staff[]> {
-  return serialize(await dbStore.listStaff());
+  if (!isDatabaseConfigured()) return [];
+  try {
+    return serialize(await dbStore.listStaff());
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] fetchStaff failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    return [];
+  }
 }
 
 export async function createStaff(data: StaffInput): Promise<Staff> {
-  return serialize(await dbStore.addStaff(cleanStaff(data)));
+  try {
+    return serialize(await dbStore.addStaff(cleanStaff(data)));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] createStaff failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not add staff member to database."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
 }
 
 export async function editStaff(id: string, data: StaffInput): Promise<Staff | null> {
-  return serialize(await dbStore.updateStaff(id, cleanStaff(data)));
+  try {
+    return serialize(await dbStore.updateStaff(id, cleanStaff(data)));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] editStaff failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not update staff member in database."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
 }
 
 export async function removeStaff(id: string): Promise<void> {
-  return await dbStore.deleteStaff(id);
+  try {
+    return await dbStore.deleteStaff(id);
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] removeStaff failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not delete staff member from database."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
 }
 
 export async function fetchAttendance(fromDate: string, toDate: string): Promise<AttendanceRecord[]> {
-  return serialize(await dbStore.listAttendance(assertDate(fromDate), assertDate(toDate)));
+  if (!isDatabaseConfigured()) return [];
+  try {
+    return serialize(await dbStore.listAttendance(assertDate(fromDate), assertDate(toDate)));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] fetchAttendance failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    return [];
+  }
 }
 
 export async function setAttendanceStatus(
@@ -301,13 +361,296 @@ export async function setAttendanceStatus(
   if (status !== null && !ATTENDANCE_STATUSES.includes(status)) {
     throw new Error(`Invalid attendance status: ${status}`);
   }
-  return await dbStore.setAttendanceStatus(staffId, assertDate(date), status);
+  try {
+    return await dbStore.setAttendanceStatus(staffId, assertDate(date), status);
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] setAttendanceStatus failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not update attendance status."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
 }
 
 export async function clockInStaff(staffId: string, date: string): Promise<void> {
-  return await dbStore.clockIn(staffId, assertDate(date));
+  try {
+    return await dbStore.clockIn(staffId, assertDate(date));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] clockInStaff failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not record clock in."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
 }
 
 export async function clockOutStaff(staffId: string, date: string): Promise<void> {
-  return await dbStore.clockOut(staffId, assertDate(date));
+  try {
+    return await dbStore.clockOut(staffId, assertDate(date));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] clockOutStaff failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not record clock out."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
+}
+
+// Customers
+export async function fetchCustomers(search?: string): Promise<Customer[]> {
+  if (!isDatabaseConfigured()) return [];
+  try {
+    return serialize(await dbStore.listCustomers(search));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] fetchCustomers failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    return [];
+  }
+}
+
+export async function createCustomer(data: {
+  name: string;
+  phone: string;
+  address?: string | null;
+  dob?: string | null;
+}): Promise<Customer> {
+  const name = data.name.trim();
+  const phone = data.phone.replace(/\D/g, "").slice(-10);
+  if (!name) throw new Error("Customer name is required");
+  if (!phone || phone.length < 10) throw new Error("Valid 10-digit phone number is required");
+  try {
+    return serialize(await dbStore.addCustomer({ ...data, name, phone }));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] createCustomer failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not add customer to database."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
+}
+
+export async function editCustomer(id: string, patch: Partial<Customer>): Promise<Customer | null> {
+  try {
+    return serialize(await dbStore.updateCustomer(id, patch));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] editCustomer failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not update customer in database."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
+}
+
+export async function removeCustomer(id: string): Promise<void> {
+  try {
+    return await dbStore.deleteCustomer(id);
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] removeCustomer failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not delete customer from database."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
+}
+
+// Offers
+export async function fetchOffers(): Promise<Offer[]> {
+  if (!isDatabaseConfigured()) return [];
+  try {
+    return serialize(await dbStore.listOffers());
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] fetchOffers failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    return [];
+  }
+}
+
+export async function createOffer(data: {
+  name: string;
+  discount_type: 'PERCENT' | 'FIXED';
+  discount_value: number;
+  start_date?: string | null;
+  end_date?: string | null;
+  is_active?: boolean;
+}): Promise<Offer> {
+  const name = data.name.trim();
+  if (!name) throw new Error("Offer name is required");
+  try {
+    return serialize(await dbStore.addOffer({ ...data, name, discount_value: Number(data.discount_value) || 0 }));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] createOffer failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not create offer."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
+}
+
+export async function editOffer(id: string, patch: Partial<Offer>): Promise<Offer | null> {
+  try {
+    return serialize(await dbStore.updateOffer(id, patch));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] editOffer failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not update offer."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
+}
+
+export async function removeOffer(id: string): Promise<void> {
+  try {
+    return await dbStore.deleteOffer(id);
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] removeOffer failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not delete offer."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
+}
+
+// Birthday Settings & Logs
+export async function fetchBirthdaySettings(): Promise<BirthdaySettings> {
+  const defaultTemplate = `Hi {name}! 🎂 Happy Birthday!\n\nHere's a special treat from Universal Look:\n🎁 {offer}\n\nVisit us in store or call +91 91596 00067.\nFollow us on Instagram @universallook600067\n\n— Universal Look`;
+  if (!isDatabaseConfigured()) {
+    return {
+      id: "default",
+      message_template: defaultTemplate,
+      selected_offer_id: null,
+      updated_at: new Date().toISOString(),
+    };
+  }
+  try {
+    return serialize(await dbStore.getBirthdaySettings());
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] fetchBirthdaySettings failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    return {
+      id: "default",
+      message_template: defaultTemplate,
+      selected_offer_id: null,
+      updated_at: new Date().toISOString(),
+    };
+  }
+}
+
+export async function saveBirthdaySettingsAction(template: string, selectedOfferId?: string | null): Promise<BirthdaySettings> {
+  try {
+    return serialize(await dbStore.saveBirthdaySettings(template, selectedOfferId));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] saveBirthdaySettings failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    throw new Error(
+      isDatabaseConfigured()
+        ? "Could not save birthday settings."
+        : "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+    );
+  }
+}
+
+export async function recordBirthdaySend(data: {
+  customer_id?: string | null;
+  customer_name: string;
+  customer_phone: string;
+  offer_name?: string | null;
+  message: string;
+  status?: string;
+}): Promise<BirthdayLog> {
+  try {
+    return serialize(await dbStore.logBirthdaySend(data));
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] recordBirthdaySend failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    return {
+      id: `local-${Date.now()}`,
+      ...data,
+      sent_at: new Date().toISOString(),
+      status: data.status || 'OPENED_WHATSAPP',
+    };
+  }
+}
+
+export async function fetchBirthdayLogs(): Promise<BirthdayLog[]> {
+  if (!isDatabaseConfigured()) return [];
+  try {
+    return serialize(await dbStore.listBirthdayLogs());
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] fetchBirthdayLogs failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err
+    );
+    return [];
+  }
+}
+
+export async function checkDatabaseConfigured(): Promise<{ configured: boolean; message: string }> {
+  if (!isDatabaseConfigured()) {
+    return {
+      configured: false,
+      message: "Database is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local.",
+    };
+  }
+
+  try {
+    await checkDatabaseConnection();
+    return { configured: true, message: "Connected to Supabase database." };
+  } catch (err) {
+    console.error(
+      `[Server Diagnostic] Supabase connection check failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err,
+    );
+    return {
+      configured: false,
+      message: `Supabase is configured, but the connection check failed: ${
+        err instanceof Error ? err.message : "unknown error"
+      }`,
+    };
+  }
 }

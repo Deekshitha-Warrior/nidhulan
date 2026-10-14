@@ -12,6 +12,7 @@ import {
   X,
   ArrowUp,
   ArrowDown,
+  AlertTriangle,
 } from "lucide-react";
 import type { AttendanceRecord, AttendanceStatus, Staff } from "@/lib/types";
 import {
@@ -34,10 +35,10 @@ const STATUS_OPTIONS: { value: AttendanceStatus; label: string; active: string }
 ];
 
 const inputCls =
-  "w-full bg-white border border-[#000000]/15 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#000000] placeholder:text-[#000000]/30 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors";
+  "w-full bg-[#181820] border border-[#C5A059]/25 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#FAF7F2] placeholder:text-[#B8B5AE]/40 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors";
 
 const labelCls =
-  "block text-[10px] font-extrabold uppercase tracking-widest text-[#000000]/50 mb-1.5";
+  "block text-[10px] font-extrabold uppercase tracking-widest text-[#B8B5AE] mb-1.5";
 
 /** Today's date in the shop's time zone, as 'YYYY-MM-DD'. */
 export function todayIST(): string {
@@ -77,41 +78,67 @@ export default function AttendancePanel() {
   const [subTab, setSubTab] = useState<SubTab>("today");
   const [staff, setStaff] = useState<Staff[]>([]);
   const [isLoadingStaff, setIsLoadingStaff] = useState(true);
+  const [staffError, setStaffError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
 
-  const loadStaff = useCallback(async () => {
+  const [retryKey, setRetryKey] = useState(0);
+
+  const refreshStaff = useCallback(async () => {
     try {
-      setStaff(await fetchStaff());
-    } catch (err) {
+      const rows = await fetchStaff();
+      setStaff(rows);
+      setStaffError(null);
+    } catch (err: unknown) {
       console.error("Failed to load staff:", err);
-      alert("Could not load staff. Please try again.");
-    } finally {
-      setIsLoadingStaff(false);
+      setStaffError(
+        err instanceof Error
+          ? err.message
+          : "Could not load staff records. Database connection may be unavailable."
+      );
     }
+  }, []);
+
+  const handleRetryStaff = useCallback(() => {
+    setIsRetrying(true);
+    setStaffError(null);
+    setRetryKey((k) => k + 1);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     fetchStaff()
       .then((rows) => {
-        if (!cancelled) setStaff(rows);
+        if (!cancelled) {
+          setStaff(rows);
+          setStaffError(null);
+        }
       })
-      .catch((err) => {
-        console.error("Failed to load staff:", err);
-        alert("Could not load staff. Please try again.");
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          console.error("Failed to load staff:", err);
+          setStaffError(
+            err instanceof Error
+              ? err.message
+              : "Could not load staff records. Database connection may be unavailable."
+          );
+        }
       })
       .finally(() => {
-        if (!cancelled) setIsLoadingStaff(false);
+        if (!cancelled) {
+          setIsLoadingStaff(false);
+          setIsRetrying(false);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [retryKey]);
 
   return (
     <div className="flex-1 flex flex-col max-w-[1400px] mx-auto w-full pb-8 pr-2 animate-in fade-in duration-300 gap-6">
       <div className="flex items-center gap-3">
         <span className="w-1.5 h-10 bg-[var(--accent)] rounded-full" />
-        <h2 className="text-[28px] font-black text-[#000000] tracking-tight">
+        <h2 className="text-[28px] font-black text-[#FAF7F2] tracking-tight">
           Attendance &amp; Staff
         </h2>
       </div>
@@ -130,8 +157,8 @@ export default function AttendancePanel() {
             onClick={() => setSubTab(key)}
             className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-colors cursor-pointer ${
               subTab === key
-                ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-sm"
-                : "bg-white border-[#000000]/10 text-[#000000] hover:border-[var(--accent)]/40"
+                ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] border-[#E5C378] text-[#0C0C0E] font-black shadow-sm"
+                : "bg-[#181820] border-[#C5A059]/20 text-[#FAF7F2] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
             }`}
           >
             {label}
@@ -139,16 +166,18 @@ export default function AttendancePanel() {
         ))}
       </div>
 
+
+
       {isLoadingStaff ? (
-        <div className="flex items-center justify-center py-16 text-[#000000]/50">
-          <Loader2 className="w-5 h-5 animate-spin" />
+        <div className="flex items-center justify-center py-16 text-[#B8B5AE]">
+          <Loader2 className="w-5 h-5 animate-spin text-[var(--accent)]" />
         </div>
       ) : subTab === "today" ? (
         <TodayAttendance staff={staff} onAddStaff={() => setSubTab("staff")} />
       ) : subTab === "report" ? (
         <MonthlyReport staff={staff} />
       ) : (
-        <StaffManagement staff={staff} onChanged={loadStaff} />
+        <StaffManagement staff={staff} onChanged={refreshStaff} />
       )}
     </div>
   );
@@ -162,6 +191,8 @@ function TodayAttendance({ staff, onAddStaff }: { staff: Staff[]; onAddStaff: ()
   // shows as loading until its fetch lands.
   const [loaded, setLoaded] = useState<{ date: string; records: AttendanceRecord[] } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const activeStaff = useMemo(() => staff.filter((s) => s.is_active), [staff]);
   const isToday = date === todayIST();
@@ -179,20 +210,34 @@ function TodayAttendance({ staff, onAddStaff }: { staff: Staff[]; onAddStaff: ()
     [loaded, date],
   );
 
+  const [retryKey, setRetryKey] = useState(0);
+
+  const handleRetryAttendance = useCallback(() => {
+    setAttendanceError(null);
+    setRetryKey((k) => k + 1);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     fetchAttendance(date, date)
       .then((rows) => {
-        if (!cancelled) setLoaded({ date, records: rows });
+        if (!cancelled) {
+          setLoaded({ date, records: rows });
+          setAttendanceError(null);
+        }
       })
-      .catch((err) => {
-        console.error("Failed to load attendance:", err);
-        alert("Could not load attendance for this date.");
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          console.error("Failed to load attendance:", err);
+          setAttendanceError(
+            err instanceof Error ? err.message : "Could not load attendance for this date."
+          );
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [date, refreshTick]);
+  }, [date, refreshTick, retryKey]);
 
   const byStaff = useMemo(() => {
     const map = new Map<string, AttendanceRecord>();
@@ -216,12 +261,15 @@ function TodayAttendance({ staff, onAddStaff }: { staff: Staff[]; onAddStaff: ()
   const run = async (staffId: string, action: () => Promise<void>) => {
     if (busyId) return;
     setBusyId(staffId);
+    setActionError(null);
     try {
       await action();
       setLoaded({ date, records: await fetchAttendance(date, date) });
     } catch (err) {
       console.error("Attendance update failed:", err);
-      alert("Could not update attendance. Please try again.");
+      setActionError(
+        err instanceof Error ? err.message : "Could not update attendance. Please try again."
+      );
     } finally {
       setBusyId(null);
     }
@@ -235,13 +283,30 @@ function TodayAttendance({ staff, onAddStaff }: { staff: Staff[]; onAddStaff: ()
 
   return (
     <>
-      <div className="bg-white border border-[#000000]/10 rounded-2xl px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+
+      {actionError && (
+        <div className="bg-[#181820] border border-red-500/30 rounded-2xl p-3.5 flex items-center justify-between gap-3 text-xs text-red-300">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+            <span>{actionError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            className="text-[#B8B5AE] hover:text-[#FAF7F2] p-1 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+      <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center shrink-0">
+          <div className="w-11 h-11 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center shrink-0 border border-[var(--accent)]/20">
             <CalendarDays className="w-5 h-5" />
           </div>
           <div>
-            <span className="block text-[10px] font-extrabold uppercase tracking-widest text-[#000000]/50">
+            <span className="block text-[10px] font-extrabold uppercase tracking-widest text-[#B8B5AE]">
               Select Date
             </span>
             <input
@@ -249,21 +314,21 @@ function TodayAttendance({ staff, onAddStaff }: { staff: Staff[]; onAddStaff: ()
               value={date}
               max={todayIST()}
               onChange={(e) => e.target.value && setDate(e.target.value)}
-              className="text-lg font-black text-[#000000] bg-transparent focus:outline-none cursor-pointer"
+              className="text-lg font-black text-[#FAF7F2] bg-transparent focus:outline-none cursor-pointer [color-scheme:dark]"
             />
           </div>
         </div>
         <div className="flex items-center gap-6 sm:gap-8">
           {(
             [
-              ["Total", counts.total, "text-[#000000]"],
+              ["Total", counts.total, "text-[#FAF7F2]"],
               ["Present", counts.present, "text-[#15803D]"],
               ["Absent", counts.absent, "text-[#DC2626]"],
               ["Leave/Half", counts.leaveHalf, "text-[#EA580C]"],
             ] as [string, number, string][]
           ).map(([label, value, color]) => (
             <div key={label} className="text-center">
-              <span className="block text-[10px] font-extrabold uppercase tracking-widest text-[#000000]/50">
+              <span className="block text-[10px] font-extrabold uppercase tracking-widest text-[#B8B5AE]">
                 {label}
               </span>
               <span className={`text-2xl font-black ${color}`}>{value}</span>
@@ -272,22 +337,22 @@ function TodayAttendance({ staff, onAddStaff }: { staff: Staff[]; onAddStaff: ()
         </div>
       </div>
 
-      <div className="bg-white border border-[#000000]/10 rounded-2xl shadow-sm overflow-x-auto">
+      <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl shadow-sm overflow-x-auto">
         <table className="w-full min-w-[820px] text-left">
           <thead>
-            <tr className="bg-[#FAFAFA] border-b border-[#000000]/10 text-[11px] font-black uppercase tracking-wider text-[#000000]">
+            <tr className="bg-[#181820] border-b border-[#C5A059]/20 text-[11px] font-black uppercase tracking-wider text-[#FAF7F2]">
               <th className="px-5 py-3.5">Staff Member</th>
-              <th className="px-5 py-3.5">Role</th>
+              <th className="px-5 py-3.5 text-[#B8B5AE]">Role</th>
               <th className="px-5 py-3.5 text-[#15803D]">Clock In</th>
               <th className="px-5 py-3.5 text-[#DC2626]">Clock Out</th>
-              <th className="px-5 py-3.5">Override Status</th>
+              <th className="px-5 py-3.5 text-[#B8B5AE]">Override Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#000000]/5">
+          <tbody className="divide-y divide-[#C5A059]/10">
             {activeStaff.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-10 text-center text-sm text-[#000000]/50 font-semibold">
-                  No active staff yet.{" "}
+                <td colSpan={5} className="px-5 py-10 text-center text-sm text-[#FAF7F2] font-semibold">
+                  <span className="text-[#B8B5AE]">No active staff yet. </span>
                   <button
                     type="button"
                     onClick={onAddStaff}
@@ -295,7 +360,7 @@ function TodayAttendance({ staff, onAddStaff }: { staff: Staff[]; onAddStaff: ()
                   >
                     Add staff
                   </button>{" "}
-                  to start taking attendance.
+                  <span className="text-[#B8B5AE]">to start taking attendance.</span>
                 </td>
               </tr>
             ) : (
@@ -307,18 +372,18 @@ function TodayAttendance({ staff, onAddStaff }: { staff: Staff[]; onAddStaff: ()
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <Initial name={s.name} />
-                        <span className="text-sm font-bold text-[#000000]">{s.name}</span>
+                        <span className="text-sm font-bold text-[#FAF7F2]">{s.name}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-sm text-[#000000]/70">{s.role || "—"}</td>
-                    <td className="px-5 py-3.5 text-sm font-semibold text-[#000000]">
+                    <td className="px-5 py-3.5 text-sm text-[#B8B5AE]">{s.role || "—"}</td>
+                    <td className="px-5 py-3.5 text-sm font-semibold text-[#FAF7F2]">
                       {record?.clock_in ? (
                         formatTime(record.clock_in)
                       ) : (
-                        <span className="text-[#000000]/40">—</span>
+                        <span className="text-[#B8B5AE]/40">—</span>
                       )}
                     </td>
-                    <td className="px-5 py-3.5 text-sm font-semibold text-[#000000]">
+                    <td className="px-5 py-3.5 text-sm font-semibold text-[#FAF7F2]">
                       {record?.clock_out ? (
                         formatTime(record.clock_out)
                       ) : record?.clock_in && isToday ? (
@@ -326,7 +391,7 @@ function TodayAttendance({ staff, onAddStaff }: { staff: Staff[]; onAddStaff: ()
                           On shift
                         </span>
                       ) : (
-                        <span className="text-[#000000]/40">—</span>
+                        <span className="text-[#B8B5AE]/40">—</span>
                       )}
                     </td>
                     <td className="px-5 py-3.5">
@@ -342,14 +407,14 @@ function TodayAttendance({ staff, onAddStaff }: { staff: Staff[]; onAddStaff: ()
                               className={`px-3 py-1.5 rounded-lg border text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50 ${
                                 selected
                                   ? opt.active
-                                  : "bg-[#FAFAFA] border-[#000000]/10 text-[#000000]/60 hover:border-[#000000]/30"
+                                  : "bg-[#181820] border-[#C5A059]/20 text-[#B8B5AE] hover:border-[#C5A059]/40 hover:text-[#FAF7F2]"
                               }`}
                             >
                               {opt.label}
                             </button>
                           );
                         })}
-                        {isBusy && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#000000]/40" />}
+                        {isBusy && <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />}
                       </div>
                     </td>
                   </tr>
@@ -412,26 +477,42 @@ function MonthlyReport({ staff }: { staff: Staff[] }) {
   const [loaded, setLoaded] = useState<{ key: string; records: AttendanceRecord[] } | null>(null);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortAsc, setSortAsc] = useState(true);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [filterError, setFilterError] = useState<string | null>(null);
 
   const rangeKey = `${range.from}|${range.to}`;
   const isLoading = loaded?.key !== rangeKey;
   // Keep showing the previous range's numbers (dimmed) while the new one loads.
   const records = useMemo(() => loaded?.records ?? [], [loaded]);
 
+  const [retryKey, setRetryKey] = useState(0);
+
+  const handleRetryReport = useCallback(() => {
+    setReportError(null);
+    setRetryKey((k) => k + 1);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     fetchAttendance(range.from, range.to)
       .then((rows) => {
-        if (!cancelled) setLoaded({ key: `${range.from}|${range.to}`, records: rows });
+        if (!cancelled) {
+          setLoaded({ key: `${range.from}|${range.to}`, records: rows });
+          setReportError(null);
+        }
       })
-      .catch((err) => {
-        console.error("Failed to load report:", err);
-        alert("Could not load the attendance report.");
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          console.error("Failed to load report:", err);
+          setReportError(
+            err instanceof Error ? err.message : "Could not load the attendance report."
+          );
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [range]);
+  }, [range.from, range.to, retryKey]);
 
   // A complete, valid From–To range applies as soon as it is picked.
   const applyCustomRange = (from: string, to: string) => {
@@ -439,13 +520,14 @@ function MonthlyReport({ staff }: { staff: Staff[] }) {
   };
 
   const applyFilter = () => {
+    setFilterError(null);
     if (fromDate || toDate) {
       if (!fromDate || !toDate) {
-        alert("Pick both a From and a To date, or clear them to use the month.");
+        setFilterError("Pick both a From and a To date, or clear them to use the month.");
         return;
       }
       if (fromDate > toDate) {
-        alert("The From date must be on or before the To date.");
+        setFilterError("The From date must be on or before the To date.");
         return;
       }
       setRange({ from: fromDate, to: toDate });
@@ -455,6 +537,7 @@ function MonthlyReport({ staff }: { staff: Staff[] }) {
   };
 
   const resetFilter = () => {
+    setFilterError(null);
     setMonth(currentMonth);
     setFromDate("");
     setToDate("");
@@ -506,7 +589,7 @@ function MonthlyReport({ staff }: { staff: Staff[] }) {
 
   const exportCsv = () => {
     if (rows.length === 0) {
-      alert("No staff to export.");
+      setFilterError("No staff records to export for this period.");
       return;
     }
     const quote = (v: string) => `"${v.replace(/"/g, '""')}"`;
@@ -550,11 +633,28 @@ function MonthlyReport({ staff }: { staff: Staff[] }) {
 
   return (
     <>
-      <div className="bg-white border border-[#000000]/10 rounded-2xl p-4 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+
+
+      {filterError && (
+        <div className="bg-[#181820] border border-amber-500/30 rounded-2xl p-3 flex items-center justify-between gap-3 text-xs text-amber-300">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>{filterError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFilterError(null)}
+            className="text-[#B8B5AE] hover:text-[#FAF7F2] p-1 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+      <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl p-4 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 bg-[#FAFAFA] border border-[#000000]/10 rounded-xl px-3 py-2">
+          <label className="flex items-center gap-2 bg-[#181820] border border-[#C5A059]/20 rounded-xl px-3 py-2">
             <CalendarDays className="w-4 h-4 text-[var(--accent)]" />
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#000000]/50">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#B8B5AE]">
               Month:
             </span>
             <input
@@ -567,11 +667,11 @@ function MonthlyReport({ staff }: { staff: Staff[] }) {
                 setToDate("");
                 setRange(monthRange(e.target.value));
               }}
-              className="text-sm font-bold text-[#000000] bg-transparent focus:outline-none cursor-pointer"
+              className="text-sm font-bold text-[#FAF7F2] bg-transparent focus:outline-none cursor-pointer [color-scheme:dark]"
             />
           </label>
-          <label className="flex items-center gap-2 bg-[#FAFAFA] border border-[#000000]/10 rounded-xl px-3 py-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#000000]/50">
+          <label className="flex items-center gap-2 bg-[#181820] border border-[#C5A059]/20 rounded-xl px-3 py-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#B8B5AE]">
               From
             </span>
             <input
@@ -582,11 +682,11 @@ function MonthlyReport({ staff }: { staff: Staff[] }) {
                 setFromDate(e.target.value);
                 applyCustomRange(e.target.value, toDate);
               }}
-              className="text-sm font-bold text-[#000000] bg-transparent focus:outline-none cursor-pointer"
+              className="text-sm font-bold text-[#FAF7F2] bg-transparent focus:outline-none cursor-pointer [color-scheme:dark]"
             />
           </label>
-          <label className="flex items-center gap-2 bg-[#FAFAFA] border border-[#000000]/10 rounded-xl px-3 py-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#000000]/50">
+          <label className="flex items-center gap-2 bg-[#181820] border border-[#C5A059]/20 rounded-xl px-3 py-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#B8B5AE]">
               To
             </span>
             <input
@@ -597,7 +697,7 @@ function MonthlyReport({ staff }: { staff: Staff[] }) {
                 setToDate(e.target.value);
                 applyCustomRange(fromDate, e.target.value);
               }}
-              className="text-sm font-bold text-[#000000] bg-transparent focus:outline-none cursor-pointer"
+              className="text-sm font-bold text-[#FAF7F2] bg-transparent focus:outline-none cursor-pointer [color-scheme:dark]"
             />
           </label>
         </div>
@@ -605,58 +705,58 @@ function MonthlyReport({ staff }: { staff: Staff[] }) {
           <button
             type="button"
             onClick={applyFilter}
-            className="bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-white text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer transition-colors"
+            className="bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 active:scale-[0.98] text-[#0C0C0E] border border-[#E5C378] text-xs font-black px-4 py-2.5 rounded-xl cursor-pointer transition-all shadow-[0_2px_10px_rgba(197,160,89,0.2)]"
           >
             Apply Filter
           </button>
           <button
             type="button"
             onClick={resetFilter}
-            className="bg-white border border-[#000000]/10 hover:border-[#000000]/30 text-[#000000] text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer transition-colors"
+            className="bg-[#181820] border border-[#C5A059]/20 hover:border-[#C5A059]/40 text-[#FAF7F2] text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer transition-colors"
           >
             Reset
           </button>
           <button
             type="button"
             onClick={exportCsv}
-            className="inline-flex items-center gap-1.5 bg-white border-2 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/5 text-xs font-bold px-4 py-2 rounded-xl cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1.5 bg-[#181820] border-2 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 text-xs font-bold px-4 py-2 rounded-xl cursor-pointer transition-colors"
           >
             <Download className="w-4 h-4" /> Export to Excel
           </button>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs font-semibold text-[#000000]/60">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs font-semibold text-[#B8B5AE]">
         <span>
           Showing records from:{" "}
-          <span className="font-black text-[#000000]">{formatDate(range.from)}</span> to{" "}
-          <span className="font-black text-[#000000]">{formatDate(range.to)}</span>
+          <span className="font-black text-[#FAF7F2]">{formatDate(range.from)}</span> to{" "}
+          <span className="font-black text-[#FAF7F2]">{formatDate(range.to)}</span>
         </span>
         <span>
-          Staff: <span className="font-black text-[#000000]">{rows.length}</span> · Sorted by:{" "}
-          <span className="font-black text-[#000000] uppercase">
+          Staff: <span className="font-black text-[#FAF7F2]">{rows.length}</span> · Sorted by:{" "}
+          <span className="font-black text-[#FAF7F2] uppercase">
             {sortLabel[sortField]} ({sortAsc ? "asc" : "desc"})
           </span>
         </span>
       </div>
 
-      <div className="bg-white border border-[#000000]/10 rounded-2xl shadow-sm overflow-x-auto">
+      <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl shadow-sm overflow-x-auto">
         <table className="w-full min-w-[720px] text-left">
           <thead>
-            <tr className="bg-[#FAFAFA] border-b border-[#000000]/10 text-[11px] font-black uppercase tracking-wider text-[#000000]">
+            <tr className="bg-[#181820] border-b border-[#C5A059]/20 text-[11px] font-black uppercase tracking-wider text-[#FAF7F2]">
               <SortHeader {...sortProps} field="name" label="Staff Member" className="" />
-              <th className="px-5 py-3.5">Role</th>
+              <th className="px-5 py-3.5 text-[#B8B5AE]">Role</th>
               <SortHeader {...sortProps} field="present" label="Present" className="text-center text-[#15803D]" />
               <SortHeader {...sortProps} field="half" label="Half Day" className="text-center text-[#EA580C]" />
               <SortHeader {...sortProps} field="absent" label="Absent" className="text-center text-[#DC2626]" />
               <SortHeader {...sortProps} field="leave" label="Leave" className="text-center text-[#2563EB]" />
             </tr>
           </thead>
-          <tbody className={`divide-y divide-[#000000]/5 ${isLoading ? "opacity-50" : ""}`}>
+          <tbody className={`divide-y divide-[#C5A059]/10 ${isLoading ? "opacity-50" : ""}`}>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-10 text-center text-sm text-[#000000]/50 font-semibold">
-                  No staff to report on yet.
+                <td colSpan={6} className="px-5 py-10 text-center text-sm text-[#FAF7F2] font-semibold">
+                  <span className="text-[#B8B5AE]">No staff to report on yet.</span>
                 </td>
               </tr>
             ) : (
@@ -665,15 +765,15 @@ function MonthlyReport({ staff }: { staff: Staff[] }) {
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       <Initial name={r.staff.name} />
-                      <span className="text-sm font-bold text-[#000000]">{r.staff.name}</span>
+                      <span className="text-sm font-bold text-[#FAF7F2]">{r.staff.name}</span>
                       {!r.staff.is_active && (
-                        <span className="text-[8px] font-black uppercase tracking-widest text-[#000000]/50 bg-[#000000]/5 border border-[#000000]/15 px-1.5 py-0.5 rounded">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-[#B8B5AE] bg-[#181820] border border-[#C5A059]/20 px-1.5 py-0.5 rounded">
                           Inactive
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-sm text-[#000000]/70">{r.staff.role || "—"}</td>
+                  <td className="px-5 py-3.5 text-sm text-[#B8B5AE]">{r.staff.role || "—"}</td>
                   <td className="px-5 py-3.5 text-center text-lg font-black text-[#15803D]">{r.present}</td>
                   <td className="px-5 py-3.5 text-center text-lg font-black text-[#EA580C]">{r.half}</td>
                   <td className="px-5 py-3.5 text-center text-lg font-black text-[#DC2626]">{r.absent}</td>
@@ -697,9 +797,12 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState(emptyStaffDraft);
   const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const openNew = () => {
     setDraft(emptyStaffDraft);
+    setFormError(null);
     setEditing("new");
   };
 
@@ -711,18 +814,20 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
       base_salary: String(Number(s.base_salary) || 0),
       is_active: s.is_active,
     });
+    setFormError(null);
     setEditing(s.id);
   };
 
   const handleSave = async () => {
     if (isSaving || !editing) return;
+    setFormError(null);
     if (!draft.name.trim()) {
-      alert("Enter the staff member's name.");
+      setFormError("Enter the staff member's name.");
       return;
     }
     const phoneDigits = draft.phone.replace(/\D/g, "");
     if (phoneDigits && phoneDigits.length < 10) {
-      alert("Enter a 10-digit phone number, or leave it blank.");
+      setFormError("Enter a 10-digit phone number, or leave it blank.");
       return;
     }
     const payload = {
@@ -740,7 +845,9 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
       setEditing(null);
     } catch (err) {
       console.error("Failed to save staff:", err);
-      alert("Could not save the staff member.");
+      setFormError(
+        err instanceof Error ? err.message : "Could not save the staff member. Please check database connection."
+      );
     } finally {
       setIsSaving(false);
     }
@@ -753,53 +860,72 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
       )
     )
       return;
+    setDeleteError(null);
     try {
       await removeStaff(s.id);
       await onChanged();
     } catch (err) {
       console.error("Failed to delete staff:", err);
-      alert("Could not delete the staff member.");
+      setDeleteError(
+        err instanceof Error ? err.message : "Could not delete the staff member. Please check database connection."
+      );
     }
   };
 
   return (
     <>
+      {deleteError && (
+        <div className="bg-[#181820] border border-red-500/30 rounded-2xl p-3.5 flex items-center justify-between gap-3 text-xs text-red-300">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+            <span>{deleteError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDeleteError(null)}
+            className="text-[#B8B5AE] hover:text-[#FAF7F2] p-1 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       <div className="flex justify-end">
         <button
           type="button"
           onClick={openNew}
-          className="inline-flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-white text-sm font-bold px-5 py-2.5 rounded-xl cursor-pointer transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 active:scale-[0.98] text-[#0C0C0E] border border-[#E5C378] text-sm font-black px-5 py-2.5 rounded-xl cursor-pointer transition-all shadow-[0_4px_16px_rgba(197,160,89,0.25)]"
         >
           <Plus className="w-4 h-4" /> Add Staff
         </button>
       </div>
 
-      <div className="bg-white border border-[#000000]/10 rounded-2xl shadow-sm overflow-x-auto">
+      <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl shadow-sm overflow-x-auto">
         <table className="w-full min-w-[760px] text-left">
           <thead>
-            <tr className="bg-[#FAFAFA] border-b border-[#000000]/10 text-[11px] font-black uppercase tracking-wider text-[#000000]">
+            <tr className="bg-[#181820] border-b border-[#C5A059]/20 text-[11px] font-black uppercase tracking-wider text-[#FAF7F2]">
               <th className="px-5 py-3.5">Name</th>
-              <th className="px-5 py-3.5">Role</th>
-              <th className="px-5 py-3.5">Phone</th>
+              <th className="px-5 py-3.5 text-[#B8B5AE]">Role</th>
+              <th className="px-5 py-3.5 text-[#B8B5AE]">Phone</th>
               <th className="px-5 py-3.5">Base Salary</th>
-              <th className="px-5 py-3.5 text-center">Status</th>
-              <th className="px-5 py-3.5 text-right">Actions</th>
+              <th className="px-5 py-3.5 text-center text-[#B8B5AE]">Status</th>
+              <th className="px-5 py-3.5 text-right text-[#B8B5AE]">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#000000]/5">
+          <tbody className="divide-y divide-[#C5A059]/10">
             {staff.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-10 text-center text-sm text-[#000000]/50 font-semibold">
-                  No staff added yet. Use “Add Staff” to create your first staff member.
+                <td colSpan={6} className="px-5 py-10 text-center text-sm text-[#FAF7F2] font-semibold">
+                  <span className="text-[#B8B5AE]">No staff added yet. Use “Add Staff” to create your first staff member.</span>
                 </td>
               </tr>
             ) : (
               staff.map((s) => (
                 <tr key={s.id}>
-                  <td className="px-5 py-3.5 text-sm font-bold text-[#000000]">{s.name}</td>
-                  <td className="px-5 py-3.5 text-sm text-[#000000]/70">{s.role || "—"}</td>
-                  <td className="px-5 py-3.5 text-sm text-[#000000]/70 font-mono">{s.phone || "—"}</td>
-                  <td className="px-5 py-3.5 text-sm font-black text-[#000000]">
+                  <td className="px-5 py-3.5 text-sm font-bold text-[#FAF7F2]">{s.name}</td>
+                  <td className="px-5 py-3.5 text-sm text-[#B8B5AE]">{s.role || "—"}</td>
+                  <td className="px-5 py-3.5 text-sm text-[#B8B5AE] font-mono">{s.phone || "—"}</td>
+                  <td className="px-5 py-3.5 text-sm font-black text-[#FAF7F2]">
                     ₹
                     {Number(s.base_salary).toLocaleString("en-IN", {
                       minimumFractionDigits: 2,
@@ -811,7 +937,7 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
                       className={`inline-block text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
                         s.is_active
                           ? "text-[#15803D] bg-[#15803D]/10 border-[#15803D]/25"
-                          : "text-[#000000]/50 bg-[#000000]/5 border-[#000000]/15"
+                          : "text-[#B8B5AE] bg-[#181820] border border-[#C5A059]/20"
                       }`}
                     >
                       {s.is_active ? "Active" : "Inactive"}
@@ -823,7 +949,7 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
                         type="button"
                         onClick={() => openEdit(s)}
                         title="Edit staff"
-                        className="w-8 h-8 flex items-center justify-center rounded-md bg-[#000000]/5 hover:bg-[#000000]/10 text-[#000000] cursor-pointer transition-colors"
+                        className="w-8 h-8 flex items-center justify-center rounded-md bg-[#181820] hover:bg-[#C5A059]/20 text-[#FAF7F2] hover:text-[var(--accent)] cursor-pointer transition-colors border border-[#C5A059]/15"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -831,7 +957,7 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
                         type="button"
                         onClick={() => handleDelete(s)}
                         title="Delete staff"
-                        className="w-8 h-8 flex items-center justify-center rounded-md bg-[#DC2626]/10 hover:bg-[#DC2626]/20 text-[#DC2626] cursor-pointer transition-colors"
+                        className="w-8 h-8 flex items-center justify-center rounded-md bg-[#DC2626]/10 hover:bg-[#DC2626]/20 text-[#EF4444] cursor-pointer transition-colors border border-[#DC2626]/20"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -846,11 +972,11 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
 
       {editing && (
         <div
-          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => !isSaving && setEditing(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6"
+            className="bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl w-full max-w-md p-6 text-[#FAF7F2]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
@@ -861,12 +987,19 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
                 type="button"
                 onClick={() => setEditing(null)}
                 disabled={isSaving}
-                className="w-8 h-8 rounded-lg hover:bg-[#000000]/5 flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 rounded-lg hover:bg-[#181820] text-[#B8B5AE] hover:text-[#FAF7F2] flex items-center justify-center cursor-pointer transition-colors"
                 title="Close"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {formError && (
+              <div className="mb-4 p-3 bg-red-950/40 border border-red-500/30 rounded-xl text-red-300 text-xs font-semibold flex items-center gap-2.5">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+                <span>{formError}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
@@ -925,8 +1058,8 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
                       onClick={() => setDraft({ ...draft, is_active: active })}
                       className={`py-2.5 rounded-lg border text-[10px] font-extrabold uppercase tracking-wider cursor-pointer transition-colors ${
                         draft.is_active === active
-                          ? "bg-[var(--accent)] border-[var(--accent)] text-white"
-                          : "bg-white border-[#000000]/15 text-[#000000]/60 hover:border-[#000000]/30"
+                          ? "bg-[var(--accent)] border-[var(--accent)] text-[#0C0C0E] font-black"
+                          : "bg-[#181820] border-[#C5A059]/20 text-[#B8B5AE] hover:border-[#C5A059]/40"
                       }`}
                     >
                       {active ? "Active" : "Inactive"}
@@ -941,7 +1074,7 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
                 type="button"
                 onClick={() => setEditing(null)}
                 disabled={isSaving}
-                className="bg-[#000000]/5 hover:bg-[#000000]/10 text-[#000000] text-[11px] font-extrabold uppercase tracking-wider px-4 py-2.5 rounded-lg cursor-pointer"
+                className="bg-[#181820] hover:bg-[#202028] border border-[#C5A059]/20 text-[#FAF7F2] text-[11px] font-extrabold uppercase tracking-wider px-4 py-2.5 rounded-lg cursor-pointer transition-colors"
               >
                 Cancel
               </button>
@@ -949,7 +1082,7 @@ function StaffManagement({ staff, onChanged }: { staff: Staff[]; onChanged: () =
                 type="button"
                 onClick={handleSave}
                 disabled={isSaving}
-                className="inline-flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-strong)] disabled:opacity-50 text-white text-[11px] font-extrabold uppercase tracking-wider px-4 py-2.5 rounded-lg cursor-pointer transition-colors"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 active:scale-[0.98] text-[#0C0C0E] border border-[#E5C378] disabled:opacity-50 text-[11px] font-black uppercase tracking-wider px-4 py-2.5 rounded-lg cursor-pointer transition-all shadow-[0_2px_10px_rgba(197,160,89,0.2)]"
               >
                 {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 {isSaving ? "Saving..." : "Save Staff"}

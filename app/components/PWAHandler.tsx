@@ -91,12 +91,12 @@ export default function PWAHandler({
 
   return (
     <div className="fixed bottom-3 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-4 z-50 bg-[#000000] text-white p-2.5 sm:p-4 rounded-2xl shadow-2xl border-2 border-[var(--accent)] flex items-center gap-2.5 sm:gap-3 animate-in slide-in-from-bottom-5 duration-300 w-auto sm:max-w-[360px] print:hidden">
-      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[var(--accent)]/20 border border-[var(--accent)] flex items-center justify-center shrink-0 overflow-hidden">
+      <div className="w-12 h-10 sm:w-14 sm:h-11 rounded-xl bg-black/95 border border-[var(--accent)] flex items-center justify-center shrink-0 overflow-hidden p-0.5">
         {logo ? (
           <img
             src={logo}
             alt=""
-            className="w-full h-full object-contain p-1"
+            className="w-full h-full object-contain"
           />
         ) : (
           <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--accent)]" />
@@ -104,7 +104,7 @@ export default function PWAHandler({
       </div>
       <div className="flex-1 min-w-0">
         <h4 className="text-[11px] sm:text-xs font-black tracking-tight text-white uppercase truncate">
-          Install {shopName || "SS CREATIVES"}
+          Install {shopName || "NIDHULAN"}
         </h4>
         <p className="text-[9px] sm:text-[10px] text-gray-300 font-semibold truncate">
           Add app for fast offline access

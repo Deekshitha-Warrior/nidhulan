@@ -1,6 +1,6 @@
-// Bumped to v3 so installed PWA clients drop cached copies of the old logo
-// images; the shop logo now comes only from Settings (via the manifest).
-const CACHE_NAME = 'dhanyas-boutique-pos-v3';
+// Updated to nidhulan-pos-v1 so installed PWA clients drop legacy cached copies
+// and refresh with NIDHULAN - The Precious Pearls branding.
+const CACHE_NAME = 'nidhulan-pos-v1';
 const ASSETS_TO_CACHE = [
   '/store',
   '/manifest.json',

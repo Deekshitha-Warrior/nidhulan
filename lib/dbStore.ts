@@ -1,15 +1,13 @@
-import { sql } from './db';
-import {
+import { getSupabaseClient } from './db';
+import type {
   Product,
   Category,
   Customer,
-  OrderRow,
   OrderItemRow,
   OrderWithRelations,
   CartItem,
   Expense,
   PaymentMode,
-  AdvanceOrderRow,
   AdvanceOrderItemRow,
   AdvanceOrderStatus,
   AdvanceOrderWithRelations,
@@ -17,18 +15,29 @@ import {
   Staff,
   AttendanceRecord,
   AttendanceStatus,
+  Offer,
+  BirthdaySettings,
+  BirthdayLog,
 } from './types';
 import { advanceCharges } from './advanceCharges';
 
-// Reset per process so the idempotent column checks only run once.
-let productSchemaChecked = false;
-let customerSchemaChecked = false;
-let attendanceSchemaChecked = false;
-let advanceSchemaChecked = false;
+type QueryResult = {
+  data: unknown;
+  error: { message: string; code?: string } | null;
+};
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
+async function run<T>(
+  request: PromiseLike<QueryResult>,
+  emptyValue: T,
+): Promise<T> {
+  const { data, error } = await request;
+  if (error) {
+    const code = error.code ? ` (${error.code})` : '';
+    throw new Error(`Supabase request failed${code}: ${error.message}`);
+  }
+  return (data ?? emptyValue) as T;
+}
 
-// Utility to generate a unique ID
 const uid = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID();
@@ -36,124 +45,172 @@ const uid = () => {
   return `id-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 };
 
-/**
- * `upsertCustomer` relies on `ON CONFLICT (phone)`, which Postgres only accepts
- * when a UNIQUE constraint exists on that column. schema.sql originally created a
- * plain (non-unique) index, so every sale that involved a customer phone failed
- * with "there is no unique or exclusion constraint matching the ON CONFLICT
- * specification". This promotes the index to UNIQUE and is idempotent.
- */
-/**
- * Only keep product links that still exist in the catalogue. A stale id (a
- * product deleted in another tab, or removed by the demo-data rollback) would
- * violate the *_product_id foreign key and abort the entire save. The line still
- * bills correctly from its snapshot name/price — it simply loses the catalogue
- * link, which is exactly what ON DELETE SET NULL does anyway.
- */
-async function filterLiveProductIds(ids: (string | null | undefined)[]): Promise<Set<string>> {
-  const wanted = ids.filter((id): id is string => Boolean(id));
-  const live = new Set<string>();
-  if (wanted.length === 0) return live;
-  const existing = await sql`SELECT id FROM products WHERE id = ANY(${wanted})`;
-  for (const row of existing as unknown as { id: string }[]) {
-    live.add(row.id);
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const PAGE_SIZE = 1000;
+const rows = <T>(request: PromiseLike<QueryResult>) => run<T[]>(request, []);
+const maybeOne = <T>(request: PromiseLike<QueryResult>) => run<T | null>(request, null);
+const execute = (request: PromiseLike<QueryResult>) => run<null>(request, null);
+
+async function allRows<T>(
+  buildRequest: (from: number, to: number) => PromiseLike<QueryResult>,
+): Promise<T[]> {
+  const result: T[] = [];
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const page = await rows<T>(buildRequest(offset, offset + PAGE_SIZE - 1));
+    result.push(...page);
+    if (page.length < PAGE_SIZE) return result;
   }
-  return live;
 }
 
-async function ensureCustomerSchema(): Promise<void> {
-  if (customerSchemaChecked) return;
-  try {
-    // If any historical duplicates exist, collapse them onto the oldest row
-    // before the UNIQUE index can be created.
-    await sql`
-      DELETE FROM customers c
-      USING customers d
-      WHERE c.phone = d.phone
-        AND c.id > d.id
-    `;
-    await sql`DROP INDEX IF EXISTS idx_customers_phone`;
-    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_phone ON customers (phone)`;
-    customerSchemaChecked = true;
-  } catch (err) {
-    console.error('Failed to ensure customer schema:', err);
+async function filterLiveProductIds(ids: (string | null | undefined)[]): Promise<Set<string>> {
+  const wanted = [...new Set(ids.filter((id): id is string => Boolean(id)))];
+  if (wanted.length === 0) return new Set();
+  const existing = await rows<{ id: string }>(
+    getSupabaseClient().from('products').select('id').in('id', wanted),
+  );
+  return new Set(existing.map((row) => row.id));
+}
+
+async function getOrderItemsByOrderId(orderIds: string[]): Promise<OrderItemRow[]> {
+  if (orderIds.length === 0) return [];
+  const client = getSupabaseClient();
+  const result: OrderItemRow[] = [];
+  for (let offset = 0; offset < orderIds.length; offset += 500) {
+    const ids = orderIds.slice(offset, offset + 500);
+    result.push(
+      ...(await allRows<OrderItemRow>((from, to) =>
+        client.from('order_items').select('*').in('order_id', ids).range(from, to),
+      )),
+    );
   }
+  return result;
+}
+
+async function getOrderCustomerDetails(customerIds: string[]) {
+  const ids = [...new Set(customerIds)];
+  type CustomerDetails = Pick<Customer, 'id' | 'name' | 'phone' | 'address'>;
+  if (ids.length === 0) return new Map<string, CustomerDetails>();
+  const client = getSupabaseClient();
+  const customers: CustomerDetails[] = [];
+  for (let offset = 0; offset < ids.length; offset += 500) {
+    const batch = ids.slice(offset, offset + 500);
+    customers.push(
+      ...(await allRows<CustomerDetails>((from, to) =>
+        client
+          .from('customers')
+          .select('id,name,phone,address')
+          .in('id', batch)
+          .range(from, to),
+      )),
+    );
+  }
+  return new Map(customers.map((customer) => [customer.id, customer]));
+}
+
+async function getAdvanceOrderItems(orderIds: string[]): Promise<AdvanceOrderItemRow[]> {
+  if (orderIds.length === 0) return [];
+  const client = getSupabaseClient();
+  const result: AdvanceOrderItemRow[] = [];
+  for (let offset = 0; offset < orderIds.length; offset += 500) {
+    const ids = orderIds.slice(offset, offset + 500);
+    result.push(
+      ...(await allRows<AdvanceOrderItemRow>((from, to) =>
+        client
+          .from('advance_order_items')
+          .select('*')
+          .in('advance_order_id', ids)
+          .range(from, to),
+      )),
+    );
+  }
+  return result;
+}
+
+async function saveAttendance(
+  staffId: string,
+  date: string,
+  patch: { status?: AttendanceStatus | null; clock_in?: string; clock_out?: string },
+): Promise<void> {
+  const client = getSupabaseClient();
+  const existing = await maybeOne<{ id: string; status: AttendanceStatus | null }>(
+    client
+      .from('staff_attendance')
+      .select('id,status')
+      .eq('staff_id', staffId)
+      .eq('attendance_date', date)
+      .maybeSingle(),
+  );
+  const now = new Date().toISOString();
+  const value = {
+    id: existing?.id ?? uid(),
+    staff_id: staffId,
+    attendance_date: date,
+    status: patch.status !== undefined ? patch.status : existing?.status ?? 'PRESENT',
+    ...(patch.clock_in ? { clock_in: now } : {}),
+    ...(patch.clock_out ? { clock_out: now } : {}),
+    updated_at: now,
+  };
+  await execute(
+    client
+      .from('staff_attendance')
+      .upsert(value, { onConflict: 'staff_id,attendance_date' }),
+  );
 }
 
 export const dbStore = {
-  // CATEGORIES
   async listCategories(): Promise<Category[]> {
-    const rows = await sql`SELECT * FROM categories ORDER BY name ASC`;
-    return rows as Category[];
+    const client = getSupabaseClient();
+    return allRows<Category>((from, to) =>
+      client.from('categories').select('*').order('name', { ascending: true }).range(from, to),
+    );
   },
 
   async addCategory(name: string): Promise<Category> {
-    const id = uid();
-    const rows = await sql`
-      INSERT INTO categories (id, name)
-      VALUES (${id}, ${name})
-      ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-      RETURNING *
-    `;
-    return rows[0] as Category;
+    const result = await maybeOne<Category>(
+      getSupabaseClient()
+        .from('categories')
+        .upsert({ id: uid(), name }, { onConflict: 'name' })
+        .select('*')
+        .single(),
+    );
+    if (!result) throw new Error('Supabase did not return the saved category.');
+    return result;
   },
 
   async updateCategory(id: string, name: string): Promise<Category | null> {
-    const existing = await sql`SELECT * FROM categories WHERE id = ${id}`;
-    if (existing.length === 0) return null;
-    const oldName = (existing[0] as Category).name;
+    const client = getSupabaseClient();
+    const existing = await maybeOne<Category>(
+      client.from('categories').select('*').eq('id', id).maybeSingle(),
+    );
+    if (!existing) return null;
     const newName = name.trim();
-    if (!newName || newName === oldName) return existing[0] as Category;
+    if (!newName || newName === existing.name) return existing;
 
-    const rows = await sql`
-      UPDATE categories SET name = ${newName} WHERE id = ${id} RETURNING *
-    `;
-    // Keep products in sync — their category is stored as the name string.
-    await sql`UPDATE products SET category = ${newName} WHERE category = ${oldName}`;
-    return rows[0] as Category;
+    const updated = await maybeOne<Category>(
+      client.from('categories').update({ name: newName }).eq('id', id).select('*').maybeSingle(),
+    );
+    if (!updated) return null;
+    await execute(
+      client.from('products').update({ category: newName }).eq('category', existing.name),
+    );
+    return updated;
   },
 
   async deleteCategory(id: string): Promise<void> {
-    await sql`DELETE FROM categories WHERE id = ${id}`;
-  },
-
-  // PRODUCTS
-
-  /**
-   * Bring an existing `products` table up to date with the product/service
-   * columns. Every statement is idempotent, so this is safe to run on every
-   * list/add/update.
-   */
-  async ensureProductSchema(): Promise<void> {
-    if (productSchemaChecked) return;
-    try {
-      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS item_type TEXT NOT NULL DEFAULT 'PRODUCT'`;
-      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_price NUMERIC NOT NULL DEFAULT 0`;
-      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS current_stock NUMERIC`;
-      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS low_stock_alert NUMERIC`;
-      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_discount_pct NUMERIC NOT NULL DEFAULT 0`;
-      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_price NUMERIC`;
-      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true`;
-      // The offer percentage is snapshotted per invoice line so the printed
-      // invoice can show the discount that was actually applied.
-      await sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS offer_pct NUMERIC NOT NULL DEFAULT 0`;
-      await sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS original_price NUMERIC`;
-      productSchemaChecked = true;
-    } catch (err) {
-      console.error('Failed to ensure product schema:', err);
-    }
+    await execute(getSupabaseClient().from('categories').delete().eq('id', id));
   },
 
   async listProducts(): Promise<Product[]> {
-    await this.ensureProductSchema();
-    const rows = await sql`SELECT * FROM products ORDER BY name ASC`;
-    return rows as Product[];
+    const client = getSupabaseClient();
+    return allRows<Product>((from, to) =>
+      client.from('products').select('*').order('name', { ascending: true }).range(from, to),
+    );
   },
 
   async getProduct(id: string): Promise<Product | null> {
-    await this.ensureProductSchema();
-    const rows = await sql`SELECT * FROM products WHERE id = ${id}`;
-    return rows.length > 0 ? (rows[0] as Product) : null;
+    return maybeOne<Product>(
+      getSupabaseClient().from('products').select('*').eq('id', id).maybeSingle(),
+    );
   },
 
   async addProduct(input: {
@@ -171,155 +228,253 @@ export const dbStore = {
     offer_price?: number | null;
     is_active?: boolean;
   }): Promise<Product> {
-    await this.ensureProductSchema();
-    const id = uid();
-    // Services never hold stock, so those columns are always written as NULL.
     const isService = input.item_type === 'SERVICE';
-    const rows = await sql`
-      INSERT INTO products (
-        id, name, description, category, gst_rate, hsn_code, selling_price,
-        item_type, cost_price, current_stock, low_stock_alert,
-        offer_discount_pct, offer_price, is_active
-      )
-      VALUES (
-        ${id}, ${input.name}, ${input.description}, ${input.category},
-        ${input.gst_rate}, ${input.hsn_code}, ${input.selling_price},
-        ${isService ? 'SERVICE' : 'PRODUCT'}, ${input.cost_price ?? 0},
-        ${isService ? null : input.current_stock ?? 0},
-        ${isService ? null : input.low_stock_alert ?? 0},
-        ${input.offer_discount_pct ?? 0}, ${input.offer_price ?? null},
-        ${input.is_active ?? true}
-      )
-      RETURNING *
-    `;
-    return rows[0] as Product;
+    const result = await maybeOne<Product>(
+      getSupabaseClient()
+        .from('products')
+        .insert({
+          id: uid(),
+          name: input.name,
+          description: input.description,
+          category: input.category,
+          gst_rate: input.gst_rate,
+          hsn_code: input.hsn_code,
+          selling_price: input.selling_price,
+          item_type: isService ? 'SERVICE' : 'PRODUCT',
+          cost_price: input.cost_price ?? 0,
+          current_stock: isService ? null : input.current_stock ?? 0,
+          low_stock_alert: isService ? null : input.low_stock_alert ?? 0,
+          offer_discount_pct: input.offer_discount_pct ?? 0,
+          offer_price: input.offer_price ?? null,
+          is_active: input.is_active ?? true,
+        })
+        .select('*')
+        .single(),
+    );
+    if (!result) throw new Error('Supabase did not return the saved product.');
+    return result;
   },
 
   async updateProduct(id: string, patch: Partial<Product>): Promise<Product | null> {
-    await this.ensureProductSchema();
     if (Object.keys(patch).length === 0) return this.getProduct(id);
+    const update: Partial<Product> = {};
+    if (patch.name !== undefined) update.name = patch.name;
+    if (patch.description !== undefined) update.description = patch.description;
+    if (patch.category !== undefined) update.category = patch.category;
+    if (patch.gst_rate !== undefined) update.gst_rate = patch.gst_rate;
+    if (patch.hsn_code !== undefined) update.hsn_code = patch.hsn_code;
+    if (patch.selling_price !== undefined) update.selling_price = patch.selling_price;
+    if (patch.item_type !== undefined) update.item_type = patch.item_type;
+    if (patch.cost_price !== undefined) update.cost_price = patch.cost_price;
+    if (patch.current_stock !== undefined) update.current_stock = patch.current_stock;
+    if (patch.low_stock_alert !== undefined) update.low_stock_alert = patch.low_stock_alert;
+    if (patch.offer_discount_pct !== undefined) update.offer_discount_pct = patch.offer_discount_pct;
+    if (patch.offer_price !== undefined) update.offer_price = patch.offer_price;
+    if (patch.is_active !== undefined) update.is_active = patch.is_active;
 
-    // We update fields individually since dynamic SET with Neon SQL template tag is tricky
-    if (patch.name !== undefined) await sql`UPDATE products SET name = ${patch.name} WHERE id = ${id}`;
-    if (patch.description !== undefined) await sql`UPDATE products SET description = ${patch.description} WHERE id = ${id}`;
-    if (patch.category !== undefined) await sql`UPDATE products SET category = ${patch.category} WHERE id = ${id}`;
-    if (patch.gst_rate !== undefined) await sql`UPDATE products SET gst_rate = ${patch.gst_rate} WHERE id = ${id}`;
-    if (patch.hsn_code !== undefined) await sql`UPDATE products SET hsn_code = ${patch.hsn_code} WHERE id = ${id}`;
-    if (patch.selling_price !== undefined) await sql`UPDATE products SET selling_price = ${patch.selling_price} WHERE id = ${id}`;
-    if (patch.item_type !== undefined) await sql`UPDATE products SET item_type = ${patch.item_type} WHERE id = ${id}`;
-    if (patch.cost_price !== undefined) await sql`UPDATE products SET cost_price = ${patch.cost_price} WHERE id = ${id}`;
-    if (patch.offer_discount_pct !== undefined) await sql`UPDATE products SET offer_discount_pct = ${patch.offer_discount_pct} WHERE id = ${id}`;
-    if (patch.offer_price !== undefined) await sql`UPDATE products SET offer_price = ${patch.offer_price} WHERE id = ${id}`;
-    if (patch.is_active !== undefined) await sql`UPDATE products SET is_active = ${patch.is_active} WHERE id = ${id}`;
-
-    // Stock is meaningless for services — switching the type to SERVICE clears it.
-    if (
+    const needsStockCheck =
+      patch.item_type === 'SERVICE' ||
       patch.current_stock !== undefined ||
-      patch.low_stock_alert !== undefined ||
-      patch.item_type !== undefined
-    ) {
-      const existing = await this.getProduct(id);
-      if (existing && existing.item_type === 'SERVICE') {
-        await sql`UPDATE products SET current_stock = NULL, low_stock_alert = NULL WHERE id = ${id}`;
-      } else {
-        if (patch.current_stock !== undefined)
-          await sql`UPDATE products SET current_stock = ${patch.current_stock} WHERE id = ${id}`;
-        if (patch.low_stock_alert !== undefined)
-          await sql`UPDATE products SET low_stock_alert = ${patch.low_stock_alert} WHERE id = ${id}`;
-      }
+      patch.low_stock_alert !== undefined;
+    const existing = needsStockCheck ? await this.getProduct(id) : null;
+    if (patch.item_type === 'SERVICE') {
+      update.current_stock = null;
+      update.low_stock_alert = null;
+    } else if (existing?.item_type === 'SERVICE') {
+      update.current_stock = null;
+      update.low_stock_alert = null;
     }
-
-    const rows = await sql`SELECT * FROM products WHERE id = ${id}`;
-    return rows.length > 0 ? (rows[0] as Product) : null;
+    if (Object.keys(update).length === 0) return this.getProduct(id);
+    const client = getSupabaseClient();
+    const changed = await maybeOne<Product>(
+      client.from('products').update(update).eq('id', id).select('*').maybeSingle(),
+    );
+    return changed;
   },
 
-  /** Adjust stock after a completed sale. Services are skipped (stock is NULL). */
   async decrementStock(productId: string, qty: number): Promise<void> {
-    try {
-      await sql`
-        UPDATE products
-        SET current_stock = GREATEST(0, COALESCE(current_stock, 0) - ${Number(qty) || 0})
-        WHERE id = ${productId} AND item_type = 'PRODUCT' AND current_stock IS NOT NULL
-      `;
-    } catch (err) {
-      console.error(`Failed to decrement stock for ${productId}:`, err);
+    const amount = Number(qty) || 0;
+    if (amount <= 0) return;
+
+    const client = getSupabaseClient();
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const product = await maybeOne<Pick<Product, 'id' | 'item_type' | 'current_stock'>>(
+        client
+          .from('products')
+          .select('id,item_type,current_stock')
+          .eq('id', productId)
+          .maybeSingle(),
+      );
+      if (!product || product.item_type !== 'PRODUCT' || product.current_stock === null) return;
+
+      const nextStock = Math.max(0, Number(product.current_stock) - amount);
+      const updated = await maybeOne<{ id: string }>(
+        client
+          .from('products')
+          .update({ current_stock: nextStock })
+          .eq('id', productId)
+          .eq('current_stock', product.current_stock)
+          .select('id')
+          .maybeSingle(),
+      );
+      if (updated) return;
     }
+    throw new Error(`Could not decrement stock for ${productId} because it kept changing.`);
   },
 
   async deleteProduct(id: string): Promise<void> {
-    await sql`DELETE FROM products WHERE id = ${id}`;
+    await execute(getSupabaseClient().from('products').delete().eq('id', id));
   },
 
-  // CUSTOMERS
-  async upsertCustomer(name: string, phone: string, address?: string | null): Promise<Customer> {
-    await ensureCustomerSchema();
-    const id = uid();
-    const rows = await sql`
-      INSERT INTO customers (id, name, phone, address)
-      VALUES (${id}, ${name}, ${phone}, ${address || null})
-      ON CONFLICT (phone) DO UPDATE SET name = EXCLUDED.name, address = EXCLUDED.address
-      RETURNING *
-    `;
-    return rows[0] as Customer;
+  async listCustomers(search?: string): Promise<Customer[]> {
+    const client = getSupabaseClient();
+    const trimmed = search?.trim();
+    if (trimmed) {
+      const escaped = trimmed.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      return allRows<Customer>((from, to) =>
+        client
+          .from('customers')
+          .select('*')
+          .or(`name.ilike."%${escaped}%",phone.ilike."%${escaped}%"`)
+          .order('name', { ascending: true })
+          .range(from, to),
+      );
+    }
+    return allRows<Customer>((from, to) =>
+      client.from('customers').select('*').order('name', { ascending: true }).range(from, to),
+    );
   },
 
-  // ORDERS
+  async getCustomer(id: string): Promise<Customer | null> {
+    return maybeOne<Customer>(
+      getSupabaseClient().from('customers').select('*').eq('id', id).maybeSingle(),
+    );
+  },
+
+  async upsertCustomer(
+    name: string,
+    phone: string,
+    address?: string | null,
+    dob?: string | null,
+  ): Promise<Customer> {
+    const client = getSupabaseClient();
+    const existing = await maybeOne<Customer>(
+      client.from('customers').select('*').eq('phone', phone).maybeSingle(),
+    );
+    const result = await maybeOne<Customer>(
+      client
+        .from('customers')
+        .upsert(
+          {
+            id: existing?.id ?? uid(),
+            name,
+            phone,
+            address: address ?? existing?.address ?? null,
+            dob: dob ?? existing?.dob ?? null,
+          },
+          { onConflict: 'phone' },
+        )
+        .select('*')
+        .single(),
+    );
+    if (!result) throw new Error('Supabase did not return the saved customer.');
+    return result;
+  },
+
+  async addCustomer(data: {
+    name: string;
+    phone: string;
+    address?: string | null;
+    dob?: string | null;
+  }): Promise<Customer> {
+    return this.upsertCustomer(data.name, data.phone, data.address, data.dob);
+  },
+
+  async updateCustomer(id: string, patch: Partial<Customer>): Promise<Customer | null> {
+    const update: Partial<Customer> = {};
+    if (patch.name !== undefined) update.name = patch.name;
+    if (patch.phone !== undefined) update.phone = patch.phone;
+    if (patch.address !== undefined) update.address = patch.address;
+    if (patch.dob !== undefined) update.dob = patch.dob || null;
+    if (Object.keys(update).length === 0) return this.getCustomer(id);
+    return maybeOne<Customer>(
+      getSupabaseClient().from('customers').update(update).eq('id', id).select('*').maybeSingle(),
+    );
+  },
+
+  async deleteCustomer(id: string): Promise<void> {
+    await execute(getSupabaseClient().from('customers').delete().eq('id', id));
+  },
+
   async orderIdExists(id: string): Promise<boolean> {
-    const rows = await sql`SELECT 1 FROM orders WHERE id = ${id} LIMIT 1`;
-    return rows.length > 0;
+    return Boolean(
+      await maybeOne<{ id: string }>(
+        getSupabaseClient().from('orders').select('id').eq('id', id).maybeSingle(),
+      ),
+    );
   },
 
   async listOrdersWithRelations(): Promise<OrderWithRelations[]> {
-    const orders = await sql`
-      SELECT o.*, c.name as customer_name, c.phone as customer_phone, c.address as customer_address
-      FROM orders o
-      JOIN customers c ON c.id = o.customer_id
-      ORDER BY o.created_at DESC
-    `;
-
+    const client = getSupabaseClient();
+    const orders = await allRows<Record<string, unknown> & { id: string; customer_id: string }>(
+      (from, to) =>
+        client
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to),
+    );
     if (orders.length === 0) return [];
 
-    const orderIds = orders.map((o: any) => o.id);
-    const items = await sql`
-      SELECT * FROM order_items
-      WHERE order_id = ANY(${orderIds})
-    `;
-
-    return orders.map((o: any) => ({
-      ...o,
-      items: items.filter((i: any) => i.order_id === o.id) as OrderItemRow[],
-    })) as OrderWithRelations[];
+    const [customers, items] = await Promise.all([
+      getOrderCustomerDetails(orders.map((order) => order.customer_id)),
+      getOrderItemsByOrderId(orders.map((order) => order.id)),
+    ]);
+    return orders.map((order) => {
+      const customer = customers.get(order.customer_id);
+      return {
+        ...order,
+        customer_name: customer?.name ?? '',
+        customer_phone: customer?.phone ?? '',
+        customer_address: customer?.address ?? null,
+        items: items.filter((item) => item.order_id === order.id),
+      };
+    }) as unknown as OrderWithRelations[];
   },
 
   async getOrderWithRelations(id: string): Promise<OrderWithRelations | null> {
-    const orders = await sql`
-      SELECT o.*, c.name as customer_name, c.phone as customer_phone, c.address as customer_address
-      FROM orders o
-      JOIN customers c ON c.id = o.customer_id
-      WHERE o.id = ${id}
-    `;
-    if (orders.length === 0) return null;
-
-    const items = await sql`SELECT * FROM order_items WHERE order_id = ${id}`;
-
+    const order = await maybeOne<Record<string, unknown> & { id: string; customer_id: string }>(
+      getSupabaseClient().from('orders').select('*').eq('id', id).maybeSingle(),
+    );
+    if (!order) return null;
+    const [customers, items] = await Promise.all([
+      getOrderCustomerDetails([order.customer_id]),
+      getOrderItemsByOrderId([order.id]),
+    ]);
+    const customer = customers.get(order.customer_id);
     return {
-      ...(orders[0] as any),
-      items: items as OrderItemRow[],
-    } as OrderWithRelations;
+      ...order,
+      customer_name: customer?.name ?? '',
+      customer_phone: customer?.phone ?? '',
+      customer_address: customer?.address ?? null,
+      items,
+    } as unknown as OrderWithRelations;
   },
 
   async deleteOrder(id: string): Promise<void> {
-    // Order items are removed via ON DELETE CASCADE.
-    await sql`DELETE FROM orders WHERE id = ${id}`;
+    await execute(getSupabaseClient().from('orders').delete().eq('id', id));
   },
 
-  // EXPENSES
   async listExpenses(): Promise<Expense[]> {
-    const rows = await sql`
-      SELECT * FROM expenses
-      ORDER BY expense_date DESC, created_at DESC
-    `;
-    return rows as Expense[];
+    const client = getSupabaseClient();
+    return allRows<Expense>((from, to) =>
+      client
+        .from('expenses')
+        .select('*')
+        .order('expense_date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .range(from, to),
+    );
   },
 
   async addExpense(input: {
@@ -330,40 +485,35 @@ export const dbStore = {
     notes: string | null;
     expense_date: string;
   }): Promise<Expense> {
-    const id = uid();
-    const rows = await sql`
-      INSERT INTO expenses (id, title, category, amount, payment_mode, notes, expense_date)
-      VALUES (
-        ${id}, ${input.title}, ${input.category}, ${input.amount},
-        ${input.payment_mode}, ${input.notes}, ${input.expense_date}
-      )
-      RETURNING *
-    `;
-    return rows[0] as Expense;
+    const result = await maybeOne<Expense>(
+      getSupabaseClient().from('expenses').insert({ id: uid(), ...input }).select('*').single(),
+    );
+    if (!result) throw new Error('Supabase did not return the saved expense.');
+    return result;
   },
 
   async updateExpense(id: string, patch: Partial<Expense>): Promise<Expense | null> {
+    const client = getSupabaseClient().from('expenses');
     if (Object.keys(patch).length === 0) {
-      const rows = await sql`SELECT * FROM expenses WHERE id = ${id}`;
-      return rows.length > 0 ? (rows[0] as Expense) : null;
+      return maybeOne<Expense>(client.select('*').eq('id', id).maybeSingle());
     }
-
-    if (patch.title !== undefined) await sql`UPDATE expenses SET title = ${patch.title} WHERE id = ${id}`;
-    if (patch.category !== undefined) await sql`UPDATE expenses SET category = ${patch.category} WHERE id = ${id}`;
-    if (patch.amount !== undefined) await sql`UPDATE expenses SET amount = ${patch.amount} WHERE id = ${id}`;
-    if (patch.payment_mode !== undefined) await sql`UPDATE expenses SET payment_mode = ${patch.payment_mode} WHERE id = ${id}`;
-    if (patch.notes !== undefined) await sql`UPDATE expenses SET notes = ${patch.notes} WHERE id = ${id}`;
-    if (patch.expense_date !== undefined) await sql`UPDATE expenses SET expense_date = ${patch.expense_date} WHERE id = ${id}`;
-
-    const rows = await sql`SELECT * FROM expenses WHERE id = ${id}`;
-    return rows.length > 0 ? (rows[0] as Expense) : null;
+    const update: Partial<Expense> = {};
+    if (patch.title !== undefined) update.title = patch.title;
+    if (patch.category !== undefined) update.category = patch.category;
+    if (patch.amount !== undefined) update.amount = patch.amount;
+    if (patch.payment_mode !== undefined) update.payment_mode = patch.payment_mode;
+    if (patch.notes !== undefined) update.notes = patch.notes;
+    if (patch.expense_date !== undefined) update.expense_date = patch.expense_date;
+    if (Object.keys(update).length === 0) {
+      return maybeOne<Expense>(client.select('*').eq('id', id).maybeSingle());
+    }
+    return maybeOne<Expense>(client.update(update).eq('id', id).select('*').maybeSingle());
   },
 
   async deleteExpense(id: string): Promise<void> {
-    await sql`DELETE FROM expenses WHERE id = ${id}`;
+    await execute(getSupabaseClient().from('expenses').delete().eq('id', id));
   },
 
-  // ORDER SUBMISSION
   async submitOrder(payload: {
     orderId: string;
     customerName: string;
@@ -385,138 +535,116 @@ export const dbStore = {
     splitGpay?: number;
     paymentMode: PaymentMode;
   }): Promise<{ orderId: string }> {
-    // Neon HTTP doesn't natively support full interactive transactions in the simple
-    // API, so we run statements sequentially/concurrently which is fine at this scale.
-
     const customer = await this.upsertCustomer(
       payload.customerName,
       payload.customerPhone,
       payload.customerAddress,
     );
-
-    // Same stale-id guard as the regular sale path.
     const liveProductIds = await filterLiveProductIds(
       payload.items.map((item) => item.product_id),
     );
+    const subtotalExclusive =
+      payload.grandTotal + payload.discountAmount - payload.gstAmount - payload.deliveryFee;
 
-    // Each cart line becomes one order item, snapshotting its name and price.
-    const finalOrderItems: Omit<OrderItemRow, 'id'>[] = payload.items.map((item) => ({
+    await execute(
+      getSupabaseClient().from('orders').insert({
+        id: payload.orderId,
+        customer_id: customer.id,
+        source: payload.source,
+        status: 'COMPLETED',
+        is_gst: payload.isGst,
+        subtotal: subtotalExclusive,
+        discount_type: payload.discountType,
+        discount_value: payload.discountValue,
+        discount_amount: payload.discountAmount,
+        gst_percentage: payload.gstPercentage,
+        gst_amount: payload.gstAmount,
+        delivery_fee: payload.deliveryFee,
+        grand_total: payload.grandTotal,
+        cash_received: payload.cashReceived,
+        split_cash: payload.splitCash ?? 0,
+        split_gpay: payload.splitGpay ?? 0,
+        payment_mode: payload.paymentMode,
+        bill_date: payload.billDate,
+        created_at: new Date().toISOString(),
+      }),
+    );
+
+    const finalOrderItems = payload.items.map((item) => ({
+      id: uid(),
       order_id: payload.orderId,
-      product_id:
-        item.product_id && liveProductIds.has(item.product_id) ? item.product_id : null,
+      product_id: item.product_id && liveProductIds.has(item.product_id) ? item.product_id : null,
       snapshot_name: item.name,
       snapshot_price: item.price,
       quantity: item.qty,
       offer_pct: item.offerPct ?? 0,
       original_price: (item.offerPct ?? 0) > 0 ? item.originalPrice ?? null : null,
     }));
+    if (finalOrderItems.length > 0) {
+      await execute(getSupabaseClient().from('order_items').insert(finalOrderItems));
+    }
 
-    // Subtotal is GST-exclusive (sum of line prices × qty).
-    // grand_total = subtotal - discount + GST + delivery  (GST is added on top).
-    const subtotalExclusive =
-      payload.grandTotal + payload.discountAmount - payload.gstAmount - payload.deliveryFee;
-
-    await sql`
-      INSERT INTO orders (
-        id, customer_id, source, status, is_gst, subtotal, discount_type, discount_value,
-        discount_amount, gst_percentage, gst_amount, delivery_fee, grand_total,
-        cash_received, split_cash, split_gpay, payment_mode, bill_date, created_at
-      ) VALUES (
-        ${payload.orderId}, ${customer.id}, ${payload.source}, 'COMPLETED', ${payload.isGst},
-        ${subtotalExclusive},
-        ${payload.discountType}, ${payload.discountValue}, ${payload.discountAmount},
-        ${payload.gstPercentage}, ${payload.gstAmount}, ${payload.deliveryFee},
-        ${payload.grandTotal}, ${payload.cashReceived},
-        ${payload.splitCash ?? 0}, ${payload.splitGpay ?? 0},
-        ${payload.paymentMode}, ${payload.billDate}, now()
-      )
-    `;
-
-    // Insert order items now that the order row exists.
-    await this.ensureProductSchema();
-    await Promise.all(
-      finalOrderItems.map((oi) =>
-        sql`
-          INSERT INTO order_items (
-            id, order_id, product_id, snapshot_name, snapshot_price, quantity, offer_pct,
-            original_price
-          ) VALUES (
-            ${uid()}, ${oi.order_id}, ${oi.product_id},
-            ${oi.snapshot_name}, ${oi.snapshot_price}, ${oi.quantity}, ${oi.offer_pct},
-            ${oi.original_price}
-          )
-        `
-      ),
-    );
-
-    // Sell-through: reduce stock for every catalogued product on the bill.
-    // Services have NULL stock and are skipped by the query.
     await Promise.all(
       payload.items
         .filter((item) => item.product_id)
         .map((item) => this.decrementStock(item.product_id as string, item.qty)),
     );
-
     return { orderId: payload.orderId };
   },
 
-  // ADVANCE ORDERS — partial-payment holds. Revenue is recognized only when the
-  // balance is collected and finalizeAdvanceOrder turns the hold into an invoice.
-
-  /** Bill-level charge columns; NULL on orders booked before they existed. */
-  async ensureAdvanceSchema(): Promise<void> {
-    if (advanceSchemaChecked) return;
-    try {
-      await sql`ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS discount_type TEXT`;
-      await sql`ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS discount_value NUMERIC`;
-      await sql`ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC`;
-      await sql`ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS delivery_fee NUMERIC`;
-      await sql`ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS is_gst BOOLEAN`;
-      await sql`ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS gst_percentage NUMERIC`;
-      await sql`ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS gst_amount NUMERIC`;
-      advanceSchemaChecked = true;
-    } catch (err) {
-      console.error('Failed to ensure advance order schema:', err);
-    }
-  },
-
   async listAdvanceOrders(): Promise<AdvanceOrderWithRelations[]> {
-    await this.ensureAdvanceSchema();
-    const rows = await sql`
-      SELECT a.*, c.name AS customer_name, c.phone AS customer_phone, c.address AS customer_address
-      FROM advance_orders a
-      JOIN customers c ON c.id = a.customer_id
-      ORDER BY a.created_at DESC
-    `;
-    if (rows.length === 0) return [];
+    const client = getSupabaseClient();
+    const orders = await allRows<Record<string, unknown> & { id: string; customer_id: string }>(
+      (from, to) =>
+        client
+          .from('advance_orders')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to),
+    );
+    if (orders.length === 0) return [];
 
-    const ids = rows.map((r: any) => r.id);
-    const items = await sql`
-      SELECT * FROM advance_order_items WHERE advance_order_id = ANY(${ids})
-    `;
-
-    return rows.map((r: any) => ({
-      ...r,
-      items: (items as AdvanceOrderItemRow[]).filter((i) => i.advance_order_id === r.id),
-    })) as AdvanceOrderWithRelations[];
+    const [customers, items] = await Promise.all([
+      getOrderCustomerDetails(orders.map((order) => order.customer_id)),
+      getAdvanceOrderItems(orders.map((order) => order.id)),
+    ]);
+    return orders.map((order) => {
+      const customer = customers.get(order.customer_id);
+      return {
+        ...order,
+        customer_name: customer?.name ?? '',
+        customer_phone: customer?.phone ?? '',
+        customer_address: customer?.address ?? null,
+        items: items.filter((item) => item.advance_order_id === order.id),
+      };
+    }) as unknown as AdvanceOrderWithRelations[];
   },
 
   async getAdvanceOrder(id: string): Promise<AdvanceOrderWithRelations | null> {
-    await this.ensureAdvanceSchema();
-    const rows = await sql`
-      SELECT a.*, c.name AS customer_name, c.phone AS customer_phone, c.address AS customer_address
-      FROM advance_orders a
-      JOIN customers c ON c.id = a.customer_id
-      WHERE a.id = ${id}
-    `;
-    if (rows.length === 0) return null;
-    const items = await sql`SELECT * FROM advance_order_items WHERE advance_order_id = ${id}`;
-    return { ...(rows[0] as any), items: items as AdvanceOrderItemRow[] } as AdvanceOrderWithRelations;
+    const order = await maybeOne<Record<string, unknown> & { id: string; customer_id: string }>(
+      getSupabaseClient().from('advance_orders').select('*').eq('id', id).maybeSingle(),
+    );
+    if (!order) return null;
+    const [customers, items] = await Promise.all([
+      getOrderCustomerDetails([order.customer_id]),
+      getAdvanceOrderItems([order.id]),
+    ]);
+    const customer = customers.get(order.customer_id);
+    return {
+      ...order,
+      customer_name: customer?.name ?? '',
+      customer_phone: customer?.phone ?? '',
+      customer_address: customer?.address ?? null,
+      items,
+    } as unknown as AdvanceOrderWithRelations;
   },
 
   async advanceOrderIdExists(id: string): Promise<boolean> {
-    const rows = await sql`SELECT 1 FROM advance_orders WHERE id = ${id} LIMIT 1`;
-    return rows.length > 0;
+    return Boolean(
+      await maybeOne<{ id: string }>(
+        getSupabaseClient().from('advance_orders').select('id').eq('id', id).maybeSingle(),
+      ),
+    );
   },
 
   async createAdvanceOrder(payload: {
@@ -545,70 +673,66 @@ export const dbStore = {
       quantity: number;
     }[];
   }): Promise<{ advanceOrderId: string }> {
-    await this.ensureAdvanceSchema();
     const customer = await this.upsertCustomer(
       payload.customerName,
       payload.customerPhone,
       payload.customerAddress,
     );
-
-    await sql`
-      INSERT INTO advance_orders (
-        id, customer_id, status, subtotal, total_amount, deposit_amount,
-        deposit_payment_mode, delivery_date, notes,
-        discount_type, discount_value, discount_amount, delivery_fee,
-        is_gst, gst_percentage, gst_amount
-      ) VALUES (
-        ${payload.advanceOrderId}, ${customer.id}, 'PENDING',
-        ${payload.subtotal}, ${payload.totalAmount}, ${payload.depositAmount},
-        ${payload.depositPaymentMode}, ${payload.deliveryDate}, ${payload.notes},
-        ${payload.discountType}, ${payload.discountValue}, ${payload.discountAmount},
-        ${payload.deliveryFee}, ${payload.isGst},
-        ${payload.isGst ? payload.gstPercentage : 0}, ${payload.isGst ? payload.gstAmount : 0}
-      )
-    `;
-
-    // Same stale-id guard as the regular sale path, so a catalogue product removed
-    // after it was added to the cart cannot abort the advance order.
-    const liveProductIds = await filterLiveProductIds(
-      payload.items.map((it) => it.product_id),
+    await execute(
+      getSupabaseClient().from('advance_orders').insert({
+        id: payload.advanceOrderId,
+        customer_id: customer.id,
+        status: 'PENDING',
+        subtotal: payload.subtotal,
+        total_amount: payload.totalAmount,
+        deposit_amount: payload.depositAmount,
+        deposit_payment_mode: payload.depositPaymentMode,
+        delivery_date: payload.deliveryDate,
+        notes: payload.notes,
+        discount_type: payload.discountType,
+        discount_value: payload.discountValue,
+        discount_amount: payload.discountAmount,
+        delivery_fee: payload.deliveryFee,
+        is_gst: payload.isGst,
+        gst_percentage: payload.isGst ? payload.gstPercentage : 0,
+        gst_amount: payload.isGst ? payload.gstAmount : 0,
+      }),
     );
 
-    await Promise.all(
-      payload.items.map((it) =>
-        sql`
-          INSERT INTO advance_order_items (
-            id, advance_order_id, product_id, snapshot_name, snapshot_desc, snapshot_price, quantity
-          ) VALUES (
-            ${uid()}, ${payload.advanceOrderId},
-            ${it.product_id && liveProductIds.has(it.product_id) ? it.product_id : null},
-            ${it.snapshot_name}, ${it.snapshot_desc}, ${it.snapshot_price}, ${it.quantity}
-          )
-        `,
-      ),
-    );
-
+    const liveProductIds = await filterLiveProductIds(payload.items.map((item) => item.product_id));
+    const items = payload.items.map((item) => ({
+      id: uid(),
+      advance_order_id: payload.advanceOrderId,
+      product_id:
+        item.product_id && liveProductIds.has(item.product_id) ? item.product_id : null,
+      snapshot_name: item.snapshot_name,
+      snapshot_desc: item.snapshot_desc,
+      snapshot_price: item.snapshot_price,
+      quantity: item.quantity,
+    }));
+    if (items.length > 0) {
+      await execute(getSupabaseClient().from('advance_order_items').insert(items));
+    }
     return { advanceOrderId: payload.advanceOrderId };
   },
 
   async updateAdvanceOrderStatus(id: string, status: AdvanceOrderStatus): Promise<void> {
-    await sql`UPDATE advance_orders SET status = ${status} WHERE id = ${id}`;
+    await execute(getSupabaseClient().from('advance_orders').update({ status }).eq('id', id));
   },
 
   async cancelAdvanceOrder(id: string): Promise<void> {
-    await sql`
-      UPDATE advance_orders
-      SET status = 'CANCELLED', cancelled_at = now()
-      WHERE id = ${id}
-    `;
+    await execute(
+      getSupabaseClient()
+        .from('advance_orders')
+        .update({ status: 'CANCELLED', cancelled_at: new Date().toISOString() })
+        .eq('id', id),
+    );
   },
 
   async deleteAdvanceOrder(id: string): Promise<void> {
-    await sql`DELETE FROM advance_orders WHERE id = ${id}`;
+    await execute(getSupabaseClient().from('advance_orders').delete().eq('id', id));
   },
 
-  // Collect the remaining balance and turn the hold into a real invoice.
-  // Reuses submitOrder for revenue recognition.
   async finalizeAdvanceOrder(payload: {
     advanceOrderId: string;
     invoiceId: string;
@@ -626,44 +750,40 @@ export const dbStore = {
     if (advance.status === 'COMPLETED') throw new Error('Advance order already finalized');
     if (advance.status === 'CANCELLED') throw new Error('Advance order was cancelled');
 
-    // A line loses its catalogue link when its product was deleted (ON DELETE SET
-    // NULL) — e.g. the catalogue was rebuilt after the advance was booked. Re-link
-    // those lines by product name so completing the order still reduces stock.
-    const liveProductIds = await filterLiveProductIds(advance.items.map((it) => it.product_id));
-    const unlinkedNames = advance.items
-      .filter((it) => !it.product_id || !liveProductIds.has(it.product_id))
-      .map((it) => it.snapshot_name.trim().toLowerCase());
+    const liveProductIds = await filterLiveProductIds(advance.items.map((item) => item.product_id));
+    const unlinkedNames = new Set(
+      advance.items
+        .filter((item) => !item.product_id || !liveProductIds.has(item.product_id))
+        .map((item) => item.snapshot_name.trim().toLowerCase()),
+    );
     const productIdByName = new Map<string, string>();
-    if (unlinkedNames.length > 0) {
-      const matches = await sql`
-        SELECT id, name FROM products WHERE lower(trim(name)) = ANY(${unlinkedNames})
-      `;
-      for (const row of matches as unknown as { id: string; name: string }[]) {
-        const key = row.name.trim().toLowerCase();
-        if (!productIdByName.has(key)) productIdByName.set(key, row.id);
+    if (unlinkedNames.size > 0) {
+      const client = getSupabaseClient();
+      const products = await allRows<{ id: string; name: string }>(
+        (from, to) => client.from('products').select('id,name').range(from, to),
+      );
+      for (const product of products) {
+        const key = product.name.trim().toLowerCase();
+        if (unlinkedNames.has(key) && !productIdByName.has(key)) {
+          productIdByName.set(key, product.id);
+        }
       }
     }
 
-    // Rebuild cart from the stored snapshot items. NUMERIC columns come back as
-    // strings, so coerce them before they reach the stock and total math.
-    const cart: CartItem[] = advance.items.map((it) => ({
-      id: it.id,
+    const cart: CartItem[] = advance.items.map((item) => ({
+      id: item.id,
       product_id:
-        it.product_id && liveProductIds.has(it.product_id)
-          ? it.product_id
-          : productIdByName.get(it.snapshot_name.trim().toLowerCase()) ?? null,
-      name: it.snapshot_name,
-      desc: it.snapshot_desc || '',
-      price: Number(it.snapshot_price),
-      qty: Number(it.quantity) || 0,
+        item.product_id && liveProductIds.has(item.product_id)
+          ? item.product_id
+          : productIdByName.get(item.snapshot_name.trim().toLowerCase()) ?? null,
+      name: item.snapshot_name,
+      desc: item.snapshot_desc || '',
+      price: Number(item.snapshot_price),
+      qty: Number(item.quantity) || 0,
     }));
 
-    // The invoice keeps the discount, GST and delivery agreed at booking. A
-    // discount given when the balance is collected comes off the amount payable,
-    // so it is converted to the taxable value it removes: with GST added on top,
-    // a reduction of x in the taxable value lowers the total by x × (1 + GST%).
     const booked = advanceCharges(advance);
-    const rawSubtotal = cart.reduce((acc, i) => acc + i.price * i.qty, 0);
+    const rawSubtotal = cart.reduce((total, item) => total + item.price * item.qty, 0);
     const balanceDue = Math.max(0, booked.total - (Number(advance.deposit_amount) || 0));
     const balanceDiscount = Math.min(Math.max(0, payload.discountAmount), balanceDue);
     const gstRate = booked.isGst ? booked.gstPercentage : 0;
@@ -671,8 +791,6 @@ export const dbStore = {
     const taxableValue = Math.max(0, rawSubtotal - totalDiscount);
     const gstAmount = round2(taxableValue * (gstRate / 100));
     const grandTotal = round2(taxableValue + gstAmount + booked.deliveryFee);
-    // Only the booking discount was a percentage; once a balance discount is
-    // added on top, the combined discount is recorded as a fixed amount.
     const discountIsPercent = balanceDiscount === 0 && booked.discountType === 'PERCENT';
 
     const { orderId } = await this.submitOrder({
@@ -694,56 +812,28 @@ export const dbStore = {
       cashReceived: grandTotal,
       paymentMode: payload.paymentMode,
     });
-
-    await sql`
-      UPDATE advance_orders
-      SET status = 'COMPLETED', finalized_order_id = ${orderId}, finalized_at = now()
-      WHERE id = ${payload.advanceOrderId}
-    `;
-
+    await execute(
+      getSupabaseClient()
+        .from('advance_orders')
+        .update({
+          status: 'COMPLETED',
+          finalized_order_id: orderId,
+          finalized_at: new Date().toISOString(),
+        })
+        .eq('id', payload.advanceOrderId),
+    );
     return { orderId };
   },
 
-  // STAFF & ATTENDANCE
-
-  /** Create the staff tables on first use so existing databases pick them up. */
-  async ensureAttendanceSchema(): Promise<void> {
-    if (attendanceSchemaChecked) return;
-    try {
-      await sql`
-        CREATE TABLE IF NOT EXISTS staff (
-          id           TEXT PRIMARY KEY,
-          name         TEXT NOT NULL,
-          role         TEXT NOT NULL DEFAULT '',
-          phone        TEXT NOT NULL DEFAULT '',
-          base_salary  NUMERIC NOT NULL DEFAULT 0,
-          is_active    BOOLEAN NOT NULL DEFAULT TRUE,
-          created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
-        )
-      `;
-      await sql`
-        CREATE TABLE IF NOT EXISTS staff_attendance (
-          id               TEXT PRIMARY KEY,
-          staff_id         TEXT NOT NULL REFERENCES staff (id) ON DELETE CASCADE,
-          attendance_date  DATE NOT NULL,
-          status           TEXT CHECK (status IN ('PRESENT', 'ABSENT', 'HALF_DAY', 'LEAVE')),
-          clock_in         TIMESTAMPTZ,
-          clock_out        TIMESTAMPTZ,
-          updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-          UNIQUE (staff_id, attendance_date)
-        )
-      `;
-      await sql`CREATE INDEX IF NOT EXISTS idx_staff_attendance_date ON staff_attendance (attendance_date)`;
-      attendanceSchemaChecked = true;
-    } catch (err) {
-      console.error('Failed to ensure attendance schema:', err);
-    }
-  },
-
   async listStaff(): Promise<Staff[]> {
-    await this.ensureAttendanceSchema();
-    const rows = await sql`SELECT * FROM staff ORDER BY lower(name) ASC`;
-    return (rows as Staff[]).map((s) => ({ ...s, base_salary: Number(s.base_salary) || 0 }));
+    const client = getSupabaseClient();
+    const staff = await allRows<Staff>((from, to) =>
+      client.from('staff').select('*').order('name', { ascending: true }).range(from, to),
+    );
+    return staff.map((member) => ({
+      ...member,
+      base_salary: Number(member.base_salary) || 0,
+    }));
   },
 
   async addStaff(input: {
@@ -753,86 +843,193 @@ export const dbStore = {
     base_salary: number;
     is_active: boolean;
   }): Promise<Staff> {
-    await this.ensureAttendanceSchema();
-    const rows = await sql`
-      INSERT INTO staff (id, name, role, phone, base_salary, is_active)
-      VALUES (${uid()}, ${input.name}, ${input.role}, ${input.phone}, ${input.base_salary}, ${input.is_active})
-      RETURNING *
-    `;
-    return rows[0] as Staff;
+    const result = await maybeOne<Staff>(
+      getSupabaseClient()
+        .from('staff')
+        .insert({ id: uid(), ...input })
+        .select('*')
+        .single(),
+    );
+    if (!result) throw new Error('Supabase did not return the saved staff member.');
+    return result;
   },
 
   async updateStaff(
     id: string,
     input: { name: string; role: string; phone: string; base_salary: number; is_active: boolean },
   ): Promise<Staff | null> {
-    await this.ensureAttendanceSchema();
-    const rows = await sql`
-      UPDATE staff
-      SET name = ${input.name}, role = ${input.role}, phone = ${input.phone},
-          base_salary = ${input.base_salary}, is_active = ${input.is_active}
-      WHERE id = ${id}
-      RETURNING *
-    `;
-    return (rows[0] as Staff) ?? null;
+    return maybeOne<Staff>(
+      getSupabaseClient().from('staff').update(input).eq('id', id).select('*').maybeSingle(),
+    );
   },
 
-  /** Deleting a staff member also removes their attendance history (cascade). */
   async deleteStaff(id: string): Promise<void> {
-    await this.ensureAttendanceSchema();
-    await sql`DELETE FROM staff WHERE id = ${id}`;
+    await execute(getSupabaseClient().from('staff').delete().eq('id', id));
   },
 
-  /** Attendance rows between two 'YYYY-MM-DD' dates, inclusive. */
   async listAttendance(fromDate: string, toDate: string): Promise<AttendanceRecord[]> {
-    await this.ensureAttendanceSchema();
-    // DATE is rendered as text so it never shifts across time zones.
-    const rows = await sql`
-      SELECT id, staff_id, to_char(attendance_date, 'YYYY-MM-DD') AS attendance_date,
-             status, clock_in, clock_out
-      FROM staff_attendance
-      WHERE attendance_date BETWEEN ${fromDate}::date AND ${toDate}::date
-    `;
-    return rows as AttendanceRecord[];
+    const client = getSupabaseClient();
+    return allRows<AttendanceRecord>((from, to) =>
+      client
+        .from('staff_attendance')
+        .select('id,staff_id,attendance_date,status,clock_in,clock_out')
+        .gte('attendance_date', fromDate)
+        .lte('attendance_date', toDate)
+        .range(from, to),
+    );
   },
 
-  /** Set (or clear, with null) a staff member's status for a day. */
   async setAttendanceStatus(
     staffId: string,
     date: string,
     status: AttendanceStatus | null,
   ): Promise<void> {
-    await this.ensureAttendanceSchema();
-    await sql`
-      INSERT INTO staff_attendance (id, staff_id, attendance_date, status)
-      VALUES (${uid()}, ${staffId}, ${date}::date, ${status})
-      ON CONFLICT (staff_id, attendance_date)
-      DO UPDATE SET status = EXCLUDED.status, updated_at = now()
-    `;
+    await saveAttendance(staffId, date, { status });
   },
 
-  /** Record the clock-in time; marks the day PRESENT unless a status is already set. */
   async clockIn(staffId: string, date: string): Promise<void> {
-    await this.ensureAttendanceSchema();
-    await sql`
-      INSERT INTO staff_attendance (id, staff_id, attendance_date, status, clock_in)
-      VALUES (${uid()}, ${staffId}, ${date}::date, 'PRESENT', now())
-      ON CONFLICT (staff_id, attendance_date)
-      DO UPDATE SET clock_in = now(),
-                    status = COALESCE(staff_attendance.status, 'PRESENT'),
-                    updated_at = now()
-    `;
+    await saveAttendance(staffId, date, { clock_in: new Date().toISOString() });
   },
 
   async clockOut(staffId: string, date: string): Promise<void> {
-    await this.ensureAttendanceSchema();
-    await sql`
-      INSERT INTO staff_attendance (id, staff_id, attendance_date, status, clock_out)
-      VALUES (${uid()}, ${staffId}, ${date}::date, 'PRESENT', now())
-      ON CONFLICT (staff_id, attendance_date)
-      DO UPDATE SET clock_out = now(),
-                    status = COALESCE(staff_attendance.status, 'PRESENT'),
-                    updated_at = now()
-    `;
+    await saveAttendance(staffId, date, { clock_out: new Date().toISOString() });
+  },
+
+  async listOffers(): Promise<Offer[]> {
+    const client = getSupabaseClient();
+    return allRows<Offer>((from, to) =>
+      client.from('offers').select('*').order('created_at', { ascending: false }).range(from, to),
+    );
+  },
+
+  async addOffer(data: {
+    name: string;
+    discount_type: 'PERCENT' | 'FIXED';
+    discount_value: number;
+    start_date?: string | null;
+    end_date?: string | null;
+    is_active?: boolean;
+  }): Promise<Offer> {
+    const result = await maybeOne<Offer>(
+      getSupabaseClient()
+        .from('offers')
+        .insert({
+          id: uid(),
+          name: data.name,
+          discount_type: data.discount_type,
+          discount_value: data.discount_value,
+          start_date: data.start_date || null,
+          end_date: data.end_date || null,
+          is_active: data.is_active ?? true,
+        })
+        .select('*')
+        .single(),
+    );
+    if (!result) throw new Error('Supabase did not return the saved offer.');
+    return result;
+  },
+
+  async updateOffer(id: string, patch: Partial<Offer>): Promise<Offer | null> {
+    const update: Partial<Offer> = {};
+    if (patch.name !== undefined) update.name = patch.name;
+    if (patch.discount_type !== undefined) update.discount_type = patch.discount_type;
+    if (patch.discount_value !== undefined) update.discount_value = patch.discount_value;
+    if (patch.start_date !== undefined) update.start_date = patch.start_date || null;
+    if (patch.end_date !== undefined) update.end_date = patch.end_date || null;
+    if (patch.is_active !== undefined) update.is_active = patch.is_active;
+    if (Object.keys(update).length === 0) {
+      return maybeOne<Offer>(
+        getSupabaseClient().from('offers').select('*').eq('id', id).maybeSingle(),
+      );
+    }
+    return maybeOne<Offer>(
+      getSupabaseClient().from('offers').update(update).eq('id', id).select('*').maybeSingle(),
+    );
+  },
+
+  async deleteOffer(id: string): Promise<void> {
+    await execute(getSupabaseClient().from('offers').delete().eq('id', id));
+  },
+
+  async getBirthdaySettings(): Promise<BirthdaySettings> {
+    const client = getSupabaseClient();
+    const existing = await maybeOne<BirthdaySettings>(
+      client.from('birthday_settings').select('*').eq('id', 'default').maybeSingle(),
+    );
+    if (existing) return existing;
+    const defaultTemplate = `Hi {name}! 🎂 Happy Birthday!\n\nHere's a special treat from Universal Look:\n🎁 {offer}\n\nVisit us in store or call +91 91596 00067.\nFollow us on Instagram @universallook600067\n\n— Universal Look`;
+    const inserted = await maybeOne<BirthdaySettings>(
+      client
+        .from('birthday_settings')
+        .upsert(
+          { id: 'default', message_template: defaultTemplate, updated_at: new Date().toISOString() },
+          { onConflict: 'id' },
+        )
+        .select('*')
+        .single(),
+    );
+    if (!inserted) throw new Error('Supabase did not return the birthday settings.');
+    return inserted;
+  },
+
+  async saveBirthdaySettings(
+    template: string,
+    selectedOfferId?: string | null,
+  ): Promise<BirthdaySettings> {
+    const result = await maybeOne<BirthdaySettings>(
+      getSupabaseClient()
+        .from('birthday_settings')
+        .upsert(
+          {
+            id: 'default',
+            message_template: template,
+            selected_offer_id: selectedOfferId || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' },
+        )
+        .select('*')
+        .single(),
+    );
+    if (!result) throw new Error('Supabase did not return the saved birthday settings.');
+    return result;
+  },
+
+  async logBirthdaySend(data: {
+    customer_id?: string | null;
+    customer_name: string;
+    customer_phone: string;
+    offer_name?: string | null;
+    message: string;
+    status?: string;
+  }): Promise<BirthdayLog> {
+    const result = await maybeOne<BirthdayLog>(
+      getSupabaseClient()
+        .from('birthday_logs')
+        .insert({
+          id: uid(),
+          customer_id: data.customer_id || null,
+          customer_name: data.customer_name,
+          customer_phone: data.customer_phone,
+          offer_name: data.offer_name || null,
+          message: data.message,
+          sent_at: new Date().toISOString(),
+          status: data.status || 'OPENED_WHATSAPP',
+        })
+        .select('*')
+        .single(),
+    );
+    if (!result) throw new Error('Supabase did not return the birthday log.');
+    return result;
+  },
+
+  async listBirthdayLogs(): Promise<BirthdayLog[]> {
+    return rows<BirthdayLog>(
+      getSupabaseClient()
+        .from('birthday_logs')
+        .select('*')
+        .order('sent_at', { ascending: false })
+        .limit(100),
+    );
   },
 };

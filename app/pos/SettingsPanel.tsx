@@ -10,7 +10,8 @@ import {
   MapPin,
   Clock,
   Camera,
-  Scissors,
+  Gem,
+  Sparkles,
   Hash,
   ImageIcon,
   Upload,
@@ -53,10 +54,10 @@ interface SettingsPanelProps {
 }
 
 const inputCls =
-  "w-full bg-white border border-[#000000]/15 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#000000] placeholder:text-[#000000]/30 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors";
+  "w-full bg-[#181820] border border-[#C5A059]/25 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#FAF7F2] placeholder:text-[#B8B5AE]/40 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors";
 
 const labelCls =
-  "block text-[10px] font-extrabold uppercase tracking-widest text-[#000000]/50 mb-1.5";
+  "block text-[10px] font-extrabold uppercase tracking-widest text-[#B8B5AE] mb-1.5";
 
 const emptyDraft = {
   name: "",
@@ -127,7 +128,7 @@ function TextField({
       </label>
       <div className="relative">
         {icon && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#000000]/30 pointer-events-none">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8B5AE]/60 pointer-events-none">
             {icon}
           </span>
         )}
@@ -168,7 +169,7 @@ function TextAreaField({
       </label>
       <div className="relative">
         {icon && (
-          <span className="absolute left-3 top-3 text-[#000000]/30 pointer-events-none">
+          <span className="absolute left-3 top-3 text-[#B8B5AE]/60 pointer-events-none">
             {icon}
           </span>
         )}
@@ -200,12 +201,14 @@ function ThemePicker({
   onChange: (hex: string) => void;
 }) {
   const current = normalizeHex(value) || DEFAULT_ACCENT;
+  const [prevCurrent, setPrevCurrent] = React.useState(current);
   const [custom, setCustom] = React.useState(current);
 
-  // Keep the hex box in sync when a preset is chosen.
-  React.useEffect(() => {
+  // Keep the hex box in sync when a preset is chosen without cascading renders
+  if (prevCurrent !== current) {
+    setPrevCurrent(current);
     setCustom(current);
-  }, [current]);
+  }
 
   const previewVars = accentCssVars(current) as React.CSSProperties;
 
@@ -241,7 +244,7 @@ function ThemePicker({
 
       <div className="flex flex-wrap items-center gap-3">
         <label
-          className="relative w-11 h-9 rounded-lg overflow-hidden border border-[#000000]/15 cursor-pointer shrink-0"
+          className="relative w-11 h-9 rounded-lg overflow-hidden border border-[#C5A059]/30 cursor-pointer shrink-0 shadow-sm"
           style={{ backgroundColor: current }}
           title="Pick a custom colour"
         >
@@ -256,14 +259,14 @@ function ThemePicker({
         <input
           value={custom}
           onChange={(e) => commitCustom(e.target.value)}
-          placeholder="#31042F"
+          placeholder="#C5A059"
           spellCheck={false}
-          className="w-32 bg-white border border-[#000000]/15 rounded-lg px-3 py-2 text-sm font-mono font-semibold text-[#000000] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
+          className="w-32 bg-[#181820] border border-[#C5A059]/25 rounded-lg px-3 py-2 text-sm font-mono font-semibold text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
         />
         <button
           type="button"
           onClick={() => onChange(DEFAULT_ACCENT)}
-          className="text-[10px] font-extrabold uppercase tracking-wider text-[#000000]/50 hover:text-[var(--accent)] underline underline-offset-2 cursor-pointer transition-colors"
+          className="text-[10px] font-extrabold uppercase tracking-wider text-[#B8B5AE] hover:text-[var(--accent)] underline underline-offset-2 cursor-pointer transition-colors"
         >
           Reset
         </button>
@@ -272,18 +275,18 @@ function ThemePicker({
       {/* Live preview card */}
       <div
         style={previewVars}
-        className="mt-4 rounded-xl overflow-hidden border border-[#000000]/10"
+        className="mt-4 rounded-xl overflow-hidden border border-[#C5A059]/20"
       >
-        <div className="p-4 text-center" style={{ backgroundColor: current, color: isLightColor(current) ? "#1C1917" : "#FFFFFF" }}>
+        <div className="p-4 text-center" style={{ backgroundColor: current, color: isLightColor(current) ? "#0C0C0E" : "#FAF7F2" }}>
           <p className="text-sm font-black uppercase tracking-tight">Card Preview</p>
           <p className="text-[10px] font-semibold opacity-80 mt-0.5">
             Buttons, links, totals and invoice headers use this colour.
           </p>
         </div>
-        <div className="bg-white p-3 flex items-center gap-2">
+        <div className="bg-[#181820] p-3 flex items-center gap-2">
           <span
-            className="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider"
-            style={{ backgroundColor: current, color: isLightColor(current) ? "#1C1917" : "#FFFFFF" }}
+            className="px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider"
+            style={{ backgroundColor: current, color: isLightColor(current) ? "#0C0C0E" : "#FAF7F2" }}
           >
             Button
           </span>
@@ -292,7 +295,7 @@ function ThemePicker({
           </span>
           <span
             className="ml-auto text-[10px] font-extrabold px-2.5 py-1 rounded-md"
-            style={{ backgroundColor: `color-mix(in srgb, ${current} 14%, #FFFFFF)`, color: current }}
+            style={{ backgroundColor: `color-mix(in srgb, ${current} 18%, #181820)`, color: current }}
           >
             Total ₹1,250
           </span>
@@ -372,19 +375,19 @@ export default function SettingsPanel({
     }
   };
 
-  const logoPreview = form.logo_data_url || "/logo.svg";
+  const logoPreview = form.logo_data_url || "/nidhulan-logo.png";
 
   return (
     <div className="flex-1 flex flex-col max-w-[1400px] mx-auto w-full pb-8 pr-2 animate-in fade-in duration-300 gap-6">
-      <div className="bg-[#FFFFFF] border border-[#000000]/10 rounded-2xl px-5 py-4 flex items-center gap-3 shadow-sm">
-        <div className="w-9 h-9 rounded-xl bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+      <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl px-5 py-4 flex items-center gap-3 shadow-sm">
+        <div className="w-9 h-9 rounded-xl bg-[var(--accent)] text-[#0C0C0E] flex items-center justify-center shrink-0">
           <Settings2 className="w-5 h-5" />
         </div>
         <div>
-          <h2 className="text-sm font-black text-[#000000] uppercase tracking-tight">
+          <h2 className="text-sm font-black text-[#FAF7F2] uppercase tracking-tight">
             Shop Settings
           </h2>
-          <p className="text-[10px] text-[#000000]/50 font-semibold">
+          <p className="text-[10px] text-[#B8B5AE] font-semibold">
             Update the shop profile, logo and product catalogue used across the POS,
             invoices and the public store page.
           </p>
@@ -393,11 +396,11 @@ export default function SettingsPanel({
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
         {/* Appearance / theme */}
-        <div className="bg-[#FFFFFF] border border-[#000000]/10 rounded-2xl p-5 sm:p-6 shadow-sm">
+        <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl p-5 sm:p-6 shadow-sm">
           <h3 className="text-xs font-black uppercase tracking-widest text-[var(--accent)] flex items-center gap-2 mb-1">
             <Palette className="w-4 h-4" /> Appearance
           </h3>
-          <p className="text-[10px] text-[#000000]/50 font-semibold mb-5">
+          <p className="text-[10px] text-[#B8B5AE] font-semibold mb-5">
             One accent colour drives the whole app — POS, storefront, invoices,
             receipts and the installed app.
           </p>
@@ -408,7 +411,7 @@ export default function SettingsPanel({
         </div>
 
         {/* ── Shop profile ─────────────────────────────────────────── */}
-        <div className="bg-[#FFFFFF] border border-[#000000]/10 rounded-2xl p-5 sm:p-6 shadow-sm">
+        <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl p-5 sm:p-6 shadow-sm">
           <h3 className="text-xs font-black uppercase tracking-widest text-[var(--accent)] flex items-center gap-2 mb-5">
             <Store className="w-4 h-4" /> Shop Profile
           </h3>
@@ -419,7 +422,7 @@ export default function SettingsPanel({
               label="Shop Owner Name"
               icon={<User className="w-3.5 h-3.5" />}
               value={form.owner_name}
-              placeholder="Ananthi M"
+              placeholder="Ajay Kumar"
               onChange={(v) => setField("owner_name", v)}
             />
             <TextField
@@ -427,23 +430,23 @@ export default function SettingsPanel({
               label="Shop Name"
               icon={<Store className="w-3.5 h-3.5" />}
               value={form.shop_name}
-              placeholder="Dhanyas Boutique"
+              placeholder="NIDHULAN"
               onChange={(v) => setField("shop_name", v)}
             />
             <TextField
               id="set-tagline"
               label="Tagline / Sub-heading"
               value={form.tagline}
-              placeholder="Designer Wear • Tailoring • Alterations"
+              placeholder="THE PRECIOUS PEARLS"
               onChange={(v) => setField("tagline", v)}
               className="sm:col-span-2"
             />
             <TextField
               id="set-phone"
-              label="Contact Number"
+              label="Contact Numbers"
               icon={<Phone className="w-3.5 h-3.5" />}
               value={form.phone}
-              placeholder="8098089591"
+              placeholder="9871480705 / 8920980965"
               inputMode="tel"
               onChange={(v) => setField("phone", v)}
             />
@@ -452,7 +455,7 @@ export default function SettingsPanel({
               label="Email ID"
               icon={<Mail className="w-3.5 h-3.5" />}
               value={form.email}
-              placeholder="shop@example.com"
+              placeholder="nidhulan21@gmail.com"
               onChange={(v) => setField("email", v)}
             />
             <TextAreaField
@@ -460,7 +463,7 @@ export default function SettingsPanel({
               label="Shop Address"
               icon={<MapPin className="w-3.5 h-3.5" />}
               value={form.address}
-              placeholder="Kasthoribhai road, AGM Apartment, Kumbakonam - 612001"
+              placeholder="Door Number 615A, Salem Road, Namakkal – 637212"
               onChange={(v) => setField("address", v)}
               className="sm:col-span-2"
             />
@@ -468,7 +471,7 @@ export default function SettingsPanel({
               id="set-location"
               label="City / Location"
               value={form.location}
-              placeholder="Kumbakonam, Tamil Nadu"
+              placeholder="Namakkal, Tamil Nadu"
               onChange={(v) => setField("location", v)}
             />
             <TextField
@@ -476,7 +479,7 @@ export default function SettingsPanel({
               label="Business Hours"
               icon={<Clock className="w-3.5 h-3.5" />}
               value={form.business_hours}
-              placeholder="Open Daily"
+              placeholder="10:00 AM – 9:00 PM • Open Daily"
               onChange={(v) => setField("business_hours", v)}
             />
             <TextField
@@ -484,16 +487,16 @@ export default function SettingsPanel({
               label="Instagram Link"
               icon={<Camera className="w-3.5 h-3.5" />}
               value={form.instagram_url}
-              placeholder="https://www.instagram.com/yourhandle"
+              placeholder="https://www.instagram.com/nidhulan.official/"
               onChange={(v) => setField("instagram_url", v)}
               className="sm:col-span-2"
             />
             <TextAreaField
               id="set-services"
               label="Catalogue Headline / Services"
-              icon={<Scissors className="w-3.5 h-3.5" />}
+              icon={<Gem className="w-3.5 h-3.5" />}
               value={form.services}
-              placeholder="Custom Tailoring • Designer Blouses & Dresses • Alterations"
+              placeholder="Precious Pearls • Exclusive Pearl Jewelry • Custom Pearl Necklaces & Bangles"
               onChange={(v) => setField("services", v)}
               className="sm:col-span-2"
             />
@@ -509,12 +512,12 @@ export default function SettingsPanel({
           </div>
 
           {/* Logo uploader */}
-          <div className="mt-6 pt-5 border-t border-[#000000]/10">
+          <div className="mt-6 pt-5 border-t border-[#C5A059]/15">
             <p className={`${labelCls} flex items-center gap-1.5`}>
               <ImageIcon className="w-3.5 h-3.5" /> Shop Logo
             </p>
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-2xl bg-white border border-[var(--accent)]/30 shadow-sm flex items-center justify-center p-2 shrink-0">
+              <div className="w-32 h-22 sm:w-36 sm:h-24 rounded-2xl bg-[#09090B] border border-[var(--accent)]/40 shadow-sm flex items-center justify-center p-2 shrink-0 overflow-hidden">
                 <img
                   src={logoPreview}
                   alt="Shop logo preview"
@@ -526,7 +529,7 @@ export default function SettingsPanel({
                   <button
                     type="button"
                     onClick={() => logoInputRef.current?.click()}
-                    className="inline-flex items-center gap-1.5 bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer transition-colors"
+                    className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 active:scale-[0.98] text-[#0C0C0E] border border-[#E5C378] text-[10px] font-black uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer transition-colors shadow-sm"
                   >
                     <Upload className="w-3.5 h-3.5" /> Upload Logo
                   </button>
@@ -534,13 +537,13 @@ export default function SettingsPanel({
                     <button
                       type="button"
                       onClick={() => setField("logo_data_url", null)}
-                      className="inline-flex items-center gap-1.5 bg-[#000000]/5 hover:bg-[#000000]/10 text-[#000000] text-[10px] font-extrabold uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer transition-colors"
+                      className="inline-flex items-center gap-1.5 bg-[#181820] hover:bg-[#202028] border border-[#C5A059]/20 text-[#FAF7F2] text-[10px] font-extrabold uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Reset Logo
                     </button>
                   )}
                 </div>
-                <p className="text-[10px] text-[#000000]/45 font-semibold">
+                <p className="text-[10px] text-[#B8B5AE] font-semibold">
                   PNG or JPG, auto-resized to 512px. Used on the store page,
                   invoices, receipts and the installed app icon.
                 </p>
@@ -556,12 +559,12 @@ export default function SettingsPanel({
           </div>
 
           {/* Save */}
-          <div className="mt-6 pt-5 border-t border-[#000000]/10 flex flex-wrap items-center gap-3">
+          <div className="mt-6 pt-5 border-t border-[#C5A059]/15 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="inline-flex items-center gap-2 bg-[#000000] hover:bg-[#000000]/85 disabled:opacity-50 text-white text-[11px] font-extrabold uppercase tracking-wider px-4 py-2.5 rounded-lg cursor-pointer transition-colors"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 active:scale-[0.98] text-[#0C0C0E] border border-[#E5C378] disabled:opacity-50 text-[11px] font-black uppercase tracking-wider px-5 py-2.5 rounded-xl cursor-pointer transition-all shadow-[0_4px_16px_rgba(197,160,89,0.25)]"
             >
               {isSaving ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -757,7 +760,7 @@ function CatalogueEditor({
   };
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#000000]/10 rounded-2xl p-5 sm:p-6 shadow-sm">
+    <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl p-5 sm:p-6 shadow-sm">
       <div className="flex items-start justify-between gap-3 mb-5">
         <h3 className="text-xs font-black uppercase tracking-widest text-[var(--accent)] flex items-center gap-2">
           <Package className="w-4 h-4" /> Product Catalogue
@@ -776,7 +779,7 @@ function CatalogueEditor({
         <p className={labelCls}>Categories</p>
         <div className="flex flex-wrap gap-1.5 mb-2">
           {categories.length === 0 && (
-            <span className="text-[10px] text-[#000000]/40 font-semibold">
+            <span className="text-[10px] text-[#B8B5AE]/60 font-semibold">
               No categories yet.
             </span>
           )}
@@ -800,7 +803,7 @@ function CatalogueEditor({
           <button
             type="button"
             onClick={handleAddCategory}
-            className="inline-flex items-center gap-1.5 bg-[#000000] hover:bg-[#000000]/85 text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer transition-colors shrink-0"
+            className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 active:scale-[0.98] text-[#0C0C0E] border border-[#E5C378] text-[10px] font-black uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer transition-colors shrink-0 shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" /> Add
           </button>
@@ -808,7 +811,7 @@ function CatalogueEditor({
       </div>
 
       {/* Add item */}
-      <div className="mb-5 pb-5 border-b border-[#000000]/10">
+      <div className="mb-5 pb-5 border-b border-[#C5A059]/15">
         <p className={labelCls}>Add catalogue item</p>
 
         {/* Product ⇄ Service switch */}
@@ -816,10 +819,10 @@ function CatalogueEditor({
           <button
             type="button"
             onClick={() => setDraft({ ...draft, type: "PRODUCT" })}
-            className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer border ${
+            className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer border ${
               draft.type === "PRODUCT"
-                ? "bg-[var(--accent)] text-white border-[var(--accent)]"
-                : "bg-white text-[#000000]/60 border-[#000000]/15 hover:border-[#000000]/30"
+                ? "bg-[var(--accent)] text-[#0C0C0E] border-[var(--accent)]"
+                : "bg-[#181820] text-[#B8B5AE] border-[#C5A059]/20 hover:border-[#C5A059]/40 hover:text-[#FAF7F2]"
             }`}
           >
             <Package className="w-3.5 h-3.5" /> Product
@@ -827,13 +830,13 @@ function CatalogueEditor({
           <button
             type="button"
             onClick={() => setDraft({ ...draft, type: "SERVICE" })}
-            className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer border ${
+            className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer border ${
               draft.type === "SERVICE"
-                ? "bg-[var(--accent-strong)] text-white border-[var(--accent-strong)]"
-                : "bg-white text-[#000000]/60 border-[#000000]/15 hover:border-[#000000]/30"
+                ? "bg-[var(--accent-strong)] text-[#0C0C0E] border-[var(--accent-strong)]"
+                : "bg-[#181820] text-[#B8B5AE] border-[#C5A059]/20 hover:border-[#C5A059]/40 hover:text-[#FAF7F2]"
             }`}
           >
-            <Scissors className="w-3.5 h-3.5" /> Service
+            <Sparkles className="w-3.5 h-3.5" /> Service
           </button>
         </div>
 
@@ -911,7 +914,7 @@ function CatalogueEditor({
             type="button"
             onClick={handleAdd}
             disabled={isBusy}
-            className="sm:col-span-6 inline-flex items-center justify-center gap-1.5 bg-[var(--accent)] hover:bg-[var(--accent-strong)] disabled:opacity-50 text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
+            className="sm:col-span-6 inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 active:scale-[0.98] disabled:opacity-50 text-[#0C0C0E] border border-[#E5C378] text-[10px] font-black uppercase tracking-wider px-3 py-2.5 rounded-lg cursor-pointer transition-all shadow-[0_2px_10px_rgba(197,160,89,0.2)]"
           >
             <Plus className="w-3.5 h-3.5" />
             {draft.type === "SERVICE" ? "Add Service" : "Add to catalogue"}
@@ -922,7 +925,7 @@ function CatalogueEditor({
       {/* Item list */}
       <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
         {sorted.length === 0 && (
-          <p className="text-[10px] text-[#000000]/40 font-semibold py-4 text-center">
+          <p className="text-[10px] text-[#B8B5AE] font-semibold py-4 text-center">
             Catalogue is empty. Add your first item above.
           </p>
         )}
@@ -930,7 +933,7 @@ function CatalogueEditor({
           editing === p.id ? (
             <div
               key={p.id}
-              className="border border-[var(--accent)]/40 bg-[var(--accent)]/5 rounded-xl p-3 grid grid-cols-1 sm:grid-cols-6 gap-2"
+              className="border border-[var(--accent)]/40 bg-[var(--accent)]/10 rounded-xl p-3 grid grid-cols-1 sm:grid-cols-6 gap-2"
             >
               <input
                 className={`${inputCls} sm:col-span-2`}
@@ -967,14 +970,14 @@ function CatalogueEditor({
                 <button
                   type="button"
                   onClick={() => handleSaveEdit(p.id)}
-                  className="inline-flex items-center gap-1.5 bg-[#000000] hover:bg-[#000000]/85 text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer"
+                  className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 active:scale-[0.98] text-[#0C0C0E] border border-[#E5C378] text-[10px] font-black uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer transition-colors shadow-sm"
                 >
                   <Check className="w-3.5 h-3.5" /> Save
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditing(null)}
-                  className="inline-flex items-center gap-1.5 bg-[#000000]/5 hover:bg-[#000000]/10 text-[#000000] text-[10px] font-extrabold uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer"
+                  className="inline-flex items-center gap-1.5 bg-[#181820] hover:bg-[#202028] border border-[#C5A059]/20 text-[#FAF7F2] text-[10px] font-extrabold uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
@@ -983,10 +986,10 @@ function CatalogueEditor({
           ) : (
             <div
               key={p.id}
-              className="flex items-center gap-3 border border-[#000000]/10 rounded-xl px-3 py-2.5 hover:border-[var(--accent)]/40 transition-colors"
+              className="flex items-center gap-3 border border-[#C5A059]/20 bg-[#181820] rounded-xl px-3 py-2.5 hover:border-[var(--accent)]/40 transition-colors"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-extrabold text-[#000000] truncate flex items-center gap-1.5">
+                <p className="text-[11px] font-extrabold text-[#FAF7F2] truncate flex items-center gap-1.5">
                   {p.name}
                   {p.item_type === "SERVICE" && (
                     <span className="text-[8px] font-black uppercase tracking-widest text-[var(--accent-strong)] bg-[var(--accent-strong)]/10 border border-[var(--accent-strong)]/25 px-1.5 py-0.5 rounded shrink-0">
@@ -994,7 +997,7 @@ function CatalogueEditor({
                     </span>
                   )}
                   {!p.is_active && (
-                    <span className="text-[8px] font-black uppercase tracking-widest text-[#000000]/50 bg-[#000000]/5 border border-[#000000]/15 px-1.5 py-0.5 rounded shrink-0">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-[#B8B5AE] bg-[#131317] border border-[#C5A059]/20 px-1.5 py-0.5 rounded shrink-0">
                       Inactive
                     </span>
                   )}
@@ -1004,7 +1007,7 @@ function CatalogueEditor({
                     </span>
                   )}
                 </p>
-                <p className="text-[9px] text-[#000000]/45 font-semibold uppercase tracking-wider truncate">
+                <p className="text-[9px] text-[#B8B5AE] font-semibold uppercase tracking-wider truncate">
                   {p.category}
                   {p.item_type === "SERVICE"
                     ? " • No stock"
@@ -1014,7 +1017,7 @@ function CatalogueEditor({
                     : ""}
                 </p>
               </div>
-              <span className="font-mono text-[11px] font-bold text-[#000000]">
+              <span className="font-mono text-[11px] font-bold text-[#FAF7F2]">
                 ₹{Number(p.selling_price).toLocaleString("en-IN")}
               </span>
               <button
@@ -1022,7 +1025,7 @@ function CatalogueEditor({
                 onClick={() => handleToggleActive(p)}
                 title={p.is_active ? "Hide from Billing Panel" : "Show in Billing Panel"}
                 className={`cursor-pointer ${
-                  p.is_active ? "text-[#15803D]" : "text-[#000000]/30"
+                  p.is_active ? "text-[#15803D]" : "text-[#B8B5AE]/40 hover:text-[#B8B5AE]"
                 }`}
               >
                 <Check className="w-3.5 h-3.5" />
@@ -1031,7 +1034,7 @@ function CatalogueEditor({
                 type="button"
                 onClick={() => startEdit(p)}
                 title="Edit item"
-                className="text-[#000000]/40 hover:text-[var(--accent)] cursor-pointer"
+                className="text-[#B8B5AE] hover:text-[var(--accent)] cursor-pointer transition-colors"
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
@@ -1039,7 +1042,7 @@ function CatalogueEditor({
                 type="button"
                 onClick={() => handleDelete(p)}
                 title="Delete item"
-                className="text-[#000000]/40 hover:text-[#B91C1C] cursor-pointer"
+                className="text-[#B8B5AE] hover:text-[#EF4444] cursor-pointer transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

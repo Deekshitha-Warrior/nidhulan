@@ -344,7 +344,7 @@ export default async function InvoicePage({
         {/* Header: Company & Invoice Info */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pb-6 border-b-2 border-[var(--accent)]">
           <div className="flex items-start gap-3.5 sm:gap-4">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-sm border border-[var(--accent)]/30 overflow-hidden bg-white p-1">
+            <div className="w-20 h-16 sm:w-24 sm:h-18 shrink-0 rounded-md border border-[var(--accent)]/40 overflow-hidden bg-black/95 p-1 shadow-xs">
               <img
                 src={shopLogo}
                 alt={shop.shop_name}

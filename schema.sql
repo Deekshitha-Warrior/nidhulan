@@ -1,14 +1,14 @@
 -- =====================================================================
---  DHANYAS BOUTIQUE — POS & INVENTORY SCHEMA
---  Target: PostgreSQL 15+ (Neon serverless)
+--  NIDHULAN – THE PRECIOUS PEARLS — POS & INVENTORY SCHEMA
+--  Target: Supabase PostgreSQL exposed through the public REST API
 --
 --  HOW TO USE
---  1. Neon Console -> SQL Editor -> New Query
+--  1. Supabase Dashboard -> SQL Editor -> New Query
 --  2. Paste this file and click Run
---  3. Copy the pooled connection string into .env.local as DATABASE_URL
+--  3. Configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local
 --
---  Safe on a brand-new database. For an EXISTING database run the
---  UPGRADE block at the very bottom instead.
+--  Safe on a brand-new database. Existing databases need the idempotent
+--  UPGRADE statements at the very bottom before using the app.
 -- =====================================================================
 
 -- CATEGORIES ------------------------------------------------------------
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS customers (
 );
 
 -- UNIQUE is required: the POS upserts customers with ON CONFLICT (phone).
-CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_phone ON customers (phone);
+-- The index is created at the bottom after checking existing databases for duplicates.
 
 -- ORDERS (invoices) -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS orders (
@@ -198,6 +198,7 @@ CREATE TABLE IF NOT EXISTS shop_settings (
   shop_name      TEXT NOT NULL DEFAULT '',
   tagline        TEXT NOT NULL DEFAULT '',
   phone          TEXT NOT NULL DEFAULT '',
+  owner_phone    TEXT NOT NULL DEFAULT '',
   email          TEXT NOT NULL DEFAULT '',
   address        TEXT NOT NULL DEFAULT '',
   location       TEXT NOT NULL DEFAULT '',
@@ -205,29 +206,30 @@ CREATE TABLE IF NOT EXISTS shop_settings (
   business_hours TEXT NOT NULL DEFAULT '',
   services       TEXT NOT NULL DEFAULT '',
   gstin          TEXT NOT NULL DEFAULT '',
-  accent_color   TEXT NOT NULL DEFAULT '#31042F',
+  accent_color   TEXT NOT NULL DEFAULT '#C5A059',
   logo_data_url  TEXT,
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 INSERT INTO shop_settings (
-  id, owner_name, shop_name, tagline, phone, email,
+  id, owner_name, shop_name, tagline, phone, owner_phone, email,
   address, location, instagram_url, business_hours, services, gstin, logo_data_url, accent_color
 ) VALUES (
   'default',
-  'Ananthi M',
-  'Dhanyas Boutique',
-  'Designer Wear • Tailoring • Alterations • Embroidery',
-  '8098089591',
-  'dhanyasboutique2015@gmail.com',
-  'Kasthoribhai road, AGM Apartment, Kumbakonam - 612001',
-  'Kumbakonam, Tamil Nadu',
-  'https://www.instagram.com/ananthinathan84',
-  'Open Daily',
-  'Custom Tailoring • Designer Blouses & Dresses • Alterations & Fittings • Embroidery & Aari Work • Boutique Wear',
+  'Ajay Kumar',
+  'NIDHULAN',
+  'THE PRECIOUS PEARLS',
+  '9871480705 / 8920980965',
+  '',
+  'nidhulan21@gmail.com',
+  'Door Number 615A, Salem Road, Namakkal – 637212',
+  'Namakkal, Tamil Nadu',
+  'https://www.instagram.com/nidhulan.official/',
+  '10:00 AM – 9:00 PM • Open Daily',
+  'Precious Pearls • Exclusive Pearl Jewelry • Custom Pearl Necklaces & Bangles • Bridal & Traditional Pearl Sets',
   '',
   NULL,
-  '#31042F'
+  '#C5A059'
 )
 ON CONFLICT (id) DO NOTHING;
 
@@ -242,25 +244,127 @@ ON CONFLICT (id) DO NOTHING;
 --   (gen_random_uuid()::text, 'Services')
 -- ON CONFLICT (name) DO NOTHING;
 
--- =====================================================================
---  UPGRADE BLOCK - run these on an EXISTING database
---  (safe to re-run; the app also applies this automatically)
--- =====================================================================
--- ALTER TABLE products    ADD COLUMN IF NOT EXISTS item_type          TEXT NOT NULL DEFAULT 'PRODUCT';
--- ALTER TABLE products    ADD COLUMN IF NOT EXISTS cost_price         NUMERIC NOT NULL DEFAULT 0;
--- ALTER TABLE products    ADD COLUMN IF NOT EXISTS current_stock      NUMERIC;
--- ALTER TABLE products    ADD COLUMN IF NOT EXISTS low_stock_alert    NUMERIC;
--- ALTER TABLE products    ADD COLUMN IF NOT EXISTS offer_discount_pct NUMERIC NOT NULL DEFAULT 0;
--- ALTER TABLE products    ADD COLUMN IF NOT EXISTS offer_price        NUMERIC;
--- ALTER TABLE products    ADD COLUMN IF NOT EXISTS is_active          BOOLEAN NOT NULL DEFAULT TRUE;
--- ALTER TABLE order_items ADD COLUMN IF NOT EXISTS offer_pct          NUMERIC NOT NULL DEFAULT 0;
--- CREATE TABLE IF NOT EXISTS shop_settings ( ...same definition as above... );
--- CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);
--- CREATE INDEX IF NOT EXISTS idx_products_active   ON products (is_active);
--- CREATE INDEX IF NOT EXISTS idx_products_type     ON products (item_type);
--- CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items (product_id);
+-- OFFERS -----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS offers (
+  id             TEXT PRIMARY KEY,
+  name           TEXT NOT NULL,
+  discount_type  TEXT NOT NULL DEFAULT 'PERCENT'
+                 CHECK (discount_type IN ('PERCENT', 'FIXED')),
+  discount_value NUMERIC NOT NULL DEFAULT 0,
+  start_date     DATE,
+  end_date       DATE,
+  is_active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
--- SANITY CHECK: expect 9 tables, and 'Dhanyas Boutique' in shop_settings
--- SELECT table_name FROM information_schema.tables
---   WHERE table_schema = 'public' ORDER BY table_name;
--- SELECT shop_name, phone, email FROM shop_settings WHERE id = 'default';
+-- BIRTHDAY SETTINGS -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS birthday_settings (
+  id                TEXT PRIMARY KEY,
+  message_template  TEXT NOT NULL,
+  selected_offer_id TEXT,
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- BIRTHDAY LOGS ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS birthday_logs (
+  id             TEXT PRIMARY KEY,
+  customer_id    TEXT,
+  customer_name  TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  offer_name     TEXT,
+  message        TEXT NOT NULL,
+  sent_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  status         TEXT NOT NULL DEFAULT 'OPENED_WHATSAPP'
+);
+
+-- =====================================================================
+--  UPGRADE BLOCK - apply to an EXISTING database before using the app.
+--  The application uses PostgREST and cannot run DDL migrations at runtime.
+-- =====================================================================
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS dob DATE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS item_type TEXT NOT NULL DEFAULT 'PRODUCT';
+ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_price NUMERIC NOT NULL DEFAULT 0;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS current_stock NUMERIC;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS low_stock_alert NUMERIC;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_discount_pct NUMERIC NOT NULL DEFAULT 0;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_price NUMERIC;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS offer_pct NUMERIC NOT NULL DEFAULT 0;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS original_price NUMERIC;
+ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS discount_type TEXT;
+ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS discount_value NUMERIC;
+ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC;
+ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS delivery_fee NUMERIC;
+ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS is_gst BOOLEAN;
+ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS gst_percentage NUMERIC;
+ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS gst_amount NUMERIC;
+ALTER TABLE shop_settings ADD COLUMN IF NOT EXISTS accent_color TEXT NOT NULL DEFAULT '#C5A059';
+ALTER TABLE shop_settings ADD COLUMN IF NOT EXISTS owner_phone TEXT NOT NULL DEFAULT '';
+
+CREATE TABLE IF NOT EXISTS offers (
+  id             TEXT PRIMARY KEY,
+  name           TEXT NOT NULL,
+  discount_type  TEXT NOT NULL DEFAULT 'PERCENT'
+                 CHECK (discount_type IN ('PERCENT', 'FIXED')),
+  discount_value NUMERIC NOT NULL DEFAULT 0,
+  start_date     DATE,
+  end_date       DATE,
+  is_active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS birthday_settings (
+  id                TEXT PRIMARY KEY,
+  message_template  TEXT NOT NULL,
+  selected_offer_id TEXT,
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS birthday_logs (
+  id             TEXT PRIMARY KEY,
+  customer_id    TEXT,
+  customer_name  TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  offer_name     TEXT,
+  message        TEXT NOT NULL,
+  sent_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  status         TEXT NOT NULL DEFAULT 'OPENED_WHATSAPP'
+);
+
+-- Stop instead of deleting customer records if duplicates prevent a safe unique index.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM customers GROUP BY phone HAVING COUNT(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'Resolve duplicate customers.phone values before applying the unique index';
+  END IF;
+END
+$$;
+DROP INDEX IF EXISTS idx_customers_phone;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_phone ON customers (phone);
+CREATE INDEX IF NOT EXISTS idx_customers_dob ON customers (dob);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);
+CREATE INDEX IF NOT EXISTS idx_products_active ON products (is_active);
+CREATE INDEX IF NOT EXISTS idx_products_type ON products (item_type);
+CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items (product_id);
+
+-- The app's service-role key is server-only and needs table ACLs in addition
+-- to bypassing row-level security.
+GRANT USAGE ON SCHEMA public TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
+  public.categories,
+  public.products,
+  public.customers,
+  public.orders,
+  public.order_items,
+  public.expenses,
+  public.advance_orders,
+  public.advance_order_items,
+  public.staff,
+  public.staff_attendance,
+  public.shop_settings,
+  public.offers,
+  public.birthday_settings,
+  public.birthday_logs
+TO service_role;

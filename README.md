@@ -1,6 +1,6 @@
-# DHANYAS BOUTIQUE — POS & Inventory Billing System
+# NIDHULAN – THE PRECIOUS PEARLS — POS & Inventory Billing System
 
-A PWA-enabled Point of Sale (POS), billing, and inventory management system for **Dhanyas Boutique**, Kumbakonam. It handles quick invoice generation, WhatsApp delivery of digital receipts, order history, GST / non-GST billing with two revenue dashboards, stock management with low-stock alerts, and an editable shop profile.
+A PWA-enabled Point of Sale (POS), billing, and inventory management system for **NIDHULAN – The Precious Pearls**, Namakkal. It handles quick invoice generation, WhatsApp delivery of digital receipts, order history, GST / non-GST billing with two revenue dashboards, stock management with low-stock alerts, and an editable shop profile.
 
 ## Features
 
@@ -11,7 +11,7 @@ A PWA-enabled Point of Sale (POS), billing, and inventory management system for 
 - Derived shades (`--accent-strong`, `--accent-soft`, `--accent-wash`) are computed automatically, so hover states and tints stay readable on light *and* dark accents
 - Text placed on the accent automatically flips white or near-black based on WCAG contrast, so pale colours never produce unreadable buttons
 - Printed invoices keep the brand colour via `print-color-adjust: exact`
-- Stored in `shop_settings.accent_color`; the column is added automatically to existing databases
+- Stored in `shop_settings.accent_color`; the column is added by the `schema.sql` upgrade
 
 ### ⚙️ Shop Settings (Admin only)
 - Edit the shop profile used everywhere: owner name, shop name, tagline, phone, email, address, city, business hours, Instagram link and GSTIN
@@ -19,7 +19,7 @@ A PWA-enabled Point of Sale (POS), billing, and inventory management system for 
 - Edit the **product catalogue** inline — add, rename, re-price, change GST % / HSN, delete items
 - Create catalogue categories without leaving the screen
 - Changes flow straight to the public store page (`/`), printed invoices/receipts, the PWA manifest and app icon
-- The `shop_settings` table is created automatically on first run — no manual migration needed
+- The `shop_settings` table is created by `schema.sql`; apply the schema before first use
 
 ### 🧾 POS Billing Panel
 - Quick invoice generator with a searchable product catalog
@@ -72,7 +72,7 @@ A PWA-enabled Point of Sale (POS), billing, and inventory management system for 
 - React 19
 - TypeScript
 - Tailwind CSS v4
-- Neon Serverless PostgreSQL (`@neondatabase/serverless`)
+- Supabase PostgreSQL via the server-side Supabase client (`@supabase/supabase-js`)
 - lucide-react (icons)
 
 ## Getting Started
@@ -90,15 +90,20 @@ Copy `.env.example` to `.env.local` and fill in real values:
 ```env
 ADMIN_PASSCODE=your-admin-passcode
 STAFF_PASSCODE=your-staff-passcode
-DATABASE_URL=postgresql://user:password@hostname/dbname?sslmode=require
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
+
+The service-role key is server-only: never prefix it with `NEXT_PUBLIC_` or expose it
+to browser code. The app connects through Supabase's REST API and does not require a
+PostgreSQL password or `DATABASE_URL`.
 
 > **Note:** if `ADMIN_PASSCODE` / `STAFF_PASSCODE` are unset the POS falls back to
 > `admin123` (admin) and `staff123` (staff). Set both env vars before going live.
 
 ### 3. Set up the database
 
-Run `schema.sql` once in your Neon SQL Editor (or `psql`) to create a clean, empty database. The `shop_settings` table is also auto-created on first run.
+Run `schema.sql` in the Supabase SQL Editor to create or upgrade the required tables. The app uses the Supabase REST API and does not run DDL migrations at runtime. Apply the schema as the project owner; no database changes were applied during this provider-code migration.
 
 ### 4. Run the Development Server
 
@@ -114,27 +119,25 @@ Open http://localhost:3000.
 
 ## Deploying to Vercel
 
-1. **Rotate the Neon password first.** The database role password must be treated as
-   secret — generate a new one in the Neon console (Connect → Reset password) and copy
-   the new pooled connection string.
-
-2. **Import the repository** at Vercel (`srishaaaaa/dhaaanyaaaa`). Framework preset:
+1. **Import the repository** at Vercel (`srishaaaaa/dhaaanyaaaa`). Framework preset:
    Next.js. Build command and output are detected automatically.
 
-3. **Add environment variables** under Project → Settings → Environment Variables,
+2. **Add environment variables** under Project > Settings > Environment Variables,
    for **Production**, **Preview** and **Development**:
 
    | Variable | Value |
    | --- | --- |
-   | `DATABASE_URL` | Neon **pooled** connection string (the `-pooler` host, port `6543`) |
+   | `SUPABASE_URL` | Supabase project URL |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Server-only service-role key |
    | `ADMIN_PASSCODE` | Long random admin passcode |
    | `STAFF_PASSCODE` | Long random staff passcode |
 
-   These are read server-side only. Nothing secret is exposed to the browser bundle.
+   Keep the service-role key server-side; nothing secret should be exposed to the
+   browser bundle.
 
-4. **Deploy.** Pushing to `main` triggers a production deployment.
+3. **Deploy.** Pushing to `main` triggers a production deployment.
 
-5. **Post-deploy checks**
+4. **Post-deploy checks**
    - POS login accepts the new passcodes (and *only* those).
    - A **product** sale decrements stock.
    - A **service** sale leaves stock untouched.
@@ -147,7 +150,7 @@ Open http://localhost:3000.
 
 ## Data Model
 
-- **shop_settings** — single row (`id = 'default'`) holding the shop profile: owner name, shop name, tagline, phone, email, address, city, business hours, Instagram link, GSTIN, the uploaded logo (stored as a data URL) and `accent_color` (the app-wide theme colour).
+- **shop_settings** — single row (`id = 'default'`) holding the shop profile: owner name, shop name, tagline, shop phone, owner phone, email, address, city, business hours, Instagram link, GSTIN, the uploaded logo (stored as a data URL) and `accent_color` (the app-wide theme colour).
 - **products** — the catalogue. Rows are either `PRODUCT` (physical, stock-tracked) or `SERVICE` (non-stocked add-ons). Each row carries `selling_price`, `cost_price`, `gst_rate`, `hsn_code`, `current_stock` / `low_stock_alert` (NULL for services), `offer_discount_pct` / `offer_price` and `is_active`.
 - **order_items** — invoice lines, snapshotting name, price, quantity and the `offer_pct` that was applied.
 - **customers**, **orders**, **order_items** — sales records. `orders.is_gst` flags GST invoices vs non-GST bills, which powers the two revenue dashboards.
@@ -163,6 +166,6 @@ The role is determined by which passcode is used to log in.
 
 ## License
 
-© 2026 Dhanyas Boutique. All Rights Reserved.
+© 2026 NIDHULAN – The Precious Pearls. All Rights Reserved.
 
 Powered by [Cenexa Systems](https://www.cenexasystems.com/).

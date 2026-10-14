@@ -13,14 +13,14 @@ import type { ShopSettings } from './types';
  */
 
 /** Fallback used when the shop has never chosen a colour. */
-export const DEFAULT_ACCENT = '#31042F';
+export const DEFAULT_ACCENT = '#C5A059';
 
-/** Preset swatches offered in Settings. */
+/** Preset swatches offered in Settings, featuring champagne gold, charcoal, warm ivory, and premium jewel accents. */
 export const ACCENT_PRESETS: string[] = [
-  '#31042F', '#7C1D3A', '#9F1239', '#B91C1C', '#C2410C',
-  '#A16207', '#15803D', '#047857', '#0F766E', '#0E7490',
-  '#1D4ED8', '#4338CA', '#6D28D9', '#7E22CE', '#A21CAF',
-  '#9333EA', '#C026D3', '#BE185D', '#475569', '#1C1917',
+  '#C5A059', '#D4AF37', '#DFBA6B', '#B89047', '#99732B',
+  '#27272A', '#18181B', '#3F3F46', '#52525B', '#71717A',
+  '#0F766E', '#1E3A8A', '#701A75', '#831843', '#991B1B',
+  '#B91C1C', '#C2410C', '#D97706', '#059669', '#475569',
 ];
 
 /** Normalise user input to `#RRGGBB`, or return null when unusable. */
@@ -91,17 +91,18 @@ export function accentCssVars(accent: string): Record<string, string> {
  * used from client components.
  */
 export const DEFAULT_SHOP_SETTINGS: ShopSettings = {
-  owner_name: 'Ananthi M',
-  shop_name: 'Dhanyas Boutique',
-  tagline: 'Designer Wear • Tailoring • Alterations • Embroidery',
-  phone: '8098089591',
-  email: 'dhanyasboutique2015@gmail.com',
-  address: 'Kasthoribhai road, AGM Apartment, Kumbakonam - 612001',
-  location: 'Kumbakonam, Tamil Nadu',
-  instagram_url: 'https://www.instagram.com/ananthinathan84',
-  business_hours: 'Open Daily',
+  owner_name: 'Ajay Kumar',
+  shop_name: 'NIDHULAN',
+  tagline: 'THE PRECIOUS PEARLS',
+  phone: '9871480705 / 8920980965',
+  owner_phone: '',
+  email: 'nidhulan21@gmail.com',
+  address: 'Door Number 615A, Salem Road, Namakkal – 637212',
+  location: 'Namakkal, Tamil Nadu',
+  instagram_url: 'https://www.instagram.com/nidhulan.official/',
+  business_hours: '10:00 AM – 9:00 PM • Open Daily',
   services:
-    'Custom Tailoring • Designer Blouses & Dresses • Alterations & Fittings • Embroidery & Aari Work • Boutique Wear',
+    'Precious Pearls • Exclusive Pearl Jewelry • Custom Pearl Necklaces & Bangles • Bridal & Traditional Pearl Sets',
   gstin: '',
   accent_color: DEFAULT_ACCENT,
   logo_data_url: null,
@@ -109,12 +110,23 @@ export const DEFAULT_SHOP_SETTINGS: ShopSettings = {
 
 /** Logo src to render: uploaded logo when present, otherwise the bundled asset. */
 export const shopLogoSrc = (settings: ShopSettings): string =>
-  settings.logo_data_url || '/logo.svg';
+  settings.logo_data_url || '/nidhulan-logo.png';
 
-/** Phone split for invoice headers, e.g. 8098089591 -> +91 80980 89591 */
+/** Phone formatter for invoice headers & contacts, supporting single or dual numbers */
 export const formatPhone = (phone: string): string => {
-  const digits = (phone || '').replace(/\D/g, '');
+  if (!phone) return '';
+  if (phone.includes('/') || phone.includes(',')) {
+    const parts = phone.split(/[/,]/).map((p) => p.trim());
+    return parts
+      .map((p) => {
+        const digits = p.replace(/\D/g, '');
+        const local = digits.length > 10 ? digits.slice(-10) : digits;
+        return local.length === 10 ? `+91 ${local.slice(0, 5)} ${local.slice(5)}` : p;
+      })
+      .join(' • ');
+  }
+  const digits = phone.replace(/\D/g, '');
   const local = digits.length > 10 ? digits.slice(-10) : digits;
-  if (local.length !== 10) return phone || '';
+  if (local.length !== 10) return phone;
   return `+91 ${local.slice(0, 5)} ${local.slice(5)}`;
 };

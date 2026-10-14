@@ -42,7 +42,37 @@ export type Customer = {
   name: string;
   phone: string;
   address: string | null;
+  dob?: string | null; // e.g. "YYYY-MM-DD"
   created_at: string;
+};
+
+export type Offer = {
+  id: string;
+  name: string;
+  discount_type: 'PERCENT' | 'FIXED';
+  discount_value: number;
+  start_date?: string | null;
+  end_date?: string | null;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type BirthdaySettings = {
+  id: string;
+  message_template: string;
+  selected_offer_id?: string | null;
+  updated_at: string;
+};
+
+export type BirthdayLog = {
+  id: string;
+  customer_id?: string | null;
+  customer_name: string;
+  customer_phone: string;
+  offer_name?: string | null;
+  message: string;
+  sent_at: string;
+  status: string;
 };
 
 export type PaymentMode = 'CASH' | 'GPAY' | 'SPLIT';
@@ -185,6 +215,7 @@ export type ShopSettings = {
   shop_name: string;
   tagline: string;
   phone: string;
+  owner_phone: string;
   email: string;
   address: string;
   location: string;
@@ -192,7 +223,7 @@ export type ShopSettings = {
   business_hours: string;
   services: string;
   gstin: string;
-  accent_color: string; // hex e.g. '#31042F' — drives the theme app-wide
+  accent_color: string; // hex e.g. '#C5A059' — drives the theme app-wide
   logo_data_url: string | null; // data:image/...; null = use bundled /logo.svg
   updated_at?: string;
 };
