@@ -2471,10 +2471,10 @@ export default function POSBilling() {
 
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-[#F7F7F8] flex items-center justify-center font-sans">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent)]"></div>
-          <span className="text-xs text-[#FAF7F2] font-bold uppercase tracking-wider">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D4AF37]"></div>
+          <span className="text-xs text-[#171717] font-bold uppercase tracking-wider">
             Verifying Session...
           </span>
         </div>
@@ -2484,23 +2484,12 @@ export default function POSBilling() {
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-[#0A0A0C] text-[#FAF7F2] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
-        {/* Subtle radial champagne gold ambient lighting */}
-        <div className="absolute top-[-25%] left-1/2 -translate-x-1/2 w-[680px] h-[480px] bg-[radial-gradient(ellipse_at_center,rgba(197,160,89,0.14),transparent_70%)] blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[400px] bg-[radial-gradient(ellipse_at_center,rgba(197,160,89,0.08),transparent_70%)] blur-[120px] pointer-events-none" />
+      <div className="min-h-screen bg-[#F7F7F8] text-[#171717] flex flex-col items-center justify-center p-4 sm:p-6 font-sans">
+        <div className="w-full max-w-[420px] bg-white border border-[#D4AF37]/40 rounded-[2rem] sm:rounded-[2.25rem] p-6 sm:p-8 shadow-[0_20px_55px_rgba(23,23,23,0.10)] flex flex-col items-center text-center">
+          <div className="w-full h-1 bg-[#D4AF37] rounded-full mb-6" />
 
-        {/* Custom luxury grid pattern overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(197,160,89,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(197,160,89,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
-
-        {/* Main Card Container */}
-        <div className="relative z-10 w-full max-w-[420px] bg-[#131316]/95 border border-[var(--accent)]/40 rounded-[2rem] sm:rounded-[2.25rem] p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.85)] backdrop-blur-xl overflow-hidden flex flex-col items-center text-center">
-          {/* Card top border gradient accent */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent" />
-
-          {/* Original Artwork Logo Showcase - Balanced & Refined */}
-          <div className="relative group mb-4 w-full max-w-[240px] sm:max-w-[260px]">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-[var(--accent)]/30 to-[var(--accent)]/10 rounded-2xl blur-sm opacity-50 group-hover:opacity-80 transition duration-500" />
-            <div className="relative w-full rounded-2xl bg-[#09090B] border border-[var(--accent)]/50 shadow-2xl p-2 overflow-hidden flex items-center justify-center">
+          <div className="mb-4 w-full max-w-[240px] sm:max-w-[260px]">
+            <div className="w-full rounded-2xl bg-white border border-[#D4AF37]/35 p-2 overflow-hidden flex items-center justify-center">
               <img
                 src={shopSettings.logo_data_url || "/nidhulan-logo.png"}
                 alt={`${shopSettings.shop_name} - THE PRECIOUS PEARLS`}
@@ -2510,10 +2499,10 @@ export default function POSBilling() {
           </div>
 
           {/* Title */}
-          <h1 className="text-xl sm:text-2xl font-serif font-extrabold text-[#FAF7F2] tracking-[0.18em] uppercase mb-1">
+          <h1 className="text-xl sm:text-2xl font-serif font-extrabold text-[#171717] tracking-[0.18em] uppercase mb-1">
             {shopSettings.shop_name}
           </h1>
-          <p className="text-[var(--accent)] text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-[0.24em] mb-5 sm:mb-6">
+          <p className="text-[#A47B16] text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-[0.24em] mb-5 sm:mb-6">
             THE PRECIOUS PEARLS • TERMINAL ACCESS
           </p>
 
@@ -2523,11 +2512,11 @@ export default function POSBilling() {
             className="w-full space-y-4 text-left"
           >
             <div className="space-y-2">
-              <label className="text-[9px] font-bold text-[var(--accent)] uppercase tracking-[0.22em] ml-1">
+              <label className="text-[9px] font-bold text-[#8A6815] uppercase tracking-[0.22em] ml-1">
                 Security Passcode
               </label>
               <div className="relative group/input">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent)] group-focus-within/input:text-[#FAF7F2] transition-colors">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A47B16] group-focus-within/input:text-[#171717] transition-colors">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -2535,7 +2524,7 @@ export default function POSBilling() {
                   name="update-pos-passcode"
                   autoComplete="new-password"
                   placeholder="••••••••"
-                  className="w-full bg-[#18181D] border border-[#C5A059]/35 hover:border-[var(--accent)] focus:border-[var(--accent)] focus:bg-[#1E1E24] rounded-xl sm:rounded-2xl pl-11 pr-11 py-3 text-[#FAF7F2] font-mono tracking-widest text-base sm:text-lg focus:outline-none transition-all placeholder:text-[#FAF7F2]/25 shadow-inner"
+                  className="w-full bg-white border border-[#D1D5DB] hover:border-[#D4AF37] focus:border-[#D4AF37] focus:bg-white rounded-xl sm:rounded-2xl pl-11 pr-11 py-3 text-[#171717] font-mono tracking-widest text-base sm:text-lg focus:outline-none transition-all placeholder:text-[#9CA3AF] shadow-sm"
                   value={passcode}
                   onChange={(e) => {
                     setPasscode(e.target.value);
@@ -2546,7 +2535,7 @@ export default function POSBilling() {
                 <button
                   type="button"
                   onClick={() => setShowPasscode(!showPasscode)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#FAF7F2]/40 hover:text-[var(--accent)] transition-colors cursor-pointer"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#8A6815] transition-colors cursor-pointer"
                 >
                   {showPasscode ? (
                     <EyeOff className="w-4 h-4" />
@@ -2564,7 +2553,7 @@ export default function POSBilling() {
 
             <button
               type="submit"
-              className="w-full py-3 sm:py-3.5 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 active:scale-[0.98] text-[#0C0C0E] rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-[0.22em] transition-all shadow-[0_6px_22px_rgba(197,160,89,0.28)] flex items-center justify-center gap-2 mt-4 cursor-pointer border border-[#E5C378]"
+              className="w-full py-3 sm:py-3.5 bg-[#D4AF37] hover:bg-[#C5A02E] active:scale-[0.98] text-[#171717] rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-[0.22em] transition-all shadow-sm flex items-center justify-center gap-2 mt-4 cursor-pointer border border-[#C5A02E]"
             >
               Authenticate
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -2572,16 +2561,16 @@ export default function POSBilling() {
           </form>
 
           {/* Status Badge */}
-          <div className="mt-5 inline-flex items-center gap-2 px-3 py-1 bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-full shadow-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
-            <span className="text-[9px] font-bold text-[var(--accent)] tracking-[0.2em] uppercase">
+          <div className="mt-5 inline-flex items-center gap-2 px-3 py-1 bg-[#D4AF37]/10 border border-[#D4AF37]/35 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#A47B16] animate-pulse" />
+            <span className="text-[9px] font-bold text-[#8A6815] tracking-[0.2em] uppercase">
               SYSTEM ONLINE • ENCRYPTED
             </span>
           </div>
         </div>
 
         {/* Footnote */}
-        <div className="mt-5 text-[#FAF7F2]/40 text-[9.5px] font-medium tracking-[0.2em] uppercase">
+        <div className="mt-5 text-[#6B7280] text-[9.5px] font-medium tracking-[0.2em] uppercase text-center">
           {shopSettings.shop_name} Terminal • Door No 615A, Namakkal
         </div>
       </div>
