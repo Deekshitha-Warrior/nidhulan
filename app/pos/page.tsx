@@ -119,42 +119,105 @@ type OrderPaymentMode = "CASH" | "GPAY" | "SPLIT";
 
 // Shared date-window test reused by the Expenses tab and the analytics dashboard.
 type PeriodKey = "all" | "today" | "week" | "month" | "year" | "custom";
+type DateRange = { start: string | null; end: string | null; valid: boolean };
+
+const localDateKey = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+const normalizeDateKey = (value: string): string | null => {
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (dateOnlyMatch) {
+    const [, year, month, day] = dateOnlyMatch;
+    const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+    return localDateKey(parsed) === value ? value : null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : localDateKey(parsed);
+};
+
+const shiftDateKey = (dateKey: string, days: number): string => {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+};
+
+const getDateRange = (
+  period: PeriodKey,
+  startStr: string,
+  endStr: string,
+  now = new Date(),
+): DateRange => {
+  if (period === "all") return { start: null, end: null, valid: true };
+  if (period === "custom") {
+    const start = startStr ? normalizeDateKey(startStr) : null;
+    const end = endStr ? normalizeDateKey(endStr) : null;
+    return {
+      start,
+      end,
+      valid:
+        (!startStr || start !== null) &&
+        (!endStr || end !== null) &&
+        (!start || !end || start <= end),
+    };
+  }
+
+  const today = localDateKey(now);
+  if (period === "today") return { start: today, end: today, valid: true };
+  if (period === "week") {
+    const weekday = new Date(`${today}T00:00:00Z`).getUTCDay();
+    const mondayOffset = weekday === 0 ? -6 : 1 - weekday;
+    const start = shiftDateKey(today, mondayOffset);
+    return { start, end: shiftDateKey(start, 6), valid: true };
+  }
+  if (period === "month") {
+    const start = `${today.slice(0, 7)}-01`;
+    const nextMonth = shiftDateKey(start, 32).slice(0, 7);
+    return { start, end: shiftDateKey(`${nextMonth}-01`, -1), valid: true };
+  }
+  return {
+    start: `${now.getFullYear()}-01-01`,
+    end: `${now.getFullYear()}-12-31`,
+    valid: true,
+  };
+};
+
+const formatDateKey = (dateKey: string): string => {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(year, month - 1, day));
+};
+
+const formatDateValue = (value: string): string => {
+  const dateKey = normalizeDateKey(value);
+  return dateKey ? formatDateKey(dateKey) : "—";
+};
+
+const getDateRangeLabel = (
+  period: PeriodKey,
+  startStr: string,
+  endStr: string,
+): string => {
+  const range = getDateRange(period, startStr, endStr);
+  if (!range.valid) return "Choose a valid date range";
+  if (period === "all") return "Showing all dates";
+  return `Showing ${range.start ? formatDateKey(range.start) : "any date"} – ${range.end ? formatDateKey(range.end) : "any date"}`;
+};
+
 const isDateInPeriod = (
   dateStr: string,
   period: PeriodKey,
   startStr: string,
   endStr: string,
 ): boolean => {
-  const now = new Date();
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return false;
-  if (period === "all") return true;
-  if (period === "today")
-    return (
-      d.getDate() === now.getDate() &&
-      d.getMonth() === now.getMonth() &&
-      d.getFullYear() === now.getFullYear()
-    );
-  if (period === "week") {
-    const start = new Date(now);
-    const dow = start.getDay();
-    start.setDate(start.getDate() + (dow === 0 ? -6 : 1 - dow)); // Monday start
-    start.setHours(0, 0, 0, 0);
-    return d >= start;
-  }
-  if (period === "month")
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  if (period === "year") return d.getFullYear() === now.getFullYear();
-  // custom range
-  const t = d.getTime();
-  const s = startStr ? new Date(startStr) : null;
-  if (s) s.setHours(0, 0, 0, 0);
-  const e = endStr ? new Date(endStr) : null;
-  if (e) e.setHours(23, 59, 59, 999);
-  if (s && e) return t >= s.getTime() && t <= e.getTime();
-  if (s) return t >= s.getTime();
-  if (e) return t <= e.getTime();
-  return true;
+  const dateKey = normalizeDateKey(dateStr);
+  if (!dateKey) return false;
+  const range = getDateRange(period, startStr, endStr);
+  if (!range.valid) return false;
+  return (!range.start || dateKey >= range.start) && (!range.end || dateKey <= range.end);
 };
 
 type CatalogItem = {
@@ -419,6 +482,8 @@ export default function POSBilling() {
   >("all");
   const [analyticsStartDate, setAnalyticsStartDate] = useState(getLocalDate);
   const [analyticsEndDate, setAnalyticsEndDate] = useState(getLocalDate);
+  const analyticsDateRange = getDateRange(analyticsPeriod, analyticsStartDate, analyticsEndDate);
+  const analyticsDateRangeLabel = getDateRangeLabel(analyticsPeriod, analyticsStartDate, analyticsEndDate);
   const [analyticsSubTab, setAnalyticsSubTab] = useState<
     "revenue" | "today" | "products" | "coupons"
   >("revenue");
@@ -447,6 +512,8 @@ export default function POSBilling() {
   >("month");
   const [expenseStartDate, setExpenseStartDate] = useState(getLocalDate);
   const [expenseEndDate, setExpenseEndDate] = useState(getLocalDate);
+  const expenseDateRange = getDateRange(expensePeriod, expenseStartDate, expenseEndDate);
+  const expenseDateRangeLabel = getDateRangeLabel(expensePeriod, expenseStartDate, expenseEndDate);
   const [expenseCategoryFilter, setExpenseCategoryFilter] = useState<string>("ALL");
   const [expenseSearch, setExpenseSearch] = useState("");
 
@@ -770,22 +837,18 @@ export default function POSBilling() {
   const [historyPeriod, setHistoryPeriod] = useState<
     "all" | "today" | "week" | "month" | "year" | "custom"
   >("all");
-  const [historyStartDate, setHistoryStartDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  );
-  const [historyEndDate, setHistoryEndDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  );
+  const [historyStartDate, setHistoryStartDate] = useState<string>(getLocalDate);
+  const [historyEndDate, setHistoryEndDate] = useState<string>(getLocalDate);
+  const historyDateRange = getDateRange(historyPeriod, historyStartDate, historyEndDate);
+  const historyDateRangeLabel = getDateRangeLabel(historyPeriod, historyStartDate, historyEndDate);
 
   const [advPeriod, setAdvPeriod] = useState<
     "all" | "today" | "week" | "month" | "year" | "custom"
   >("all");
-  const [advStartDate, setAdvStartDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  );
-  const [advEndDate, setAdvEndDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  );
+  const [advStartDate, setAdvStartDate] = useState<string>(getLocalDate);
+  const [advEndDate, setAdvEndDate] = useState<string>(getLocalDate);
+  const advDateRange = getDateRange(advPeriod, advStartDate, advEndDate);
+  const advDateRangeLabel = getDateRangeLabel(advPeriod, advStartDate, advEndDate);
 
   const [selectedCoupon, setSelectedCoupon] = useState<string>("none");
   const coupons = [
@@ -1330,6 +1393,26 @@ export default function POSBilling() {
 
   const balanceRemaining = (adv: AdvanceOrderWithRelations) =>
     Math.max(0, Number(adv.total_amount) - Number(adv.deposit_amount));
+
+  const advancePeriodOrders = advanceOrders.filter((adv) =>
+    isDateInPeriod(adv.created_at, advPeriod, advStartDate, advEndDate),
+  );
+  const allAdvanceOrderDateKeys = advanceOrders
+    .map((adv) => normalizeDateKey(adv.created_at))
+    .filter((dateKey): dateKey is string => dateKey !== null)
+    .sort();
+  const filteredAdvanceOrders = advancePeriodOrders.filter((adv) => {
+    if (advStatusFilter !== "ALL" && adv.status !== advStatusFilter) return false;
+    const query = advSearchQuery.trim().toLowerCase();
+    if (!query) return true;
+    return (
+      adv.id.toLowerCase().includes(query) ||
+      adv.customer_name.toLowerCase().includes(query) ||
+      adv.customer_phone.includes(query) ||
+      adv.status.toLowerCase().includes(query) ||
+      adv.items.some((item) => item.snapshot_name.toLowerCase().includes(query))
+    );
+  });
 
   const receiveBalanceDiscountAmount = (() => {
     if (!selectedAdvance) return 0;
@@ -2045,48 +2128,12 @@ export default function POSBilling() {
       ) {
         return false;
       }
-      const orderDate = new Date(o.date);
-      if (analyticsPeriod === "today") {
-        return (
-          orderDate.getDate() === now.getDate() &&
-          orderDate.getMonth() === now.getMonth() &&
-          orderDate.getFullYear() === now.getFullYear()
-        );
-      }
-      if (analyticsPeriod === "week") {
-        const startOfWeek = new Date(now);
-        const dayOfWeek = startOfWeek.getDay();
-        const distToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-        startOfWeek.setDate(startOfWeek.getDate() + distToMonday); // Monday start of week
-        startOfWeek.setHours(0, 0, 0, 0);
-        return orderDate >= startOfWeek;
-      }
-      if (analyticsPeriod === "month") {
-        return (
-          orderDate.getMonth() === now.getMonth() &&
-          orderDate.getFullYear() === now.getFullYear()
-        );
-      }
-      if (analyticsPeriod === "year") {
-        return orderDate.getFullYear() === now.getFullYear();
-      }
-      if (analyticsPeriod === "custom") {
-        const orderTime = orderDate.getTime();
-        const start = analyticsStartDate ? new Date(analyticsStartDate) : null;
-        if (start) start.setHours(0, 0, 0, 0);
-        const end = analyticsEndDate ? new Date(analyticsEndDate) : null;
-        if (end) end.setHours(23, 59, 59, 999);
-
-        if (start && end) {
-          return orderTime >= start.getTime() && orderTime <= end.getTime();
-        } else if (start) {
-          return orderTime >= start.getTime();
-        } else if (end) {
-          return orderTime <= end.getTime();
-        }
-        return true;
-      }
-      return true; // "all"
+      return isDateInPeriod(
+        o.date,
+        analyticsPeriod,
+        analyticsStartDate,
+        analyticsEndDate,
+      );
     });
 
     const totalOrdersCount = analyticsFilteredOrders.length;
@@ -2536,47 +2583,12 @@ export default function POSBilling() {
       orderFilterStatus === "ALL" ||
       order.status.toUpperCase() === orderFilterStatus.toUpperCase();
 
-    // Period match
-    let matchPeriod = true;
-    if (historyPeriod !== "all") {
-      const orderDate = new Date(order.date);
-      const orderTime = orderDate.getTime();
-      const now = new Date();
-
-      if (historyPeriod === "today") {
-        matchPeriod = orderDate.toDateString() === now.toDateString();
-      } else if (historyPeriod === "week") {
-        const currentDay = now.getDay();
-        const distanceToMon = currentDay === 0 ? -6 : 1 - currentDay;
-        const startOfWeek = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() + distanceToMon,
-        );
-        startOfWeek.setHours(0, 0, 0, 0);
-        matchPeriod = orderTime >= startOfWeek.getTime();
-      } else if (historyPeriod === "month") {
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        matchPeriod = orderTime >= startOfMonth.getTime();
-      } else if (historyPeriod === "year") {
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
-        matchPeriod = orderTime >= startOfYear.getTime();
-      } else if (historyPeriod === "custom") {
-        const start = historyStartDate ? new Date(historyStartDate) : null;
-        if (start) start.setHours(0, 0, 0, 0);
-        const end = historyEndDate ? new Date(historyEndDate) : null;
-        if (end) end.setHours(23, 59, 59, 999);
-
-        if (start && end) {
-          matchPeriod =
-            orderTime >= start.getTime() && orderTime <= end.getTime();
-        } else if (start) {
-          matchPeriod = orderTime >= start.getTime();
-        } else if (end) {
-          matchPeriod = orderTime <= end.getTime();
-        }
-      }
-    }
+    const matchPeriod = isDateInPeriod(
+      order.date,
+      historyPeriod,
+      historyStartDate,
+      historyEndDate,
+    );
 
     return (
       matchId &&
@@ -5304,8 +5316,19 @@ export default function POSBilling() {
                             key={p}
                             onClick={() => {
                               setAdvPeriod(p);
-                              setAdvStartDate("");
-                              setAdvEndDate("");
+                              const range = getDateRange(p, "", "");
+                              setAdvStartDate(
+                                range.start ??
+                                  allAdvanceOrderDateKeys[0] ??
+                                  getLocalDate(),
+                              );
+                              setAdvEndDate(
+                                range.end ??
+                                  allAdvanceOrderDateKeys[
+                                    allAdvanceOrderDateKeys.length - 1
+                                  ] ??
+                                  getLocalDate(),
+                              );
                             }}
                             className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                               isActive
@@ -5328,6 +5351,7 @@ export default function POSBilling() {
                       <input
                         type="date"
                         value={advStartDate}
+                        max={advEndDate || undefined}
                         onChange={(e) => {
                           setAdvPeriod("custom");
                           setAdvStartDate(e.target.value);
@@ -5342,6 +5366,7 @@ export default function POSBilling() {
                       <input
                         type="date"
                         value={advEndDate}
+                        min={advStartDate || undefined}
                         onChange={(e) => {
                           setAdvPeriod("custom");
                           setAdvEndDate(e.target.value);
@@ -5350,6 +5375,14 @@ export default function POSBilling() {
                       />
                     </div>
                   </div>
+                  <span
+                    aria-live="polite"
+                    className={`w-full text-[10px] font-semibold lg:text-right ${
+                      advDateRange.valid ? "text-[#B8B5AE]" : "text-red-400"
+                    }`}
+                  >
+                    {advDateRangeLabel}
+                  </span>
                 </div>
               )}
             </div>
@@ -5357,10 +5390,10 @@ export default function POSBilling() {
             {/* Summary cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               {(() => {
-                const pending = advanceOrders.filter((a) => a.status === "PENDING" || a.status === "READY");
+                const pending = advancePeriodOrders.filter((a) => a.status === "PENDING" || a.status === "READY");
                 const outstanding = pending.reduce((acc, a) => acc + balanceRemaining(a), 0);
-                const ready = advanceOrders.filter((a) => a.status === "READY").length;
-                const completed = advanceOrders.filter((a) => a.status === "COMPLETED").length;
+                const ready = advancePeriodOrders.filter((a) => a.status === "READY").length;
+                const completed = advancePeriodOrders.filter((a) => a.status === "COMPLETED").length;
                 return (
                   <>
                     <div className="bg-[#131317] border border-[#C5A059]/25 rounded-xl p-4 shadow-xs flex justify-between items-center">
@@ -5434,19 +5467,7 @@ export default function POSBilling() {
                 <span className="text-right">Actions</span>
               </div>
               {(() => {
-                const q = advSearchQuery.trim().toLowerCase();
-                const filtered = advanceOrders.filter((a) => {
-                  if (!isDateInPeriod(a.created_at, advPeriod, advStartDate, advEndDate)) return false;
-                  if (advStatusFilter !== "ALL" && a.status !== advStatusFilter) return false;
-                  if (!q) return true;
-                  return (
-                    a.id.toLowerCase().includes(q) ||
-                    a.customer_name.toLowerCase().includes(q) ||
-                    a.customer_phone.includes(q) ||
-                    a.status.toLowerCase().includes(q) ||
-                    a.items.some((i) => i.snapshot_name.toLowerCase().includes(q))
-                  );
-                });
+                const filtered = filteredAdvanceOrders;
                 if (filtered.length === 0) {
                   return (
                     <div className="p-8 text-center text-xs font-bold text-[#FAF7F2]">
@@ -5466,7 +5487,7 @@ export default function POSBilling() {
                     <div key={a.id} className="grid grid-cols-1 md:grid-cols-[1.1fr_1.3fr_1.5fr_1.5fr_0.9fr_1.1fr_1.4fr] gap-3 px-4 py-3 border-b border-[#C5A059]/15 items-center text-xs hover:bg-[#181820]/60">
                       <div>
                         <p className="font-mono font-black text-[11px] text-[#FAF7F2]">{a.id}</p>
-                        <p className="text-[9px] font-bold text-[var(--accent)]">{new Date(a.created_at).toLocaleDateString()}</p>
+                        <p className="text-[9px] font-bold text-[var(--accent)]">{formatDateValue(a.created_at)}</p>
                       </div>
                       <div>
                         <p className="font-black text-[#FAF7F2]">{a.customer_name}</p>
@@ -5488,7 +5509,7 @@ export default function POSBilling() {
                         <p className="text-[#EF4444] font-bold">Balance: ₹{bal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                       </div>
                       <div className="text-[11px] font-bold text-[#B8B5AE]">
-                        {a.delivery_date ? new Date(a.delivery_date).toLocaleDateString() : "—"}
+                        {a.delivery_date ? formatDateValue(a.delivery_date) : "—"}
                       </div>
                       <div>
                         <span className={`inline-block px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border ${statusStyles[a.status]}`}>
@@ -5610,6 +5631,7 @@ export default function POSBilling() {
                       <input
                         type="date"
                         value={historyStartDate}
+                        max={historyEndDate || undefined}
                         onChange={(e) => {
                           setHistoryPeriod("custom");
                           setHistoryStartDate(e.target.value);
@@ -5624,6 +5646,7 @@ export default function POSBilling() {
                       <input
                         type="date"
                         value={historyEndDate}
+                        min={historyStartDate || undefined}
                         onChange={(e) => {
                           setHistoryPeriod("custom");
                           setHistoryEndDate(e.target.value);
@@ -5632,6 +5655,15 @@ export default function POSBilling() {
                       />
                     </div>
                   </div>
+
+                  <span
+                    aria-live="polite"
+                    className={`basis-full text-[10px] font-semibold text-right ${
+                      historyDateRange.valid ? "text-[#B8B5AE]" : "text-red-400"
+                    }`}
+                  >
+                    {historyDateRangeLabel}
+                  </span>
 
                   <button
                     onClick={handleExportCSV}
@@ -5968,6 +6000,7 @@ export default function POSBilling() {
                         <input
                           type="date"
                           value={analyticsStartDate}
+                          max={analyticsEndDate || undefined}
                           onChange={(e) => {
                             setAnalyticsPeriod("custom");
                             setAnalyticsStartDate(e.target.value);
@@ -5982,6 +6015,7 @@ export default function POSBilling() {
                         <input
                           type="date"
                           value={analyticsEndDate}
+                          min={analyticsStartDate || undefined}
                           onChange={(e) => {
                             setAnalyticsPeriod("custom");
                             setAnalyticsEndDate(e.target.value);
@@ -5990,6 +6024,14 @@ export default function POSBilling() {
                         />
                       </div>
                     </div>
+                    <span
+                      aria-live="polite"
+                      className={`basis-full text-[10px] font-semibold text-right ${
+                        analyticsDateRange.valid ? "text-[#B8B5AE]" : "text-red-400"
+                      }`}
+                    >
+                      {analyticsDateRangeLabel}
+                    </span>
                   </>
                 )}
               </div>
@@ -7209,6 +7251,7 @@ export default function POSBilling() {
                   <input
                     type="date"
                     value={expenseStartDate}
+                    max={expenseEndDate || undefined}
                     onChange={(e) => setExpenseStartDate(e.target.value)}
                     className="bg-[#181820] border border-[#C5A059]/30 rounded-lg px-3 py-2 text-sm text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)]"
                   />
@@ -7220,10 +7263,19 @@ export default function POSBilling() {
                   <input
                     type="date"
                     value={expenseEndDate}
+                    min={expenseStartDate || undefined}
                     onChange={(e) => setExpenseEndDate(e.target.value)}
                     className="bg-[#181820] border border-[#C5A059]/30 rounded-lg px-3 py-2 text-sm text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)]"
                   />
                 </div>
+                <p
+                  aria-live="polite"
+                  className={`basis-full text-[10px] font-semibold ${
+                    expenseDateRange.valid ? "text-[#B8B5AE]" : "text-red-400"
+                  }`}
+                >
+                  {expenseDateRangeLabel}
+                </p>
               </div>
             )}
 
@@ -7246,7 +7298,7 @@ export default function POSBilling() {
                   })}
                 </div>
                 <div className="text-[9px] text-white/80 font-semibold mt-1 uppercase tracking-wider">
-                  {expensePeriod} period
+                  {expenseDateRangeLabel}
                 </div>
               </div>
               <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl p-5 shadow-sm hover:border-[#C5A059]/40 transition-all">
@@ -8428,23 +8480,23 @@ export default function POSBilling() {
         )}
 
         {/* Classy Footer */}
-        <footer className="mt-auto pt-10 pb-2 border-t border-[#C5A059]/20 flex flex-col md:flex-row justify-between items-center text-[10px] text-[#B8B5AE] font-semibold uppercase tracking-wider gap-4">
+        <footer className="mt-auto pt-6 pb-3 border-t border-[#C5A059]/20 grid grid-cols-1 md:grid-cols-3 items-center text-[10px] text-[#B8B5AE] font-semibold gap-4">
           <div className="text-[#B8B5AE]">
             © {new Date().getFullYear()} All Rights Reserved. {shopSettings.shop_name}.
           </div>
-          <div>
-            Powered By{" "}
+          <div className="text-center text-sm font-semibold tracking-normal normal-case text-[#7D8B7A]">
+            Powered by{" "}
             <a
               href="https://www.cenexasystems.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[var(--accent)] hover:underline font-bold transition-all"
+              className="text-inherit hover:underline font-semibold transition-all"
             >
               Cenexa Systems
             </a>{" "}
-            @2026
+            © {new Date().getFullYear()}
           </div>
-          <div className="italic text-tertiary font-bold tracking-[0.15em] flex items-center gap-1.5">
+          <div className="italic text-tertiary font-bold tracking-[0.15em] flex items-center gap-1.5 md:justify-end">
             <span className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full"></span>
             {(!shopSettings.tagline || shopSettings.tagline === "THE PRECIOUS PEARLS") ? "POS & INVENTORY MANAGEMENT" : shopSettings.tagline}
           </div>
