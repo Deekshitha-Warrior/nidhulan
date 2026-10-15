@@ -125,11 +125,18 @@ export async function submitOrder(payload: {
   try {
     return await dbStore.submitOrder(payload);
   } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error(
       `[Server Diagnostic] submitOrder failed (${getSanitizedSupabaseUrl()}):`,
-      err instanceof Error ? err.message : err,
+      message,
     );
-    return { error: "Could not save the sale. Check the database setup and try again." };
+    const schemaMismatch =
+      /column .* does not exist|could not find the table|schema cache/i.test(message);
+    return {
+      error: schemaMismatch
+        ? "The database schema is out of date. Run the latest schema.sql in Supabase SQL Editor, then retry."
+        : "Could not save the sale. Check the database setup and try again.",
+    };
   }
 }
 
