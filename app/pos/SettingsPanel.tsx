@@ -54,10 +54,10 @@ interface SettingsPanelProps {
 }
 
 const inputCls =
-  "w-full bg-[#181820] border border-[#C5A059]/25 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#FAF7F2] placeholder:text-[#B8B5AE]/40 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors";
+  "w-full bg-white border border-[#C5A059]/30 rounded-lg px-3 py-2.5 text-sm font-semibold text-black placeholder:text-zinc-400 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors shadow-xs";
 
 const labelCls =
-  "block text-[10px] font-extrabold uppercase tracking-widest text-[#B8B5AE] mb-1.5";
+  "block text-[10px] font-extrabold uppercase tracking-widest text-zinc-600 mb-1.5";
 
 const emptyDraft = {
   name: "",

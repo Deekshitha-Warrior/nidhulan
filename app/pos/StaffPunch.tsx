@@ -26,7 +26,7 @@ const clockTime = (d: Date) =>
 function Avatar({ name, size }: { name: string; size: "sm" | "lg" }) {
   return (
     <span
-      className={`rounded-2xl bg-[#181820] border border-[#C5A059]/30 text-[var(--accent)] font-black uppercase flex items-center justify-center shrink-0 ${
+      className={`rounded-2xl bg-[#FAF8F5] border border-[#C5A059]/40 text-[#8A6815] font-black uppercase flex items-center justify-center shrink-0 shadow-xs ${
         size === "lg" ? "w-20 h-20 text-4xl" : "w-14 h-14 text-2xl"
       }`}
     >
@@ -270,21 +270,21 @@ export default function StaffPunch() {
 
   return (
     <div className="flex-1 flex flex-col w-full max-w-[1400px] mx-auto gap-5 animate-in fade-in duration-300">
-      <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl shadow-sm px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white border border-[#C5A059]/30 rounded-2xl shadow-sm px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <span className="block text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">
+          <span className="block text-[10px] font-black uppercase tracking-widest text-[#8A6815]">
             Attendance
           </span>
-          <h2 className="text-xl sm:text-2xl font-black text-[#FAF7F2]">{fullDate(now)}</h2>
-          <p className="text-sm text-[#B8B5AE] font-semibold">Select your name to punch</p>
+          <h2 className="text-xl sm:text-2xl font-black text-black">{fullDate(now)}</h2>
+          <p className="text-sm text-zinc-600 font-semibold">Select your name to punch</p>
         </div>
-        <span className="text-2xl sm:text-3xl font-black text-[var(--accent)] tabular-nums">
+        <span className="text-2xl sm:text-3xl font-black text-[#8A6815] tabular-nums">
           {clockTime(now)}
         </span>
       </div>
 
       {staff.length === 0 ? (
-        <p className="text-center text-sm text-[#B8B5AE] font-semibold py-12">
+        <p className="text-center text-sm text-zinc-600 font-semibold py-12">
           No staff have been added yet. Ask the admin to add staff under Attendance → Staff Management.
         </p>
       ) : (
@@ -304,7 +304,7 @@ export default function StaffPunch() {
                   setPunchError(null);
                   setScreen({ kind: "detail", staffId: s.id });
                 }}
-                className="text-left bg-[#131317] border border-[#C5A059]/20 rounded-2xl shadow-sm p-5 hover:border-[#C5A059]/50 hover:shadow-md transition-all cursor-pointer"
+                className="text-left bg-white border border-[#C5A059]/30 rounded-2xl shadow-sm p-5 hover:border-[#C5A059]/60 hover:shadow-md transition-all cursor-pointer"
               >
                 <div className="flex items-start justify-between gap-2">
                   <Avatar name={s.name} size="sm" />
@@ -314,8 +314,8 @@ export default function StaffPunch() {
                     </span>
                   )}
                 </div>
-                <p className="text-base font-black text-[#FAF7F2] mt-4">{s.name}</p>
-                <p className="text-xs font-semibold text-[#B8B5AE]">{s.role || "Staff"}</p>
+                <p className="text-base font-black text-black mt-4">{s.name}</p>
+                <p className="text-xs font-semibold text-zinc-600">{s.role || "Staff"}</p>
               </button>
             );
           })}

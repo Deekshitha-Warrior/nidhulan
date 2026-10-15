@@ -176,19 +176,101 @@ body {
   color: #171717 !important;
 }
 
-/* Light theme high contrast text overrides */
-.pos-dashboard [class*="text-[#FAF7F2]"]:not([class*="bg-[var(--accent)]"] *):not([class*="from-[var(--accent)]"] *):not([class*="bg-[#DC2626]"] *):not([class*="bg-[#D97706]"] *):not([class*="bg-[#15803D]"] *):not([class*="bg-[#2563EB]"] *):not([class*="bg-emerald-600"] *):not([class*="bg-amber-600"] *),
-#pos-main [class*="text-[#FAF7F2]"]:not([class*="bg-[var(--accent)]"] *):not([class*="from-[var(--accent)]"] *):not([class*="bg-[#DC2626]"] *):not([class*="bg-[#D97706]"] *):not([class*="bg-[#15803D]"] *):not([class*="bg-[#2563EB]"] *):not([class*="bg-emerald-600"] *):not([class*="bg-amber-600"] *) {
+/* ==========================================================================
+   Light theme text contrast rules:
+   Whenever a text has a white/light background, make sure text color is black.
+   ========================================================================== */
+
+/* Universal baseline for light / white containers */
+.bg-white,
+[class*="bg-white"],
+[class*="bg-[#FFFFFF]"],
+[class*="bg-[#ffffff]"],
+[class*="bg-[#FAFAFA]"],
+[class*="bg-[#FAF8F5]"],
+[class*="bg-[#FAF7F2]"],
+[class*="bg-[#F7F7F8]"],
+[class*="bg-zinc-50"],
+[class*="bg-gray-50"],
+.pos-dashboard,
+#pos-main {
+  color: #171717;
+}
+
+/* Any white or light text classes on light surfaces MUST turn black (#171717) */
+.pos-dashboard .text-white,
+.pos-dashboard [class*="text-white"],
+.pos-dashboard [class*="text-[#FAF7F2]"],
+.pos-dashboard [class*="text-[#FAF8F5]"],
+.pos-dashboard [class*="text-[#FAF5EE]"],
+.pos-dashboard [class*="text-[#FFFFFF]"],
+.pos-dashboard [class*="text-[#ffffff]"],
+.pos-dashboard [class*="text-zinc-100"],
+.pos-dashboard [class*="text-zinc-200"],
+.pos-dashboard [class*="text-gray-100"],
+.pos-dashboard [class*="text-gray-200"],
+.pos-dashboard [class*="text-slate-100"],
+.pos-dashboard [class*="text-slate-200"],
+#pos-main .text-white,
+#pos-main [class*="text-white"],
+#pos-main [class*="text-[#FAF7F2]"],
+#pos-main [class*="text-[#FAF8F5]"],
+#pos-main [class*="text-[#FAF5EE]"],
+#pos-main [class*="text-[#FFFFFF]"],
+#pos-main [class*="text-[#ffffff]"],
+#pos-main [class*="text-zinc-100"],
+#pos-main [class*="text-zinc-200"],
+#pos-main [class*="text-gray-100"],
+#pos-main [class*="text-gray-200"],
+#pos-main [class*="text-slate-100"],
+#pos-main [class*="text-slate-200"],
+.birthday-dashboard .text-white,
+.birthday-dashboard [class*="text-white"],
+.birthday-dashboard [class*="text-[#FAF7F2]"],
+.birthday-dashboard [class*="text-[#FAF8F5]"],
+.birthday-dashboard [class*="text-[#FAF5EE]"],
+.birthday-dashboard [class*="text-[#FFFFFF]"],
+.birthday-dashboard [class*="text-[#ffffff]"],
+[class*="bg-white"] .text-white,
+[class*="bg-white"] [class*="text-white"],
+[class*="bg-white"] [class*="text-[#FAF7F2]"],
+[class*="bg-[#FFFFFF]"] .text-white,
+[class*="bg-[#FFFFFF]"] [class*="text-white"],
+[class*="bg-[#FFFFFF]"] [class*="text-[#FAF7F2]"],
+[class*="bg-[#FAF8F5]"] .text-white,
+[class*="bg-[#FAF8F5]"] [class*="text-white"],
+[class*="bg-[#FAF8F5]"] [class*="text-[#FAF7F2]"] {
   color: #171717 !important;
 }
 
+/* Secondary / muted text on white backgrounds becomes a crisp dark slate #4b5563 */
 .pos-dashboard [class*="text-[#FAF7F2]/"],
 .pos-dashboard [class*="text-[#B8B5AE]"],
 .pos-dashboard [class*="text-[#E8E2D8]"],
 #pos-main [class*="text-[#FAF7F2]/"],
 #pos-main [class*="text-[#B8B5AE]"],
-#pos-main [class*="text-[#E8E2D8]"] {
-  color: #6b7280 !important;
+#pos-main [class*="text-[#E8E2D8]"],
+.birthday-dashboard [class*="text-[#FAF7F2]/"],
+.birthday-dashboard [class*="text-[#B8B5AE]"],
+.birthday-dashboard [class*="text-[#E8E2D8]"],
+[class*="bg-white"] [class*="text-[#B8B5AE]"],
+[class*="bg-[#FFFFFF]"] [class*="text-[#B8B5AE]"],
+[class*="bg-[#FAF8F5]"] [class*="text-[#B8B5AE]"] {
+  color: #4b5563 !important;
+}
+
+/* Explicit text-black utility */
+.text-black,
+[class*="text-black"] {
+  color: #000000 !important;
+}
+
+/* Form inputs & dropdown options */
+.pos-dashboard select option,
+#pos-main select option,
+select option {
+  background-color: #ffffff !important;
+  color: #171717 !important;
 }
 
 .pos-dashboard .text-gray-600,
@@ -207,7 +289,7 @@ body {
 #pos-main .text-slate-500,
 #pos-main .text-neutral-600,
 #pos-main .text-neutral-500 {
-  color: #6b7280 !important;
+  color: #4b5563 !important;
 }
 
 /* Tables */
@@ -216,19 +298,86 @@ body {
 #pos-main thead tr,
 #pos-main thead th {
   background-color: #f9fafb !important;
-  color: #374151 !important;
+  color: #171717 !important;
   border-color: #e5e7eb !important;
 }
 
 .pos-dashboard td,
-#pos-main td {
-  color: #374151 !important;
+#pos-main td,
+.pos-dashboard table td p,
+#pos-main table td p,
+.pos-dashboard table td span:not([class*="bg-"]),
+#pos-main table td span:not([class*="bg-"]) {
+  color: #171717 !important;
   border-color: #e5e7eb !important;
 }
 
 .pos-dashboard tbody tr:hover,
 #pos-main tbody tr:hover {
   background-color: #faf8f2 !important;
+}
+
+/* EXCEPTION: Elements inside colored buttons or dark badges retain their white or dark styling */
+.pos-dashboard [class*="bg-[var(--accent)]"],
+.pos-dashboard [class*="bg-[var(--accent)]"] *,
+.pos-dashboard [class*="from-[var(--accent)]"],
+.pos-dashboard [class*="from-[var(--accent)]"] *,
+#pos-main [class*="bg-[var(--accent)]"],
+#pos-main [class*="bg-[var(--accent)]"] *,
+#pos-main [class*="from-[var(--accent)]"],
+#pos-main [class*="from-[var(--accent)]"] * {
+  color: #0C0C0E !important;
+}
+
+.pos-dashboard [class*="bg-[#DC2626]"],
+.pos-dashboard [class*="bg-[#DC2626]"] *,
+.pos-dashboard [class*="bg-[#16A34A]"],
+.pos-dashboard [class*="bg-[#16A34A]"] *,
+.pos-dashboard [class*="bg-[#15803D]"],
+.pos-dashboard [class*="bg-[#15803D]"] *,
+.pos-dashboard [class*="bg-[#2563EB]"],
+.pos-dashboard [class*="bg-[#2563EB]"] *,
+.pos-dashboard [class*="bg-red-600"],
+.pos-dashboard [class*="bg-red-600"] *,
+.pos-dashboard [class*="bg-red-500"],
+.pos-dashboard [class*="bg-red-500"] *,
+.pos-dashboard [class*="bg-emerald-600"],
+.pos-dashboard [class*="bg-emerald-600"] *,
+.pos-dashboard [class*="bg-green-600"],
+.pos-dashboard [class*="bg-green-600"] *,
+.pos-dashboard [class*="bg-blue-600"],
+.pos-dashboard [class*="bg-blue-600"] *,
+.pos-dashboard [class*="bg-zinc-900"],
+.pos-dashboard [class*="bg-zinc-900"] *,
+.pos-dashboard [class*="bg-zinc-800"],
+.pos-dashboard [class*="bg-zinc-800"] *,
+.pos-dashboard [class*="bg-black"],
+.pos-dashboard [class*="bg-black"] *,
+#pos-main [class*="bg-[#DC2626]"],
+#pos-main [class*="bg-[#DC2626]"] *,
+#pos-main [class*="bg-[#16A34A]"],
+#pos-main [class*="bg-[#16A34A]"] *,
+#pos-main [class*="bg-[#15803D]"],
+#pos-main [class*="bg-[#15803D]"] *,
+#pos-main [class*="bg-[#2563EB]"],
+#pos-main [class*="bg-[#2563EB]"] *,
+#pos-main [class*="bg-red-600"],
+#pos-main [class*="bg-red-600"] *,
+#pos-main [class*="bg-red-500"],
+#pos-main [class*="bg-red-500"] *,
+#pos-main [class*="bg-emerald-600"],
+#pos-main [class*="bg-emerald-600"] *,
+#pos-main [class*="bg-green-600"],
+#pos-main [class*="bg-green-600"] *,
+#pos-main [class*="bg-blue-600"],
+#pos-main [class*="bg-blue-600"] *,
+#pos-main [class*="bg-zinc-900"],
+#pos-main [class*="bg-zinc-900"] *,
+#pos-main [class*="bg-zinc-800"],
+#pos-main [class*="bg-zinc-800"] *,
+#pos-main [class*="bg-black"],
+#pos-main [class*="bg-black"] * {
+  color: #ffffff !important;
 }
 
 .pos-dashboard [class*="hover:bg-gray-50"]:hover,

@@ -146,7 +146,7 @@ export default function LowStockAlarm({
           </span>
         </div>
 
-        <div className="px-6 pt-4 pb-2 text-xs font-semibold text-[#B8B5AE]">
+        <div className="px-6 pt-4 pb-2 text-xs font-semibold text-zinc-600">
           {hasNewItems
             ? "The audible alarm and visual alert will sound until acknowledged."
             : "These items were already acknowledged and are still low on stock."}
@@ -158,15 +158,15 @@ export default function LowStockAlarm({
             return (
               <div
                 key={item.id}
-                className="flex items-center gap-3 bg-[#181820] border border-[#EF4444]/30 rounded-2xl px-4 py-3"
+                className="flex items-center gap-3 bg-white border border-[#EF4444]/30 rounded-2xl px-4 py-3 shadow-xs"
               >
-                <div className="w-10 h-10 rounded-xl bg-[#131317] border border-[#EF4444]/30 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-zinc-50 border border-[#EF4444]/30 flex items-center justify-center shrink-0">
                   <Package className="w-4 h-4 text-[#EF4444]" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-[#FAF7F2] leading-snug">{item.name}</p>
+                  <p className="text-sm font-bold text-black leading-snug">{item.name}</p>
                   {item.category && (
-                    <p className="text-xs text-[#B8B5AE] font-semibold truncate">{item.category}</p>
+                    <p className="text-xs text-zinc-600 font-semibold truncate">{item.category}</p>
                   )}
                 </div>
                 <div className="text-right shrink-0">
@@ -177,7 +177,7 @@ export default function LowStockAlarm({
                   >
                     {item.stock} in stock
                   </span>
-                  <p className="text-[10px] font-semibold text-[#B8B5AE] mt-1">
+                  <p className="text-[10px] font-semibold text-zinc-500 mt-1">
                     Alert limit: {item.alertAt}
                   </p>
                 </div>
@@ -186,8 +186,8 @@ export default function LowStockAlarm({
           })}
         </div>
 
-        <div className="px-6 py-5 flex items-center justify-between gap-4 border-t border-white/5">
-          <p className="text-[11px] font-semibold text-[#B8B5AE] max-w-[180px]">
+        <div className="px-6 py-5 flex items-center justify-between gap-4 border-t border-zinc-200">
+          <p className="text-[11px] font-semibold text-zinc-600 max-w-[180px]">
             Silences sound until the next new low-stock item.
           </p>
           <button

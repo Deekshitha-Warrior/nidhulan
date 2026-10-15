@@ -833,7 +833,7 @@ export default function BirthdayPanel({
   }, [customers, customerSearch, customerMonthFilter]);
 
   return (
-    <div className="birthday-dashboard text-[#FAF7F2] font-sans w-full max-w-[1400px] mx-auto animate-in fade-in duration-300">
+    <div className="birthday-dashboard text-black font-sans w-full max-w-[1400px] mx-auto animate-in fade-in duration-300">
       {/* Toast Notification */}
       {templateSavedToast && (
         <div className="fixed top-5 right-5 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-bold animate-bounce">
