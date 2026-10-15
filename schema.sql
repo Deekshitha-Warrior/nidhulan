@@ -282,6 +282,8 @@ CREATE TABLE IF NOT EXISTS birthday_logs (
 --  The application uses PostgREST and cannot run DDL migrations at runtime.
 -- =====================================================================
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS dob DATE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS split_cash NUMERIC NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS split_gpay NUMERIC NOT NULL DEFAULT 0;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS item_type TEXT NOT NULL DEFAULT 'PRODUCT';
 ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_price NUMERIC NOT NULL DEFAULT 0;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS current_stock NUMERIC;
@@ -300,6 +302,26 @@ ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS gst_percentage NUMERIC;
 ALTER TABLE advance_orders ADD COLUMN IF NOT EXISTS gst_amount NUMERIC;
 ALTER TABLE shop_settings ADD COLUMN IF NOT EXISTS accent_color TEXT NOT NULL DEFAULT '#C5A059';
 ALTER TABLE shop_settings ADD COLUMN IF NOT EXISTS owner_phone TEXT NOT NULL DEFAULT '';
+
+DO $$
+DECLARE
+  payment_mode_constraint TEXT;
+BEGIN
+  FOR payment_mode_constraint IN
+    SELECT conname
+    FROM pg_constraint
+    WHERE conrelid = 'public.orders'::regclass
+      AND contype = 'c'
+      AND pg_get_constraintdef(oid) ILIKE '%payment_mode%'
+  LOOP
+    EXECUTE format('ALTER TABLE public.orders DROP CONSTRAINT %I', payment_mode_constraint);
+  END LOOP;
+
+  ALTER TABLE public.orders
+    ADD CONSTRAINT orders_payment_mode_check
+    CHECK (payment_mode IN ('CASH', 'GPAY', 'SPLIT'));
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS offers (
   id             TEXT PRIMARY KEY,

@@ -1548,7 +1548,7 @@ export default function POSBilling() {
     setIsSubmittingOrder(true);
 
     try {
-      const { orderId: newOrderId } = await submitOrder({
+      const submitResult = await submitOrder({
         orderId: `INV-${new Date().getFullYear()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
         customerName: customerName || "Guest",
         customerPhone: customerPhone,
@@ -1578,6 +1578,10 @@ export default function POSBilling() {
         splitGpay: splitGpayVal,
         paymentMode: paymentMode,
       });
+      if ("error" in submitResult) {
+        throw new Error(submitResult.error);
+      }
+      const newOrderId = submitResult.orderId;
 
       // Construct mappedOrder directly in memory to respond with ZERO blocking delay
       const mappedOrder: CompletedOrder = {
@@ -3795,6 +3799,7 @@ export default function POSBilling() {
       </aside>
       {/* Main Content Area */}
       <main
+        id="pos-main"
         ref={mainScrollRef}
         className="flex-1 h-screen overflow-y-auto overflow-x-hidden min-w-0 px-3 sm:px-8 lg:px-12 pt-3 pb-8 relative flex flex-col animate-in fade-in duration-300"
       >

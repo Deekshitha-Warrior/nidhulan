@@ -121,8 +121,16 @@ export async function submitOrder(payload: {
   splitCash?: number;
   splitGpay?: number;
   paymentMode: PaymentMode;
-}): Promise<{ orderId: string }> {
-  return await dbStore.submitOrder(payload);
+}): Promise<{ orderId: string } | { error: string }> {
+  try {
+    return await dbStore.submitOrder(payload);
+  } catch (err: unknown) {
+    console.error(
+      `[Server Diagnostic] submitOrder failed (${getSanitizedSupabaseUrl()}):`,
+      err instanceof Error ? err.message : err,
+    );
+    return { error: "Could not save the sale. Check the database setup and try again." };
+  }
 }
 
 export async function removeOrder(id: string): Promise<void> {

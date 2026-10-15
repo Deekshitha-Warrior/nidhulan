@@ -26,10 +26,7 @@ body {
   color: #FAF7F2;
 }
 
-/*
- * NIDHULAN Luxury POS Theming
- * Deep Charcoal (#131317), Matte Black (#0A0A0C), Champagne Gold (#C5A059), Warm Ivory (#FAF7F2)
- */
+/* NIDHULAN POS chrome: matte black navigation with champagne-gold accents. */
 .pos-dashboard {
   background-color: #0A0A0C !important;
   color: #FAF7F2 !important;
@@ -223,6 +220,131 @@ body {
 }
 
 .pos-dashboard ::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/*
+ * The POS keeps its matte-black navigation, while the workspace uses a
+ * bright, premium black-and-gold treatment for readability at the counter.
+ * The workspace ID gives these deliberate light-theme overrides priority
+ * over the legacy dark palette used by existing utility classes.
+ */
+#pos-main {
+  background-color: #f7f7f8 !important;
+  color: #171717 !important;
+}
+
+#pos-main h1,
+#pos-main h2,
+#pos-main h3,
+#pos-main h4 {
+  color: #171717 !important;
+}
+
+#pos-main [class*="bg-[#0A0A0C]"],
+#pos-main [class*="bg-[#0A0A0D]"],
+#pos-main [class*="bg-[#08080A]"],
+#pos-main [class*="bg-[#09090B]"],
+#pos-main [class*="bg-[#101015]"],
+#pos-main [class*="bg-[#131317]"],
+#pos-main [class*="bg-[#131316]"],
+#pos-main [class*="bg-[#16161D]"],
+#pos-main [class*="bg-[#181820]"],
+#pos-main [class*="bg-[#18181D]"],
+#pos-main [class*="bg-[#1E1E24]"],
+#pos-main [class*="bg-[#1E1E26]"],
+#pos-main [class*="bg-[#1F1F28]"],
+#pos-main [class*="bg-[#202028]"],
+#pos-main [class*="bg-[#20202A]"],
+#pos-main [class*="bg-[#22222D]"],
+#pos-main [class*="bg-[#25221B]"],
+#pos-main [class*="bg-[#252530]"],
+#pos-main [class*="bg-[#252532]"],
+#pos-main [class~="bg-white"],
+#pos-main [class~="bg-[#FFFFFF]"],
+#pos-main [class~="bg-[#FAFAFA]"],
+#pos-main [class~="bg-zinc-50"],
+#pos-main [class~="bg-gray-50"] {
+  background-color: #ffffff !important;
+  color: #171717 !important;
+  border-color: rgba(197, 160, 89, 0.3) !important;
+}
+
+#pos-main input:not([type="checkbox"]):not([type="radio"]),
+#pos-main select,
+#pos-main textarea {
+  background-color: #ffffff !important;
+  color: #171717 !important;
+  border-color: #e5e7eb !important;
+  box-shadow: none;
+}
+
+#pos-main input:focus:not([type="checkbox"]):not([type="radio"]),
+#pos-main select:focus,
+#pos-main textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.16) !important;
+}
+
+#pos-main input::placeholder,
+#pos-main textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+#pos-main select option {
+  background-color: #ffffff;
+  color: #171717;
+}
+
+#pos-main [class*="text-[#FAF7F2]"] {
+  color: #171717 !important;
+}
+
+#pos-main [class*="text-[#FAF7F2]/"],
+#pos-main [class*="text-[#B8B5AE]"] {
+  color: #6b7280 !important;
+}
+
+#pos-main .text-gray-600,
+#pos-main .text-gray-500,
+#pos-main .text-zinc-600,
+#pos-main .text-zinc-500,
+#pos-main .text-slate-600,
+#pos-main .text-slate-500,
+#pos-main .text-neutral-600,
+#pos-main .text-neutral-500 {
+  color: #6b7280 !important;
+}
+
+#pos-main thead tr,
+#pos-main thead th {
+  background-color: #f9fafb !important;
+  color: #374151 !important;
+  border-color: #e5e7eb !important;
+}
+
+#pos-main td {
+  color: #374151 !important;
+  border-color: #e5e7eb !important;
+}
+
+#pos-main tbody tr:hover {
+  background-color: #faf8f2 !important;
+}
+
+#pos-main [class*="hover:bg-gray-50"]:hover,
+#pos-main [class*="hover:bg-gray-100"]:hover,
+#pos-main [class*="hover:bg-white/10"]:hover,
+#pos-main [class*="hover:bg-black/5"]:hover,
+#pos-main [class*="hover:bg-black/10"]:hover {
+  background-color: #faf8f2 !important;
+}
+
+#pos-main ::-webkit-scrollbar-thumb {
+  background: rgba(197, 160, 89, 0.45);
+}
+
+#pos-main ::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
 }
 
