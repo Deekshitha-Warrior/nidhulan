@@ -375,7 +375,7 @@ export default function SettingsPanel({
     }
   };
 
-  const logoPreview = form.logo_data_url || "/nidhulan-logo.png";
+  const logoPreview = form.logo_data_url || "/nidulan-logo.jpeg";
 
   return (
     <div className="flex-1 flex flex-col max-w-[1400px] mx-auto w-full pb-8 pr-2 animate-in fade-in duration-300 gap-6">
@@ -517,7 +517,7 @@ export default function SettingsPanel({
               <ImageIcon className="w-3.5 h-3.5" /> Shop Logo
             </p>
             <div className="flex items-center gap-4">
-              <div className="w-32 h-22 sm:w-36 sm:h-24 rounded-2xl bg-[#09090B] border border-[var(--accent)]/40 shadow-sm flex items-center justify-center p-2 shrink-0 overflow-hidden">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-sm flex items-center justify-center p-2 shrink-0 overflow-hidden">
                 <img
                   src={logoPreview}
                   alt="Shop logo preview"

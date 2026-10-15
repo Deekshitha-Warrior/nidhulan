@@ -1411,6 +1411,55 @@ export default function POSBilling() {
     setAdvanceViewMode(null);
   };
 
+  // Global Escape key listener to dismiss any open modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (activeInvoiceId || activeAdvanceBillId) {
+          setActiveInvoiceId(null);
+          setActiveAdvanceBillId(null);
+        } else if (printModalData) {
+          setPrintModalData(null);
+        } else if (selectedAdvance && advanceViewMode) {
+          closeAdvanceDialog();
+        } else if (showAdvanceSaveModal) {
+          setShowAdvanceSaveModal(false);
+        } else if (selectedOrder) {
+          setSelectedOrder(null);
+        } else if (stockAdjustTarget) {
+          closeStockAdjust();
+        } else if (showCategoryModal) {
+          setShowCategoryModal(false);
+          setEditingCategoryId(null);
+          setNewCategoryName("");
+        } else if (showCatalogModal) {
+          resetCatalogForm();
+          setEditingCatalogId(null);
+          setShowCatalogModal(false);
+        } else if (completedBillData) {
+          setCompletedBillData(null);
+        } else if (advanceReceipt) {
+          setAdvanceReceipt(null);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    activeInvoiceId,
+    activeAdvanceBillId,
+    printModalData,
+    selectedAdvance,
+    advanceViewMode,
+    showAdvanceSaveModal,
+    selectedOrder,
+    stockAdjustTarget,
+    showCategoryModal,
+    showCatalogModal,
+    completedBillData,
+    advanceReceipt,
+  ]);
+
   const balanceRemaining = (adv: AdvanceOrderWithRelations) =>
     Math.max(0, Number(adv.total_amount) - Number(adv.deposit_amount));
 
@@ -1822,13 +1871,14 @@ export default function POSBilling() {
       message += `Discount Applied: -₹${order.discount.toLocaleString(undefined, { minimumFractionDigits: 2 })}\n`;
     }
 
-    // GST is added on top of the discounted subtotal.
+    // GST is split into CGST + SGST (intra-state standard)
     const gstOnBill = Number(order.gstAmount) || 0;
-    if (order.isGst && gstOnBill > 0.1) {
-      const gstLabel = order.gstPercentage
-        ? `GST (${order.gstPercentage}%)`
-        : "GST";
-      message += `${gstLabel}: +₹${gstOnBill.toLocaleString(undefined, { minimumFractionDigits: 2 })}\n`;
+    if (order.isGst && gstOnBill > 0.01) {
+      const halfRate = (order.gstPercentage || 0) / 2;
+      const fmtRate = Number.isInteger(halfRate) ? halfRate.toString() : halfRate.toFixed(1);
+      const halfAmount = gstOnBill / 2;
+      message += `CGST (${fmtRate}%): +₹${halfAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}\n`;
+      message += `SGST (${fmtRate}%): +₹${halfAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}\n`;
     }
 
     if (order.deliveryFee > 0) {
@@ -2488,12 +2538,12 @@ export default function POSBilling() {
         <div className="w-full max-w-[420px] bg-white border border-[#D4AF37]/40 rounded-[2rem] sm:rounded-[2.25rem] p-6 sm:p-8 shadow-[0_20px_55px_rgba(23,23,23,0.10)] flex flex-col items-center text-center">
           <div className="w-full h-1 bg-[#D4AF37] rounded-full mb-6" />
 
-          <div className="mb-4 w-full max-w-[240px] sm:max-w-[260px]">
-            <div className="w-full rounded-2xl bg-white border border-[#D4AF37]/35 p-2 overflow-hidden flex items-center justify-center">
+          <div className="mb-4">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 mx-auto rounded-2xl bg-white border border-[#D4AF37]/40 p-2 overflow-hidden flex items-center justify-center shadow-xs">
               <img
-                src={shopSettings.logo_data_url || "/nidhulan-logo.png"}
+                src={shopSettings.logo_data_url || "/nidulan-logo.jpeg"}
                 alt={`${shopSettings.shop_name} - THE PRECIOUS PEARLS`}
-                className="w-full h-auto max-h-36 sm:max-h-40 object-contain rounded-xl"
+                className="w-full h-full object-contain rounded-xl"
               />
             </div>
           </div>
@@ -2770,7 +2820,7 @@ export default function POSBilling() {
 
   return (
     <div
-      className="pos-dashboard min-h-screen bg-[#0A0A0C] text-[#FAF7F2] flex flex-row font-sans overflow-hidden selection:bg-[var(--accent)] selection:text-[#0C0C0E]"
+      className="pos-dashboard min-h-screen bg-[#F7F7F8] text-[#171717] flex flex-row font-sans overflow-hidden selection:bg-[var(--accent)] selection:text-[#171717]"
     >
       {/* Stock Adjustment Modal — restock / return / loss / reconcile */}
       {stockAdjustTarget && (
@@ -2780,19 +2830,19 @@ export default function POSBilling() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#131317] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] border border-[#C5A059]/30 w-full max-w-md overflow-hidden transform animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(23,23,23,0.15)] border border-[#C5A059]/30 w-full max-w-md overflow-hidden transform animate-in zoom-in-95 duration-200"
           >
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 p-5 bg-[#181820] border-b border-[#C5A059]/25 text-[#FAF7F2]">
+            <div className="flex items-start justify-between gap-3 p-5 bg-[#FAF8F5] border-b border-[#C5A059]/25 text-[#171717]">
               <div className="flex items-start gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-[var(--accent)]/15 border border-[var(--accent)]/30 text-[var(--accent)] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#8A6815] flex items-center justify-center shrink-0">
                   <SlidersHorizontal className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-base font-black tracking-tight truncate text-[#FAF7F2]">
+                  <h3 className="text-base font-black tracking-tight truncate text-[#171717]">
                     Adjust Inventory Stock
                   </h3>
-                  <p className="text-[10px] font-semibold text-[#B8B5AE]">
+                  <p className="text-[10px] font-semibold text-zinc-500">
                     Restock, return, deduct loss, or reconcile count
                   </p>
                 </div>
@@ -2800,7 +2850,7 @@ export default function POSBilling() {
               <button
                 onClick={closeStockAdjust}
                 disabled={isSavingStock}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-[#FAF7F2] flex items-center justify-center shrink-0 transition-colors cursor-pointer disabled:opacity-50"
+                className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 flex items-center justify-center shrink-0 transition-colors cursor-pointer disabled:opacity-50"
                 aria-label="Close stock adjustment"
               >
                 <X className="w-4 h-4" />
@@ -3038,30 +3088,44 @@ export default function POSBilling() {
 
       {/* Category Management Modal */}
       {showCategoryModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-          <div className="bg-[#131317] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] border border-[#C5A059]/30 w-full max-w-md overflow-hidden transform animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-5 border-b border-[#C5A059]/25 bg-[#181820]">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4"
+          onClick={() => {
+            setShowCategoryModal(false);
+            setEditingCategoryId(null);
+            setEditCategoryName("");
+            setNewCategoryName("");
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(23,23,23,0.15)] border border-[#C5A059]/30 w-full max-w-md overflow-hidden transform animate-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between p-5 border-b border-[#C5A059]/25 bg-[#FAF8F5]">
               <div className="flex items-center gap-2">
-                <Tag className="w-5 h-5 text-[var(--accent)]" />
+                <Tag className="w-5 h-5 text-[#8A6815]" />
                 <div>
-                  <h3 className="text-base font-black text-[#FAF7F2] tracking-tight">
+                  <h3 className="text-base font-black text-[#171717] tracking-tight">
                     Manage Categories
                   </h3>
-                  <p className="text-[10px] font-semibold text-[#B8B5AE]">
+                  <p className="text-[10px] font-semibold text-zinc-500">
                     Create, rename or delete product categories
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => {
                   setShowCategoryModal(false);
                   setEditingCategoryId(null);
                   setEditCategoryName("");
                   setNewCategoryName("");
                 }}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-[#FAF7F2] transition-colors cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 transition-colors cursor-pointer shadow-xs"
+                aria-label="Close dialog"
+                title="Close (Esc)"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4.5 h-4.5 text-zinc-700" />
               </button>
             </div>
 
@@ -3171,23 +3235,33 @@ export default function POSBilling() {
 
       {/* Catalog Modal */}
       {showCatalogModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-[#131317] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] border border-[#C5A059]/30 w-full max-w-md overflow-hidden transform animate-in zoom-in-95 duration-200">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          onClick={() => {
+            resetCatalogForm();
+            setEditingCatalogId(null);
+            setShowCatalogModal(false);
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(23,23,23,0.15)] border border-[#C5A059]/30 w-full max-w-md overflow-hidden transform animate-in zoom-in-95 duration-200"
+          >
             {/* Header */}
-            <div className="px-6 py-5 bg-[#181820] border-b border-[#C5A059]/25 flex justify-between items-center">
+            <div className="px-6 py-5 bg-[#FAF8F5] border-b border-[#C5A059]/25 flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[var(--accent)]/15 border border-[var(--accent)]/30 rounded-xl flex items-center justify-center text-[var(--accent)]">
+                <div className="w-10 h-10 bg-[#D4AF37]/15 border border-[#D4AF37]/30 rounded-xl flex items-center justify-center text-[#8A6815]">
                   <PackagePlus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base text-[#FAF7F2] tracking-tight">
+                  <h3 className="font-extrabold text-base text-[#171717] tracking-tight">
                     {editingCatalogId
                       ? "Edit Catalog Item"
                       : newCatType === "SERVICE"
                         ? "Add New Service"
                         : "Add New Product"}
                   </h3>
-                  <p className="text-[11px] text-[#B8B5AE] font-medium">
+                  <p className="text-[11px] text-zinc-500 font-medium">
                     {editingCatalogId
                       ? "Modify item parameters"
                       : newCatType === "SERVICE"
@@ -3197,22 +3271,25 @@ export default function POSBilling() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => {
                   resetCatalogForm();
                   setEditingCatalogId(null);
                   setShowCatalogModal(false);
                 }}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-[#FAF7F2] transition-colors cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 transition-colors cursor-pointer shadow-xs"
+                aria-label="Close dialog"
+                title="Close (Esc)"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4.5 h-4.5 text-zinc-700" />
               </button>
             </div>
 
             {/* Form Content */}
-            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto bg-[#131317]">
+            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto bg-white">
               {/* Product ⇄ Service switch */}
               <div>
-                <p className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                <p className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">
                   Item Type
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -3221,8 +3298,8 @@ export default function POSBilling() {
                     onClick={() => setNewCatType("PRODUCT")}
                     className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer border ${
                       newCatType === "PRODUCT"
-                        ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black border-[var(--accent)] shadow-sm"
-                        : "bg-[#181820] text-[#B8B5AE] border-[#C5A059]/25 hover:border-[var(--accent)]"
+                        ? "bg-[#D4AF37] text-[#171717] font-black border-[#C5A02E] shadow-sm"
+                        : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:border-[#D4AF37] hover:text-[#171717]"
                     }`}
                   >
                     <Package className="w-4 h-4" />
@@ -3233,8 +3310,8 @@ export default function POSBilling() {
                     onClick={() => setNewCatType("SERVICE")}
                     className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer border ${
                       newCatType === "SERVICE"
-                        ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black border-[var(--accent)] shadow-sm"
-                        : "bg-[#181820] text-[#B8B5AE] border-[#C5A059]/25 hover:border-[var(--accent)]"
+                        ? "bg-[#D4AF37] text-[#171717] font-black border-[#C5A02E] shadow-sm"
+                        : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:border-[#D4AF37] hover:text-[#171717]"
                     }`}
                   >
                     <Scissors className="w-4 h-4" />
@@ -3543,31 +3620,32 @@ export default function POSBilling() {
       )}
 
       {/* Collapsible Left Sidebar */}
+      {/* Collapsible Left Sidebar */}
       <aside
-        className={`fixed lg:sticky top-0 bottom-0 left-0 bg-[#0E0E12] border-r border-[#C5A059]/20 text-[#FAF7F2] flex flex-col justify-between h-screen shrink-0 shadow-2xl z-40 transition-all duration-300 ease-in-out ${isSidebarOpen ? "w-64 translate-x-0" : "w-0 min-w-0 border-r-0 -translate-x-64 overflow-hidden"}`}
+        className={`fixed lg:sticky top-0 bottom-0 left-0 bg-white border-r border-[#C5A059]/25 text-[#171717] flex flex-col justify-between h-screen shrink-0 shadow-lg z-40 transition-all duration-300 ease-in-out ${isSidebarOpen ? "w-64 translate-x-0" : "w-0 min-w-0 border-r-0 -translate-x-64 overflow-hidden"}`}
       >
         <div className="w-64 flex flex-col justify-between h-full shrink-0 overflow-hidden relative">
           <div className="flex flex-col">
             {/* Header branding */}
-            <div className="p-5 border-b border-[#C5A059]/15 flex items-center justify-between gap-3">
+            <div className="p-5 border-b border-[#C5A059]/20 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#08080A] rounded-xl flex items-center justify-center shadow-md overflow-hidden shrink-0 border border-[var(--accent)]/40 p-1">
+                <div className="w-10 h-10 aspect-square bg-white rounded-xl flex items-center justify-center shadow-xs overflow-hidden shrink-0 border border-[#D4AF37]/40 p-0.5">
                   <img
-                    src={shopSettings.logo_data_url || "/nidhulan-logo.png"}
+                    src={shopSettings.logo_data_url || "/nidulan-logo.jpeg"}
                     alt="Logo"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain rounded-lg"
                   />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-black text-sm tracking-tight text-[#FAF7F2] block leading-tight">
+                    <span className="font-black text-sm tracking-tight text-[#171717] block leading-tight">
                       {shopSettings.shop_name || "NIDHULAN"}
                     </span>
-                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded border border-amber-400 text-amber-400 bg-amber-400/10 tracking-widest">
+                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded border border-amber-600 text-amber-700 bg-amber-50 tracking-widest">
                       ADMIN
                     </span>
                   </div>
-                  <span className="text-[9px] text-[var(--accent)] font-bold tracking-wider block mt-0.5">
+                  <span className="text-[9px] text-[#A47B16] font-bold tracking-wider block mt-0.5">
                     {(!shopSettings.tagline || shopSettings.tagline === "POS & INVENTORY MANAGEMENT" || shopSettings.tagline === "Customer birthdays & retail POS")
                       ? "THE PRECIOUS PEARLS"
                       : shopSettings.tagline}
@@ -3578,7 +3656,7 @@ export default function POSBilling() {
               {/* Collapse Button Inside Sidebar */}
               <button
                 onClick={() => setIsSidebarOpen(false)}
-                className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center text-[#FAF7F2]/70 hover:text-[#FAF7F2] transition-all cursor-pointer border border-white/5"
+                className="w-7 h-7 rounded-lg bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-700 transition-all cursor-pointer border border-zinc-200"
                 title="Collapse Sidebar"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -3597,11 +3675,11 @@ export default function POSBilling() {
                 }}
                 className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                   activeTab === "billing"
-                    ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-[0_4px_16px_rgba(197,160,89,0.35)] border border-[#E5C378]"
-                    : "text-[#FAF7F2]/80 hover:bg-[#1A1A24] hover:text-[#FAF7F2] border border-transparent hover:border-[#C5A059]/30"
+                    ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                    : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
                 }`}
               >
-                <Receipt className={`w-4.5 h-4.5 shrink-0 ${activeTab === "billing" ? "text-[#0C0C0E]" : "text-[var(--accent)]"}`} />
+                <Receipt className={`w-4.5 h-4.5 shrink-0 ${activeTab === "billing" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                 Billing Panel
               </button>
 
@@ -3617,11 +3695,11 @@ export default function POSBilling() {
                   }}
                   className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                     activeTab === "inventory"
-                      ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-[0_4px_16px_rgba(197,160,89,0.35)] border border-[#E5C378]"
-                      : "text-[#FAF7F2]/80 hover:bg-[#1A1A24] hover:text-[#FAF7F2] border border-transparent hover:border-[#C5A059]/30"
+                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
                   }`}
                 >
-                  <Boxes className={`w-4.5 h-4.5 shrink-0 ${activeTab === "inventory" ? "text-[#0C0C0E]" : "text-[var(--accent)]"}`} />
+                  <Boxes className={`w-4.5 h-4.5 shrink-0 ${activeTab === "inventory" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                   Inventory &amp; Barcodes
                   {lowStockItems.length > 0 && (
                     <span className="ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full text-[10px] font-black flex items-center justify-center bg-[#DC2626] text-white">
@@ -3641,11 +3719,11 @@ export default function POSBilling() {
                 }}
                 className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer relative ${
                   activeTab === "advance"
-                    ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-[0_4px_16px_rgba(197,160,89,0.35)] border border-[#E5C378]"
-                    : "text-[#FAF7F2]/80 hover:bg-[#1A1A24] hover:text-[#FAF7F2] border border-transparent hover:border-[#C5A059]/30"
+                    ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                    : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
                 }`}
               >
-                <Clock className={`w-4.5 h-4.5 shrink-0 ${activeTab === "advance" ? "text-[#0C0C0E]" : "text-[var(--accent)]"}`} />
+                <Clock className={`w-4.5 h-4.5 shrink-0 ${activeTab === "advance" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                 Advance Orders
                 {advanceOrders.filter((a) => a.status === "PENDING" || a.status === "READY").length > 0 && (
                   <span className="ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full text-[10px] font-black flex items-center justify-center bg-[#D97706] text-white">
@@ -3654,7 +3732,7 @@ export default function POSBilling() {
                 )}
               </button>
 
-              {/* 4. Birthdays (Highlighted with gold border & dark selected bg) */}
+              {/* 4. Birthdays */}
               <button
                 onClick={() => {
                   setActiveTab("birthdays");
@@ -3664,11 +3742,11 @@ export default function POSBilling() {
                 }}
                 className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                   activeTab === "birthdays"
-                    ? "bg-[#16161D] text-[#FAF7F2] font-black border border-[#D97706] shadow-[0_0_14px_rgba(217,119,6,0.35)]"
-                    : "text-[#FAF7F2]/80 hover:bg-[#1A1A24] hover:text-[#FAF7F2] border border-transparent hover:border-[#C5A059]/30"
+                    ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                    : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
                 }`}
               >
-                <Gift className={`w-4.5 h-4.5 shrink-0 ${activeTab === "birthdays" ? "text-amber-400" : "text-[var(--accent)]"}`} />
+                <Gift className={`w-4.5 h-4.5 shrink-0 ${activeTab === "birthdays" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                 Birthdays
               </button>
 
@@ -3683,11 +3761,11 @@ export default function POSBilling() {
                   }}
                   className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                     activeTab === "expenses"
-                      ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-[0_4px_16px_rgba(197,160,89,0.35)] border border-[#E5C378]"
-                      : "text-[#FAF7F2]/80 hover:bg-[#1A1A24] hover:text-[#FAF7F2] border border-transparent hover:border-[#C5A059]/30"
+                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
                   }`}
                 >
-                  <Wallet className={`w-4.5 h-4.5 shrink-0 ${activeTab === "expenses" ? "text-[#0C0C0E]" : "text-[var(--accent)]"}`} />
+                  <Wallet className={`w-4.5 h-4.5 shrink-0 ${activeTab === "expenses" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                   Expenses
                 </button>
               )}
@@ -3702,11 +3780,11 @@ export default function POSBilling() {
                 }}
                 className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                   activeTab === "orders"
-                    ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-[0_4px_16px_rgba(197,160,89,0.35)] border border-[#E5C378]"
-                    : "text-[#FAF7F2]/80 hover:bg-[#1A1A24] hover:text-[#FAF7F2] border border-transparent hover:border-[#C5A059]/30"
+                    ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                    : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
                 }`}
               >
-                <History className={`w-4.5 h-4.5 shrink-0 ${activeTab === "orders" ? "text-[#0C0C0E]" : "text-[var(--accent)]"}`} />
+                <History className={`w-4.5 h-4.5 shrink-0 ${activeTab === "orders" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                 Order History
               </button>
 
@@ -3721,11 +3799,11 @@ export default function POSBilling() {
                   }}
                   className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                     activeTab === "analytics"
-                      ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-[0_4px_16px_rgba(197,160,89,0.35)] border border-[#E5C378]"
-                      : "text-[#FAF7F2]/80 hover:bg-[#1A1A24] hover:text-[#FAF7F2] border border-transparent hover:border-[#C5A059]/30"
+                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
                   }`}
                 >
-                  <BarChart2 className={`w-4.5 h-4.5 shrink-0 ${activeTab === "analytics" ? "text-[#0C0C0E]" : "text-[var(--accent)]"}`} />
+                  <BarChart2 className={`w-4.5 h-4.5 shrink-0 ${activeTab === "analytics" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                   Analytics Dashboard
                 </button>
               )}
@@ -3741,11 +3819,11 @@ export default function POSBilling() {
                   }}
                   className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                     activeTab === "coupons"
-                      ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-[0_4px_16px_rgba(197,160,89,0.35)] border border-[#E5C378]"
-                      : "text-[#FAF7F2]/80 hover:bg-[#1A1A24] hover:text-[#FAF7F2] border border-transparent hover:border-[#C5A059]/30"
+                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
                   }`}
                 >
-                  <Tag className={`w-4.5 h-4.5 shrink-0 ${activeTab === "coupons" ? "text-[#0C0C0E]" : "text-[var(--accent)]"}`} />
+                  <Tag className={`w-4.5 h-4.5 shrink-0 ${activeTab === "coupons" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                   Coupons
                 </button>
               )}
@@ -3761,11 +3839,11 @@ export default function POSBilling() {
                   }}
                   className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                     activeTab === "attendance"
-                      ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-[0_4px_16px_rgba(197,160,89,0.35)] border border-[#E5C378]"
-                      : "text-[#FAF7F2]/80 hover:bg-[#1A1A24] hover:text-[#FAF7F2] border border-transparent hover:border-[#C5A059]/30"
+                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
                   }`}
                 >
-                  <UserCheck className={`w-4.5 h-4.5 shrink-0 ${activeTab === "attendance" ? "text-[#0C0C0E]" : "text-[var(--accent)]"}`} />
+                  <UserCheck className={`w-4.5 h-4.5 shrink-0 ${activeTab === "attendance" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                   Attendance
                 </button>
               )}
@@ -3781,11 +3859,11 @@ export default function POSBilling() {
                   }}
                   className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                     activeTab === "settings"
-                      ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-[0_4px_16px_rgba(197,160,89,0.35)] border border-[#E5C378]"
-                      : "text-[#FAF7F2]/80 hover:bg-[#1A1A24] hover:text-[#FAF7F2] border border-transparent hover:border-[#C5A059]/30"
+                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
                   }`}
                 >
-                  <Settings2 className={`w-4.5 h-4.5 shrink-0 ${activeTab === "settings" ? "text-[#0C0C0E]" : "text-[var(--accent)]"}`} />
+                  <Settings2 className={`w-4.5 h-4.5 shrink-0 ${activeTab === "settings" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                   Settings
                 </button>
               )}
@@ -3793,9 +3871,9 @@ export default function POSBilling() {
               <div className="pt-4 border-t border-[#C5A059]/20 mt-4">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-[#FAF7F2] bg-[#16161D] hover:bg-[#20202A] hover:shadow-md border border-[#C5A059]/30 hover:border-[var(--accent)] transition-all cursor-pointer"
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-[#171717] bg-[#F3F4F6] hover:bg-[#E5E7EB] hover:shadow-xs border border-zinc-300 hover:border-[#D4AF37] transition-all cursor-pointer"
                 >
-                  <LogOut className="w-4.5 h-4.5 text-[var(--accent)]" />
+                  <LogOut className="w-4.5 h-4.5 text-[#8A6815]" />
                   Log Out
                 </button>
               </div>
@@ -3803,15 +3881,15 @@ export default function POSBilling() {
           </div>
 
           {/* Footer branding */}
-          <div className="p-4 border-t border-[#C5A059]/20 bg-[#0A0A0D] flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 border border-[var(--accent)]/40 flex items-center justify-center text-[var(--accent)] font-black text-xs uppercase">
+          <div className="p-4 border-t border-[#C5A059]/20 bg-[#F9FAFB] flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center text-[#8A6815] font-black text-xs uppercase">
               {role === "admin" ? "A" : "S"}
             </div>
             <div>
-              <span className="text-xs font-bold text-[#FAF7F2] block uppercase tracking-wider">
+              <span className="text-xs font-bold text-[#171717] block uppercase tracking-wider">
                 {role === "admin" ? "Admin Access" : "Staff Access"}
               </span>
-              <span className="text-[9px] text-[var(--accent)] font-bold tracking-wider block">
+              <span className="text-[9px] text-[#A47B16] font-bold tracking-wider block">
                 NIDHULAN • TERMINAL
               </span>
             </div>
@@ -3830,21 +3908,21 @@ export default function POSBilling() {
             {!isSidebarOpen && (
               <button
                 onClick={() => setIsSidebarOpen(true)}
-                className="w-9 h-9 bg-[#16161D] border border-[#C5A059]/30 hover:border-[var(--accent)] hover:bg-[#202028] rounded-lg flex items-center justify-center transition-all shadow-sm cursor-pointer shrink-0"
+                className="w-9 h-9 bg-white border border-[#C5A059]/30 hover:border-[#D4AF37] hover:bg-[#FAF8F2] rounded-lg flex items-center justify-center transition-all shadow-xs cursor-pointer shrink-0"
                 title="Open Menu"
               >
-                <Menu className="w-4.5 h-4.5 text-[var(--accent)]" />
+                <Menu className="w-4.5 h-4.5 text-[#8A6815]" />
               </button>
             )}
-            <div className="w-12 h-9 bg-[#08080A] rounded-lg border border-[var(--accent)]/40 p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+            <div className="w-10 h-10 aspect-square bg-white rounded-xl border border-[#D4AF37]/40 p-0.5 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
               <img
-                src={shopSettings.logo_data_url || "/nidhulan-logo.png"}
+                src={shopSettings.logo_data_url || "/nidulan-logo.jpeg"}
                 alt={shopSettings.shop_name}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain rounded-lg"
               />
             </div>
             <div>
-              <h1 className="text-lg font-black text-[#FAF7F2] tracking-tight">
+              <h1 className="text-lg font-black text-[#171717] tracking-tight">
                 {shopSettings.shop_name}
               </h1>
             </div>
@@ -3852,27 +3930,27 @@ export default function POSBilling() {
 
           {/* OFFLINE / ONLINE Toggle (only shown when billing tab is active) */}
           {activeTab === "billing" && (
-            <div className="flex items-center bg-[#131317] border border-[#C5A059]/30 rounded-full p-1 shadow-sm">
+            <div className="flex items-center bg-[#F3F4F6] border border-[#C5A059]/30 rounded-full p-1 shadow-xs">
               <button
                 onClick={() => setIsOnline(false)}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all uppercase cursor-pointer ${
                   !isOnline
-                    ? "bg-[#252530] text-[#FAF7F2] border border-[#C5A059]/40 shadow-sm"
-                    : "text-[#FAF7F2]/60 hover:text-[#FAF7F2]"
+                    ? "bg-white text-[#171717] border border-[#C5A059]/40 shadow-xs"
+                    : "text-zinc-600 hover:text-[#171717]"
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-[var(--accent)]"></span>
+                <span className="w-2 h-2 rounded-full bg-[#D4AF37]"></span>
                 OFFLINE (POS)
               </button>
               <button
                 onClick={() => setIsOnline(true)}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all uppercase cursor-pointer ${
                   isOnline
-                    ? "bg-[#059669] text-white shadow-sm"
-                    : "text-[#FAF7F2]/60 hover:text-[#FAF7F2]"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-zinc-600 hover:text-[#171717]"
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-[#34D399]"></span>
+                <span className="w-2 h-2 rounded-full bg-white"></span>
                 ONLINE ORDER
               </button>
             </div>
@@ -3882,8 +3960,14 @@ export default function POSBilling() {
 
         {/* Bill Generated — shown as a modal over the billing screen (not a new page) */}
         {completedBillData && (
-          <div className="fixed inset-0 z-[390] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="flex flex-col gap-4 w-full max-w-[640px] min-w-0 bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl p-4 sm:p-5 max-h-[94vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+          <div
+            className="fixed inset-0 z-[390] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setCompletedBillData(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex flex-col gap-4 w-full max-w-[640px] min-w-0 bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl p-4 sm:p-5 max-h-[94vh] overflow-y-auto animate-in zoom-in-95 duration-200"
+            >
               {/* Header Bar */}
               <div className="flex justify-between items-center pb-2 border-b border-[#C5A059]/25">
                 <div>
@@ -3901,13 +3985,24 @@ export default function POSBilling() {
                     #{completedBillData.id}
                   </p>
                 </div>
-                <button
-                  onClick={() => setCompletedBillData(null)}
-                  className="bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] hover:brightness-110 px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  New Sale
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCompletedBillData(null)}
+                    className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                    aria-label="Close bill"
+                    title="Close (Esc)"
+                  >
+                    <X className="w-4.5 h-4.5 text-zinc-700" />
+                  </button>
+                  <button
+                    onClick={() => setCompletedBillData(null)}
+                    className="bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] hover:brightness-110 px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    New Sale
+                  </button>
+                </div>
               </div>
 
               {/* Payment Receipt Card */}
@@ -4062,8 +4157,17 @@ export default function POSBilling() {
 
         {/* ── Advance Order created — shareable receipt modal ─────── */}
         {advanceReceipt && (
-          <div className="fixed inset-0 z-[395] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="flex flex-col gap-4 w-full max-w-[520px] min-w-0 bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl p-4 sm:p-5 max-h-[94vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+          <div
+            className="fixed inset-0 z-[395] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => {
+              setAdvanceReceipt(null);
+              setActiveTab("advance");
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex flex-col gap-4 w-full max-w-[520px] min-w-0 bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl p-4 sm:p-5 max-h-[94vh] overflow-y-auto animate-in zoom-in-95 duration-200"
+            >
               <div className="flex justify-between items-center pb-2 border-b border-[#C5A059]/25">
                 <div>
                   <div className="flex items-center gap-2">
@@ -4078,16 +4182,30 @@ export default function POSBilling() {
                     #{advanceReceipt.id}
                   </p>
                 </div>
-                <button
-                  onClick={() => {
-                    setAdvanceReceipt(null);
-                    setActiveTab("advance");
-                  }}
-                  className="bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] hover:brightness-110 px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  New Sale
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdvanceReceipt(null);
+                      setActiveTab("advance");
+                    }}
+                    className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                    aria-label="Close receipt"
+                    title="Close (Esc)"
+                  >
+                    <X className="w-4.5 h-4.5 text-zinc-700" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAdvanceReceipt(null);
+                      setActiveTab("advance");
+                    }}
+                    className="bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] hover:brightness-110 px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    New Sale
+                  </button>
+                </div>
               </div>
 
               {/* Deposit Receipt Card */}
@@ -4775,34 +4893,42 @@ export default function POSBilling() {
                             </button>
                           </div>
                           {applyGST && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-xs font-bold text-[#FAF7F2] uppercase tracking-wider">
-                                GST <span className="text-[9px] font-bold text-[var(--accent)]">(+ added)</span>
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1">
-                                  <input
-                                    type="number"
-                                    className="w-14 text-right bg-[#181820] border border-[#C5A059]/30 rounded-lg px-2 py-1 text-xs font-bold text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    value={gstPercentage || ""}
-                                    onChange={(e) =>
-                                      setGstPercentage(
-                                        parseFloat(e.target.value) || 0,
-                                      )
-                                    }
-                                    placeholder="%"
-                                  />
-                                  <span className="text-xs font-bold text-[#FAF7F2]">
-                                    %
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-[#FAF7F2] uppercase tracking-wider">
+                                  GST <span className="text-[9px] font-bold text-[var(--accent)]">(+ added)</span>
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      className="w-14 text-right bg-[#181820] border border-[#C5A059]/30 rounded-lg px-2 py-1 text-xs font-bold text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                      value={gstPercentage || ""}
+                                      onChange={(e) =>
+                                        setGstPercentage(
+                                          parseFloat(e.target.value) || 0,
+                                        )
+                                      }
+                                      placeholder="%"
+                                    />
+                                    <span className="text-xs font-bold text-[#FAF7F2]">
+                                      %
+                                    </span>
+                                  </div>
+                                  <span className="text-xs font-bold text-[var(--accent)] w-20 text-right">
+                                    ₹
+                                    {gstAmount.toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                    })}
                                   </span>
                                 </div>
-                                <span className="text-xs font-bold text-[var(--accent)] w-20 text-right">
-                                  ₹
-                                  {gstAmount.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                  })}
-                                </span>
                               </div>
+                              {gstAmount > 0 && (
+                                <div className="flex justify-between text-[10px] font-semibold text-[#B8B5AE] pt-0.5">
+                                  <span>CGST ({(gstPercentage / 2).toFixed(1).replace(/\.0$/, "")}%): ₹{(gstAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                  <span>SGST ({(gstPercentage / 2).toFixed(1).replace(/\.0$/, "")}%): ₹{(gstAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -5003,15 +5129,27 @@ export default function POSBilling() {
 
         {/* ── Save-as-Advance modal (opens from billing) ─────────── */}
         {showAdvanceSaveModal && (
-          <div className="fixed inset-0 z-[400] flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl w-full max-w-md p-5 animate-in zoom-in-95 duration-200">
+          <div
+            className="fixed inset-0 z-[400] flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setShowAdvanceSaveModal(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl w-full max-w-md p-5 animate-in zoom-in-95 duration-200"
+            >
               <div className="flex justify-between items-center pb-3 border-b border-[#C5A059]/25">
                 <div>
                   <h3 className="text-lg font-black text-[#FAF7F2] tracking-tight">Save as Advance Order</h3>
                   <p className="text-[10px] font-bold text-[#C5A059] mt-0.5 uppercase tracking-wider">Not counted as revenue until fully paid</p>
                 </div>
-                <button onClick={() => setShowAdvanceSaveModal(false)} className="text-[#FAF7F2] hover:bg-white/10 w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer">
-                  <X className="w-4 h-4" />
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanceSaveModal(false)}
+                  className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                  aria-label="Close dialog"
+                  title="Close (Esc)"
+                >
+                  <X className="w-4.5 h-4.5 text-zinc-700" />
                 </button>
               </div>
 
@@ -5078,15 +5216,24 @@ export default function POSBilling() {
                   />
                 </div>
 
-                <button
-                  onClick={saveAdvanceOrder}
-                  disabled={isSavingAdvance}
-                  className={`w-full py-3 rounded-lg font-black text-[11px] uppercase tracking-[0.1em] flex items-center justify-center gap-2 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] hover:brightness-110 shadow-md transition-all ${
-                    isSavingAdvance ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-                  }`}
-                >
-                  {isSavingAdvance ? (<><Loader2 className="w-4 h-4 animate-spin" /><span>Saving...</span></>) : (<><Clock className="w-4 h-4" /><span>Confirm Advance Order</span></>)}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanceSaveModal(false)}
+                    className="w-1/3 py-3 rounded-lg font-bold text-[11px] uppercase tracking-wider border border-zinc-300 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveAdvanceOrder}
+                    disabled={isSavingAdvance}
+                    className={`flex-1 py-3 rounded-lg font-black text-[11px] uppercase tracking-[0.1em] flex items-center justify-center gap-2 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] hover:brightness-110 shadow-md transition-all ${
+                      isSavingAdvance ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                    }`}
+                  >
+                    {isSavingAdvance ? (<><Loader2 className="w-4 h-4 animate-spin" /><span>Saving...</span></>) : (<><Clock className="w-4 h-4" /><span>Confirm Advance Order</span></>)}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -5094,8 +5241,14 @@ export default function POSBilling() {
 
         {/* ── Advance Order VIEW / RECEIVE-BALANCE dialog ────────── */}
         {selectedAdvance && advanceViewMode && (
-          <div className="fixed inset-0 z-[400] flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl w-full max-w-lg p-5 max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+          <div
+            className="fixed inset-0 z-[400] flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={closeAdvanceDialog}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl w-full max-w-lg p-5 max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-200"
+            >
               <div className="flex justify-between items-center pb-3 border-b border-[#C5A059]/25">
                 <div>
                   <p className="text-[11px] font-mono font-bold text-[var(--accent)]">{selectedAdvance.id}</p>
@@ -5103,8 +5256,14 @@ export default function POSBilling() {
                     {advanceViewMode === "receive" ? "Receive Remaining Payment" : "Advance Order Details"}
                   </h3>
                 </div>
-                <button onClick={closeAdvanceDialog} className="text-[#FAF7F2] hover:bg-white/10 w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer">
-                  <X className="w-4 h-4" />
+                <button
+                  type="button"
+                  onClick={closeAdvanceDialog}
+                  className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                  aria-label="Close dialog"
+                  title="Close (Esc)"
+                >
+                  <X className="w-4.5 h-4.5 text-zinc-700" />
                 </button>
               </div>
 
@@ -5151,10 +5310,16 @@ export default function POSBilling() {
                         </div>
                       )}
                       {c.gstAmount > 0 && (
-                        <div className="flex justify-between">
-                          <span className="font-semibold text-[#B8B5AE]">GST ({c.gstPercentage}%)</span>
-                          <span className="font-bold text-[#FAF7F2]">+ ₹{money(c.gstAmount)}</span>
-                        </div>
+                        <>
+                          <div className="flex justify-between">
+                            <span className="font-semibold text-[#B8B5AE]">CGST ({(c.gstPercentage / 2).toFixed(1).replace(/\.0$/, "")}%)</span>
+                            <span className="font-bold text-[#FAF7F2]">+ ₹{money(c.gstAmount / 2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="font-semibold text-[#B8B5AE]">SGST ({(c.gstPercentage / 2).toFixed(1).replace(/\.0$/, "")}%)</span>
+                            <span className="font-bold text-[#FAF7F2]">+ ₹{money(c.gstAmount / 2)}</span>
+                          </div>
+                        </>
                       )}
                       {c.deliveryFee > 0 && (
                         <div className="flex justify-between">
@@ -5192,33 +5357,44 @@ export default function POSBilling() {
 
                 {/* Print / Share the advance receipt (view mode) */}
                 {advanceViewMode === "view" && (
-                  <div className="pt-3 border-t border-[#C5A059]/20 grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => printAdvanceReceipt(selectedAdvance.id)}
-                      className="bg-[#181820] border border-[#C5A059]/25 hover:bg-[#252532] text-[#FAF7F2] py-2.5 px-3 rounded-lg font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Printer className="w-3.5 h-3.5 text-[var(--accent)]" />
-                      Print Receipt
-                    </button>
-                    <button
-                      onClick={() =>
-                        shareAdvanceReceiptWhatsApp({
-                          id: selectedAdvance.id,
-                          customerName: selectedAdvance.customer_name || "Guest",
-                          customerPhone: selectedAdvance.customer_phone,
-                          total: Number(selectedAdvance.total_amount) || 0,
-                          deposit: Number(selectedAdvance.deposit_amount) || 0,
-                          balance: balanceRemaining(selectedAdvance),
-                        })
-                      }
-                      className="bg-[#10B981] hover:bg-[#059669] text-white py-2.5 px-3 rounded-lg font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.012c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
+                  <div className="pt-3 border-t border-[#C5A059]/20 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => printAdvanceReceipt(selectedAdvance.id)}
+                        className="bg-[#181820] border border-[#C5A059]/25 hover:bg-[#252532] text-[#FAF7F2] py-2.5 px-3 rounded-lg font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-[var(--accent)]" />
+                        Print Receipt
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          shareAdvanceReceiptWhatsApp({
+                            id: selectedAdvance.id,
+                            customerName: selectedAdvance.customer_name || "Guest",
+                            customerPhone: selectedAdvance.customer_phone,
+                            total: Number(selectedAdvance.total_amount) || 0,
+                            deposit: Number(selectedAdvance.deposit_amount) || 0,
+                            balance: balanceRemaining(selectedAdvance),
+                          })
+                        }
+                        className="bg-[#10B981] hover:bg-[#059669] text-white py-2.5 px-3 rounded-lg font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.012c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
                       </svg>
                       Share Receipt
                     </button>
                   </div>
+                  <button
+                    type="button"
+                    onClick={closeAdvanceDialog}
+                    className="w-full py-2.5 rounded-xl border border-zinc-300 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    Close Window
+                  </button>
+                </div>
                 )}
 
                 {/* Receive-payment specific fields */}
@@ -5272,15 +5448,24 @@ export default function POSBilling() {
                       Confirmation marks the order Completed, creates one official invoice, and recognizes the full ₹{Number(selectedAdvance.total_amount - receiveBalanceDiscountAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })} as revenue.
                     </p>
 
-                    <button
-                      onClick={confirmReceiveBalance}
-                      disabled={isFinalizing}
-                      className={`w-full py-3 rounded-lg font-black text-[11px] uppercase tracking-[0.1em] flex items-center justify-center gap-2 bg-[#10B981] hover:bg-[#059669] text-white shadow-md transition-all ${
-                        isFinalizing ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-                      }`}
-                    >
-                      {isFinalizing ? (<><Loader2 className="w-4 h-4 animate-spin" /><span>Finalizing...</span></>) : (<><Check className="w-4 h-4" /><span>Confirm Final Payment</span></>)}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={closeAdvanceDialog}
+                        className="w-1/3 py-3 rounded-lg font-bold text-[11px] uppercase tracking-wider border border-zinc-300 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={confirmReceiveBalance}
+                        disabled={isFinalizing}
+                        className={`flex-1 py-3 rounded-lg font-black text-[11px] uppercase tracking-[0.1em] flex items-center justify-center gap-2 bg-[#10B981] hover:bg-[#059669] text-white shadow-md transition-all ${
+                          isFinalizing ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                        }`}
+                      >
+                        {isFinalizing ? (<><Loader2 className="w-4 h-4 animate-spin" /><span>Finalizing...</span></>) : (<><Check className="w-4 h-4" /><span>Confirm Final Payment</span></>)}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -7337,14 +7522,14 @@ export default function POSBilling() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE]">
                     Entries
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-[#C5A059]/15 flex items-center justify-center">
-                    <Receipt className="w-4 h-4 text-[#C5A059]" />
+                  <div className="w-8 h-8 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 flex items-center justify-center">
+                    <Receipt className="w-4 h-4 text-[#8A6815]" />
                   </div>
                 </div>
-                <div className="text-2xl font-black text-[#FAF7F2]">
+                <div className="text-2xl font-black text-black">
                   {expenseStats.count}
                 </div>
-                <div className="text-[9px] text-[#B8B5AE] font-semibold mt-1">
+                <div className="text-[9px] text-zinc-500 font-semibold mt-1">
                   Expenses recorded
                 </div>
               </div>
@@ -7353,14 +7538,14 @@ export default function POSBilling() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE]">
                     Top Category
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-[#C5A059]/15 flex items-center justify-center">
-                    <Tag className="w-4 h-4 text-[#C5A059]" />
+                  <div className="w-8 h-8 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 flex items-center justify-center">
+                    <Tag className="w-4 h-4 text-[#8A6815]" />
                   </div>
                 </div>
-                <div className="text-lg font-black text-[#FAF7F2] truncate">
+                <div className="text-lg font-black text-black truncate">
                   {expenseStats.topCategory}
                 </div>
-                <div className="text-[9px] text-[#B8B5AE] font-semibold mt-1">
+                <div className="text-[9px] text-zinc-500 font-semibold mt-1">
                   Highest spend
                 </div>
               </div>
@@ -7537,24 +7722,24 @@ export default function POSBilling() {
                       return (
                         <div key={row.category}>
                           <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs font-bold text-[#FAF7F2] flex items-center gap-1.5">
-                              <Tag className="w-3 h-3 text-[#C5A059]" />
+                            <span className="text-xs font-bold text-black flex items-center gap-1.5">
+                              <Tag className="w-3 h-3 text-[#8A6815]" />
                               {row.category}
                             </span>
-                            <span className="text-xs font-black text-[#FAF7F2]">
+                            <span className="text-xs font-black text-black">
                               ₹
                               {row.amount.toLocaleString("en-IN", {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}
-                              <span className="text-[10px] font-bold text-[#B8B5AE] ml-1.5">
+                              <span className="text-[10px] font-bold text-zinc-500 ml-1.5">
                                 {pct.toFixed(0)}%
                               </span>
                             </span>
                           </div>
-                          <div className="h-2.5 bg-[#181820] rounded-full overflow-hidden border border-white/5">
+                          <div className="h-2.5 bg-zinc-100 rounded-full overflow-hidden border border-zinc-200">
                             <div
-                              className="h-full bg-[var(--accent)] rounded-full transition-all duration-700"
+                              className="h-full bg-gradient-to-r from-[var(--accent)] to-[#D4AF37] rounded-full transition-all duration-700"
                               style={{ width: `${(row.amount / max) * 100}%` }}
                             />
                           </div>
@@ -7569,31 +7754,31 @@ export default function POSBilling() {
             {/* Expenses list */}
             <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl shadow-sm overflow-hidden">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 border-b border-[#C5A059]/20">
-                <h3 className="text-sm font-black text-[#FAF7F2] uppercase tracking-wider flex items-center gap-2">
-                  <List className="w-4 h-4 text-[var(--accent)]" />
+                <h3 className="text-sm font-black text-black uppercase tracking-wider flex items-center gap-2">
+                  <List className="w-4 h-4 text-[#8A6815]" />
                   Expense Log
                 </h3>
                 <div className="flex flex-wrap items-center gap-2">
                   <select
                     value={expenseCategoryFilter}
                     onChange={(e) => setExpenseCategoryFilter(e.target.value)}
-                    className="bg-[#181820] border border-[#C5A059]/30 rounded-lg px-3 py-2 text-xs font-bold text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
+                    className="bg-white border border-[#C5A059]/30 rounded-lg px-3 py-2 text-xs font-bold text-black focus:outline-none focus:border-[var(--accent)] cursor-pointer shadow-xs"
                   >
-                    <option value="ALL" className="bg-[#181820] text-[#FAF7F2]">All categories</option>
+                    <option value="ALL" className="bg-white text-black">All categories</option>
                     {expenseStats.allCategories.map((c) => (
-                      <option key={c} value={c} className="bg-[#181820] text-[#FAF7F2]">
+                      <option key={c} value={c} className="bg-white text-black">
                         {c}
                       </option>
                     ))}
                   </select>
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-[#C5A059] absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-3.5 h-3.5 text-[#8A6815] absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       value={expenseSearch}
                       onChange={(e) => setExpenseSearch(e.target.value)}
                       placeholder="Search expenses…"
-                      className="bg-[#181820] border border-[#C5A059]/30 rounded-lg pl-8 pr-3 py-2 text-xs text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)] placeholder:text-[#B8B5AE] w-44"
+                      className="bg-white border border-[#C5A059]/30 rounded-lg pl-8 pr-3 py-2 text-xs text-black focus:outline-none focus:border-[var(--accent)] placeholder:text-zinc-400 w-44 shadow-xs"
                     />
                   </div>
                 </div>
@@ -7640,9 +7825,9 @@ export default function POSBilling() {
                       {expenseStats.filtered.map((e) => (
                         <tr
                           key={e.id}
-                          className="border-b border-white/5 hover:bg-white/[0.03] transition-colors"
+                          className="border-b border-zinc-200/80 hover:bg-[#FAF8F5] transition-colors"
                         >
-                          <td className="p-3 text-xs font-semibold text-[#FAF7F2] whitespace-nowrap">
+                          <td className="p-3 text-xs font-semibold text-black whitespace-nowrap">
                             {new Date(e.expense_date).toLocaleDateString("en-IN", {
                               day: "2-digit",
                               month: "short",
@@ -7650,28 +7835,28 @@ export default function POSBilling() {
                             })}
                           </td>
                           <td className="p-3">
-                            <p className="text-sm font-bold text-[#FAF7F2]">
+                            <p className="text-sm font-bold text-black">
                               {e.title}
                             </p>
                             {e.notes && (
-                              <p className="text-[10px] text-[#B8B5AE] font-semibold mt-0.5">
+                              <p className="text-[10px] text-zinc-500 font-semibold mt-0.5">
                                 {e.notes}
                               </p>
                             )}
                           </td>
                           <td className="p-3">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FAF7F2] bg-white/5 border border-[#C5A059]/30 px-2 py-1 rounded-full uppercase tracking-wider">
-                              <Tag className="w-2.5 h-2.5" />
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-black bg-[#FAF8F5] border border-[#C5A059]/40 px-2.5 py-1 rounded-full uppercase tracking-wider shadow-xs">
+                              <Tag className="w-3 h-3 text-[#8A6815]" />
                               {e.category}
                             </span>
                           </td>
                           <td className="p-3">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#B8B5AE]">
-                              <Banknote className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-zinc-700">
+                              <Banknote className="w-3 h-3 text-zinc-500" />
                               {e.payment_mode}
                             </span>
                           </td>
-                          <td className="p-3 text-right text-sm font-black text-[#EF4444] whitespace-nowrap">
+                          <td className="p-3 text-right text-sm font-black text-[#DC2626] whitespace-nowrap">
                             − ₹
                             {e.amount.toLocaleString("en-IN", {
                               minimumFractionDigits: 2,
@@ -8104,8 +8289,14 @@ export default function POSBilling() {
 
         {/* Order Details Modal */}
         {selectedOrder && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-            <div className="bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-xs p-4"
+            onClick={() => setSelectedOrder(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
               {/* Modal Header */}
               <div className="p-6 border-b border-[#C5A059]/20 flex justify-between items-center bg-[#181820]">
                 <div>
@@ -8117,10 +8308,13 @@ export default function POSBilling() {
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSelectedOrder(null)}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors group cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                  aria-label="Close dialog"
+                  title="Close (Esc)"
                 >
-                  <X className="w-5 h-5 text-[#B8B5AE] group-hover:text-[#FAF7F2] transition-colors" />
+                  <X className="w-4.5 h-4.5 text-zinc-700" />
                 </button>
               </div>
 
@@ -8230,14 +8424,24 @@ export default function POSBilling() {
                     </div>
                   )}
                   {(selectedOrder.gstAmount ?? 0) > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#B8B5AE] font-semibold">
-                        GST ({selectedOrder.gstPercentage ?? 0}%)
-                      </span>
-                      <span className="text-[#FAF7F2] font-bold">
-                        ₹{(selectedOrder.gstAmount ?? 0).toLocaleString()}
-                      </span>
-                    </div>
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#B8B5AE] font-semibold">
+                          CGST ({((selectedOrder.gstPercentage ?? 0) / 2).toFixed(1).replace(/\.0$/, "")}%)
+                        </span>
+                        <span className="text-[#FAF7F2] font-bold">
+                          ₹{((selectedOrder.gstAmount ?? 0) / 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#B8B5AE] font-semibold">
+                          SGST ({((selectedOrder.gstPercentage ?? 0) / 2).toFixed(1).replace(/\.0$/, "")}%)
+                        </span>
+                        <span className="text-[#FAF7F2] font-bold">
+                          ₹{((selectedOrder.gstAmount ?? 0) / 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </>
                   )}
                   {selectedOrder.deliveryFee > 0 && (
                     <div className="flex justify-between text-sm">
@@ -8259,6 +8463,17 @@ export default function POSBilling() {
                   </div>
                 </div>
               </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 bg-[#181820] border-t border-[#C5A059]/20 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setSelectedOrder(null)}
+                  className="px-5 py-2.5 rounded-xl border border-zinc-300 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
+                >
+                  Close Window
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -8274,8 +8489,14 @@ export default function POSBilling() {
             setActiveAdvanceBillId(null);
           };
           return (
-          <div className="fixed inset-0 bg-black/75 backdrop-blur-xs z-[400] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150">
-            <div className="bg-[#131317] rounded-xl shadow-2xl w-full max-w-4xl h-[92vh] sm:h-[88vh] flex flex-col overflow-hidden border border-[#C5A059]/30 transform scale-100 animate-in zoom-in-95 duration-150">
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-xs z-[400] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
+            onClick={closePreview}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#131317] rounded-xl shadow-2xl w-full max-w-4xl h-[92vh] sm:h-[88vh] flex flex-col overflow-hidden border border-[#C5A059]/30 transform scale-100 animate-in zoom-in-95 duration-150"
+            >
               <div className="px-4 py-2.5 flex justify-between items-center bg-[#0A0A0C] text-[#FAF7F2] border-b border-[#C5A059]/20 shrink-0">
                 <h3 className="font-bold text-xs uppercase tracking-wider flex items-center gap-2 text-[#FAF7F2]">
                   <Printer className="w-3.5 h-3.5 text-[var(--accent)]" />
@@ -8291,10 +8512,13 @@ export default function POSBilling() {
                     Open Full Page ↗
                   </a>
                   <button
+                    type="button"
                     onClick={closePreview}
-                    className="w-7 h-7 flex items-center justify-center bg-[#181820] hover:bg-[#22222c] text-[#FAF7F2] border border-[#C5A059]/30 rounded transition-colors cursor-pointer"
+                    className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                    aria-label="Close preview"
+                    title="Close (Esc)"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4.5 h-4.5 text-zinc-700" />
                   </button>
                 </div>
               </div>
@@ -8312,18 +8536,27 @@ export default function POSBilling() {
 
         {/* Print Settings Modal */}
         {printModalData && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-[500] flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform scale-100 animate-in zoom-in-95 duration-200">
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-xs z-[500] flex items-center justify-center p-4 animate-in fade-in duration-200"
+            onClick={() => setPrintModalData(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform scale-100 animate-in zoom-in-95 duration-200"
+            >
               <div className="bg-[#181820] px-5 py-4 flex items-center justify-between border-b border-[#C5A059]/20">
                 <h3 className="font-bold text-[#FAF7F2] text-sm uppercase tracking-wider flex items-center gap-2">
                   <Printer className="w-4 h-4 text-[var(--accent)]" />
                   Print Settings
                 </h3>
                 <button
+                  type="button"
                   onClick={() => setPrintModalData(null)}
-                  className="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 text-[#FAF7F2] rounded transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                  aria-label="Close dialog"
+                  title="Close (Esc)"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4.5 h-4.5 text-zinc-700" />
                 </button>
               </div>
               <div className="p-6 space-y-6">

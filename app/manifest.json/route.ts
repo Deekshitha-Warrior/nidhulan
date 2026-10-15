@@ -23,7 +23,7 @@ export async function GET() {
     description: `${shop.shop_name} Point of Sale, Billing & Inventory Management`,
     start_url: "/pos",
     display: "standalone",
-    background_color: "#0C0C0E",
+    background_color: "#FFFFFF",
     theme_color: normalizeHex(shop.accent_color) || DEFAULT_ACCENT,
     orientation: "any",
     scope: "/",

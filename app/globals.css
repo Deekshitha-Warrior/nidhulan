@@ -33,218 +33,31 @@
 
 body {
   font-family: var(--font-poppins), system-ui, -apple-system, "Segoe UI", sans-serif;
-  background-color: #0A0A0C;
-  color: #FAF7F2;
-}
-
-/* NIDHULAN POS chrome: matte black navigation with champagne-gold accents. */
-.pos-dashboard {
-  background-color: #0A0A0C !important;
-  color: #FAF7F2 !important;
-  --accent-strong: #E5C378 !important;
-}
-
-/* Cards & Panels (excluding printable invoice sheets) */
-.pos-dashboard div.bg-white:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard div.bg-\[\#FFFFFF\]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard div.bg-\[\#FAFAFA\]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard div.bg-zinc-50:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard div.bg-gray-50:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class~="bg-white"]:not(.invoice-sheet, .invoice-sheet *, [class*="bg-white/"], [class*="from-"], [class*="bg-gradient-"], button, span, svg),
-.pos-dashboard [class~="bg-[#FFFFFF]"]:not(.invoice-sheet, .invoice-sheet *, [class*="bg-[#FFFFFF]/"], button, span) {
-  background-color: #131317 !important;
-  color: #FAF7F2 !important;
-  border-color: rgba(197, 160, 89, 0.22) !important;
-}
-
-/* Semi-transparent Cards & Table Ledgers */
-.pos-dashboard div:where(.bg-\[\#FFFFFF\]\/40, .bg-\[\#FFFFFF\]\/60, .bg-\[\#FFFFFF\]\/80, .bg-white\/60, .bg-white\/80, .bg-\[\#F4F4F5\]):not(.invoice-sheet, .invoice-sheet *) {
-  background-color: #181820 !important;
-  color: #FAF7F2 !important;
-  border-color: rgba(197, 160, 89, 0.22) !important;
-}
-
-/* Form Inputs, Selects, and Textareas */
-.pos-dashboard input:not([type="checkbox"]):not([type="radio"]):not(.invoice-sheet *),
-.pos-dashboard select:not(.invoice-sheet *),
-.pos-dashboard textarea:not(.invoice-sheet *) {
-  background-color: #181820 !important;
-  color: #FAF7F2 !important;
-  border-color: rgba(197, 160, 89, 0.28) !important;
-}
-
-.pos-dashboard input:focus:not(.invoice-sheet *),
-.pos-dashboard select:focus:not(.invoice-sheet *),
-.pos-dashboard textarea:focus:not(.invoice-sheet *) {
-  border-color: var(--accent) !important;
-  background-color: #1F1F28 !important;
-  outline: none !important;
-  box-shadow: 0 0 0 1px var(--accent) !important;
-}
-
-.pos-dashboard input::placeholder,
-.pos-dashboard textarea::placeholder {
-  color: rgba(184, 181, 174, 0.45) !important;
-}
-
-.pos-dashboard select option {
-  background-color: #131317 !important;
-  color: #FAF7F2 !important;
-}
-
-/* Headings & High-contrast Text */
-.pos-dashboard h1:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard h2:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard h3:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard h4:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-black:not(.invoice-sheet, .invoice-sheet *, .text-\[\#0C0C0E\], [class*="from-\[var\(--accent\)\]"] *, [class*="bg-\[var\(--accent\)\]"] *),
-.pos-dashboard .\!text-black:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-\[\#000000\]:not(.invoice-sheet, .invoice-sheet *, .text-\[\#0C0C0E\], [class*="from-\[var\(--accent\)\]"] *, [class*="bg-\[var\(--accent\)\]"] *),
-.pos-dashboard .\!text-\[\#000000\]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class~="text-black"]:not(.invoice-sheet, .invoice-sheet *, .text-\[\#0C0C0E\], [class*="from-\[var\(--accent\)\]"] *, [class*="bg-\[var\(--accent\)\]"] *),
-.pos-dashboard [class~="text-[#000000]"]:not(.invoice-sheet, .invoice-sheet *, .text-\[\#0C0C0E\], [class*="from-\[var\(--accent\)\]"] *, [class*="bg-\[var\(--accent\)\]"] *),
-.pos-dashboard .text-zinc-900:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-gray-900:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-slate-900:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-neutral-900:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-gray-800:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-zinc-800:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class~="text-zinc-900"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class~="text-gray-900"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class~="text-slate-900"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class~="text-neutral-900"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class~="text-gray-800"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class~="text-zinc-800"]:not(.invoice-sheet, .invoice-sheet *) {
-  color: #FAF7F2 !important;
-}
-
-/* Secondary & Muted Labels */
-.pos-dashboard .text-gray-600:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-gray-500:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-zinc-600:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-zinc-500:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-slate-600:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-slate-500:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-neutral-600:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-neutral-500:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-black\/70:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-black\/60:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-black\/50:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .\!text-black\/60:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-black\/70"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-black\/60"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-black\/50"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-[#000000]/70"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-[#000000]/60"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-[#000000]/50"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class~="text-gray-600"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class~="text-gray-500"]:not(.invoice-sheet, .invoice-sheet *) {
-  color: #B8B5AE !important;
-}
-
-.pos-dashboard .text-gray-400:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-zinc-400:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-slate-400:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-black\/45:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-black\/40:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-black\/35:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard .text-black\/30:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-black\/45"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-black\/40"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-black\/35"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-black\/30"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-[#000000]/40"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-[#000000]/35"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="text-[#000000]/30"]:not(.invoice-sheet, .invoice-sheet *) {
-  color: rgba(184, 181, 174, 0.65) !important;
-}
-
-/* Borders & Dividers */
-.pos-dashboard [class*="border-black/10"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="border-black/15"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="border-black/20"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="border-black/5"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="border-gray-100"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="border-gray-200"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="border-gray-300"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="border-zinc-200"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="border-zinc-300"]:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard [class*="border-[#E4E4E7]"]:not(.invoice-sheet, .invoice-sheet *) {
-  border-color: rgba(197, 160, 89, 0.2) !important;
-}
-
-/* Interactive Hover States */
-.pos-dashboard [class*="hover:bg-gray-50"]:hover:not(.invoice-sheet *),
-.pos-dashboard [class*="hover:bg-black/5"]:hover:not(.invoice-sheet *),
-.pos-dashboard [class*="hover:bg-gray-100"]:hover:not(.invoice-sheet *),
-.pos-dashboard [class*="hover:bg-[#FFFFFF]"]:hover:not(.invoice-sheet *),
-.pos-dashboard [class*="hover:bg-white/10"]:hover:not(.invoice-sheet *),
-.pos-dashboard [class*="hover:bg-black/10"]:hover:not(.invoice-sheet *) {
-  background-color: #1F1F28 !important;
-}
-
-/* Dividers */
-.pos-dashboard [class*="divide-black/5"] > *:not(.invoice-sheet *),
-.pos-dashboard [class*="divide-black/10"] > *:not(.invoice-sheet *),
-.pos-dashboard [class*="divide-gray-100"] > *:not(.invoice-sheet *) {
-  border-color: rgba(197, 160, 89, 0.15) !important;
-}
-
-/* Modal Backdrops & Overlays */
-.pos-dashboard .backdrop-blur-sm,
-.pos-dashboard .backdrop-blur-md {
-  background-color: rgba(6, 6, 9, 0.85) !important;
-}
-
-/* Table Headers & Rows across all tabs */
-.pos-dashboard thead tr:not(.invoice-sheet, .invoice-sheet *),
-.pos-dashboard thead th:not(.invoice-sheet, .invoice-sheet *) {
-  background-color: #16161D !important;
-  color: #FAF7F2 !important;
-  border-color: rgba(197, 160, 89, 0.22) !important;
-}
-
-.pos-dashboard td:not(.invoice-sheet, .invoice-sheet *) {
-  border-color: rgba(197, 160, 89, 0.12) !important;
-  color: #FAF7F2 !important;
-}
-
-.pos-dashboard tbody tr:hover:not(.invoice-sheet, .invoice-sheet *) {
-  background-color: #191922 !important;
-}
-
-/* Secondary Buttons inside dashboard */
-.pos-dashboard button:where(.bg-white, .bg-\[\#FFFFFF\]):not(.invoice-sheet, .invoice-sheet *, [class*="bg-[var(--accent)]"], [class*="from-[var(--accent)]"]) {
-  background-color: #181820 !important;
-  border-color: rgba(197, 160, 89, 0.28) !important;
-  color: #FAF7F2 !important;
-}
-
-.pos-dashboard button:where(.bg-white, .bg-\[\#FFFFFF\]):hover:not(.invoice-sheet, .invoice-sheet *, [class*="bg-[var(--accent)]"], [class*="from-[var(--accent)]"]) {
-  background-color: #22222D !important;
-  border-color: var(--accent) !important;
-}
-
-/* Custom Scrollbar for POS Panels */
-.pos-dashboard ::-webkit-scrollbar-thumb {
-  background: rgba(197, 160, 89, 0.4);
-}
-
-.pos-dashboard ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+  background-color: #F7F7F8;
+  color: #171717;
 }
 
 /*
- * The POS keeps its matte-black navigation, while the workspace uses a
- * bright, premium black-and-gold treatment for readability at the counter.
- * The workspace ID gives these deliberate light-theme overrides priority
- * over the legacy dark palette used by existing utility classes.
+ * NIDHULAN POS & Store: Premium champagne-gold and crisp light luxury theme.
+ * All dashboard areas, sidebars, panels, cards, and modal dialogs use
+ * high-contrast, clean light surfaces with gold accents.
  */
+.pos-dashboard {
+  background-color: #F7F7F8 !important;
+  color: #171717 !important;
+  --accent-strong: #A47B16 !important;
+}
+
 #pos-main {
-  background-color: #f7f7f8 !important;
+  background-color: #F7F7F8 !important;
   color: #171717 !important;
 }
 
+/* Headings */
+.pos-dashboard h1,
+.pos-dashboard h2,
+.pos-dashboard h3,
+.pos-dashboard h4,
 #pos-main h1,
 #pos-main h2,
 #pos-main h3,
@@ -252,6 +65,33 @@ body {
   color: #171717 !important;
 }
 
+/* Cards & Surfaces across all screens and modal dialogs */
+.pos-dashboard [class*="bg-[#0A0A0C]"],
+.pos-dashboard [class*="bg-[#0A0A0D]"],
+.pos-dashboard [class*="bg-[#0C0C0E]"],
+.pos-dashboard [class*="bg-[#08080A]"],
+.pos-dashboard [class*="bg-[#09090B]"],
+.pos-dashboard [class*="bg-[#101015]"],
+.pos-dashboard [class*="bg-[#111114]"],
+.pos-dashboard [class*="bg-[#131317]"],
+.pos-dashboard [class*="bg-[#131316]"],
+.pos-dashboard [class*="bg-[#141417]"],
+.pos-dashboard [class*="bg-[#16161D]"],
+.pos-dashboard [class*="bg-[#181820]"],
+.pos-dashboard [class*="bg-[#18181D]"],
+.pos-dashboard [class*="bg-[#1A1A1F]"],
+.pos-dashboard [class*="bg-[#1A1A24]"],
+.pos-dashboard [class*="bg-[#1E1E24]"],
+.pos-dashboard [class*="bg-[#1E1E26]"],
+.pos-dashboard [class*="bg-[#1F1F24]"],
+.pos-dashboard [class*="bg-[#1F1F28]"],
+.pos-dashboard [class*="bg-[#202028]"],
+.pos-dashboard [class*="bg-[#20202A]"],
+.pos-dashboard [class*="bg-[#22222D]"],
+.pos-dashboard [class*="bg-[#22222E]"],
+.pos-dashboard [class*="bg-[#25221B]"],
+.pos-dashboard [class*="bg-[#252530]"],
+.pos-dashboard [class*="bg-[#252532]"],
 #pos-main [class*="bg-[#0A0A0C]"],
 #pos-main [class*="bg-[#0A0A0D]"],
 #pos-main [class*="bg-[#08080A]"],
@@ -281,41 +121,84 @@ body {
   border-color: rgba(197, 160, 89, 0.3) !important;
 }
 
+/* Semi-transparent dark backdrops for modals (keep dark overlay for focus) */
+[class*="fixed"][class*="inset-0"][class*="bg-black"],
+.pos-dashboard [class*="fixed"][class*="inset-0"][class*="bg-black"] {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* Modal Dialog containers */
+.pos-dashboard [class*="rounded-2xl"][class*="shadow-2xl"],
+.pos-dashboard [class*="rounded-2xl"][class*="shadow-[0_20px_60px"],
+.pos-dashboard [class*="rounded-2xl"][class*="border-[#C5A059]"],
+#pos-main [class*="rounded-2xl"][class*="shadow-2xl"] {
+  background-color: #ffffff !important;
+  color: #171717 !important;
+  border-color: rgba(197, 160, 89, 0.35) !important;
+  box-shadow: 0 20px 45px rgba(23, 23, 23, 0.12) !important;
+}
+
+/* Form Inputs, Selects, and Textareas */
+.pos-dashboard input:not([type="checkbox"]):not([type="radio"]),
+.pos-dashboard select,
+.pos-dashboard textarea,
 #pos-main input:not([type="checkbox"]):not([type="radio"]),
 #pos-main select,
 #pos-main textarea {
   background-color: #ffffff !important;
   color: #171717 !important;
-  border-color: #e5e7eb !important;
-  box-shadow: none;
+  border-color: #d1d5db !important;
+  box-shadow: none !important;
 }
 
+.pos-dashboard input:focus:not([type="checkbox"]):not([type="radio"]),
+.pos-dashboard select:focus,
+.pos-dashboard textarea:focus,
 #pos-main input:focus:not([type="checkbox"]):not([type="radio"]),
 #pos-main select:focus,
 #pos-main textarea:focus {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.16) !important;
+  border-color: #D4AF37 !important;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2) !important;
+  outline: none !important;
 }
 
+.pos-dashboard input::placeholder,
+.pos-dashboard textarea::placeholder,
 #pos-main input::placeholder,
 #pos-main textarea::placeholder {
   color: #9ca3af !important;
 }
 
+.pos-dashboard select option,
 #pos-main select option {
-  background-color: #ffffff;
-  color: #171717;
-}
-
-#pos-main [class*="text-[#FAF7F2]"] {
+  background-color: #ffffff !important;
   color: #171717 !important;
 }
 
+/* Light theme high contrast text overrides */
+.pos-dashboard [class*="text-[#FAF7F2]"]:not([class*="bg-[var(--accent)]"] *):not([class*="from-[var(--accent)]"] *):not([class*="bg-[#DC2626]"] *):not([class*="bg-[#D97706]"] *):not([class*="bg-[#15803D]"] *):not([class*="bg-[#2563EB]"] *):not([class*="bg-emerald-600"] *):not([class*="bg-amber-600"] *),
+#pos-main [class*="text-[#FAF7F2]"]:not([class*="bg-[var(--accent)]"] *):not([class*="from-[var(--accent)]"] *):not([class*="bg-[#DC2626]"] *):not([class*="bg-[#D97706]"] *):not([class*="bg-[#15803D]"] *):not([class*="bg-[#2563EB]"] *):not([class*="bg-emerald-600"] *):not([class*="bg-amber-600"] *) {
+  color: #171717 !important;
+}
+
+.pos-dashboard [class*="text-[#FAF7F2]/"],
+.pos-dashboard [class*="text-[#B8B5AE]"],
+.pos-dashboard [class*="text-[#E8E2D8]"],
 #pos-main [class*="text-[#FAF7F2]/"],
-#pos-main [class*="text-[#B8B5AE]"] {
+#pos-main [class*="text-[#B8B5AE]"],
+#pos-main [class*="text-[#E8E2D8]"] {
   color: #6b7280 !important;
 }
 
+.pos-dashboard .text-gray-600,
+.pos-dashboard .text-gray-500,
+.pos-dashboard .text-zinc-600,
+.pos-dashboard .text-zinc-500,
+.pos-dashboard .text-slate-600,
+.pos-dashboard .text-slate-500,
+.pos-dashboard .text-neutral-600,
+.pos-dashboard .text-neutral-500,
 #pos-main .text-gray-600,
 #pos-main .text-gray-500,
 #pos-main .text-zinc-600,
@@ -327,6 +210,9 @@ body {
   color: #6b7280 !important;
 }
 
+/* Tables */
+.pos-dashboard thead tr,
+.pos-dashboard thead th,
 #pos-main thead tr,
 #pos-main thead th {
   background-color: #f9fafb !important;
@@ -334,15 +220,22 @@ body {
   border-color: #e5e7eb !important;
 }
 
+.pos-dashboard td,
 #pos-main td {
   color: #374151 !important;
   border-color: #e5e7eb !important;
 }
 
+.pos-dashboard tbody tr:hover,
 #pos-main tbody tr:hover {
   background-color: #faf8f2 !important;
 }
 
+.pos-dashboard [class*="hover:bg-gray-50"]:hover,
+.pos-dashboard [class*="hover:bg-gray-100"]:hover,
+.pos-dashboard [class*="hover:bg-white/10"]:hover,
+.pos-dashboard [class*="hover:bg-black/5"]:hover,
+.pos-dashboard [class*="hover:bg-black/10"]:hover,
 #pos-main [class*="hover:bg-gray-50"]:hover,
 #pos-main [class*="hover:bg-gray-100"]:hover,
 #pos-main [class*="hover:bg-white/10"]:hover,
@@ -351,10 +244,13 @@ body {
   background-color: #faf8f2 !important;
 }
 
+/* Scrollbars */
+.pos-dashboard ::-webkit-scrollbar-thumb,
 #pos-main ::-webkit-scrollbar-thumb {
   background: rgba(197, 160, 89, 0.45);
 }
 
+.pos-dashboard ::-webkit-scrollbar-thumb:hover,
 #pos-main ::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
 }
@@ -438,15 +334,16 @@ input[type="number"] {
 }
 
 /* =====================================================================
-   Date of Birth / Birthday Management Dashboard (Dark Theme)
+   Date of Birth / Birthday Management Dashboard (Light Luxury Theme)
    ===================================================================== */
 .birthday-dashboard {
   background-color: transparent !important;
-  color: #FAF7F2 !important;
+  color: #171717 !important;
 }
 
 .birthday-dashboard .birthday-preview {
-  background-color: #0D1812 !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
-  color: #D1FAE5 !important;
+  background-color: #f0fdf4 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #065f46 !important;
 }
+

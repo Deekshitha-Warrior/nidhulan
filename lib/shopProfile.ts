@@ -110,7 +110,7 @@ export const DEFAULT_SHOP_SETTINGS: ShopSettings = {
 
 /** Logo src to render: uploaded logo when present, otherwise the bundled asset. */
 export const shopLogoSrc = (settings: ShopSettings): string =>
-  settings.logo_data_url || '/nidhulan-logo.png';
+  settings.logo_data_url || '/nidulan-logo.jpeg';
 
 /** Phone formatter for invoice headers & contacts, supporting single or dual numbers */
 export const formatPhone = (phone: string): string => {

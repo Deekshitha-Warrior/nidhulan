@@ -56,6 +56,7 @@ export default async function RootLayout({
       lang="en"
       className={`${poppins.variable} h-full antialiased`}
       style={accentCssVars(shop.accent_color) as React.CSSProperties}
+      suppressHydrationWarning
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
@@ -64,7 +65,7 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-title" content={shop.shop_name} />
         <link rel="apple-touch-icon" href={logo} />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
         <PWAHandler shopName={shop.shop_name} logo={logo} />
       </body>

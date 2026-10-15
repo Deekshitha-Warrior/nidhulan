@@ -176,6 +176,7 @@ export default async function InvoicePage({
     n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const halfGstRate = order.gst_percentage ? order.gst_percentage / 2 : 9;
+  const halfGstRateStr = Number.isInteger(halfGstRate) ? halfGstRate.toString() : halfGstRate.toFixed(1);
   const halfGstAmount = gstAmountNum > 0 ? gstAmountNum / 2 : 0;
 
   const formattedDate = new Date(order.bill_date).toLocaleDateString("en-IN", {
@@ -320,6 +321,18 @@ export default async function InvoicePage({
                 <span>-{discountNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
             )}
+            {order.is_gst && gstAmountNum > 0 && (
+              <>
+                <div className="flex justify-between">
+                  <span>CGST ({halfGstRateStr}%):</span>
+                  <span>{halfGstAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>SGST ({halfGstRateStr}%):</span>
+                  <span>{halfGstAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                </div>
+              </>
+            )}
             {deliveryFeeNum > 0 && (
               <div className="flex justify-between">
                 <span>Delivery:</span>
@@ -344,11 +357,11 @@ export default async function InvoicePage({
         {/* Header: Company & Invoice Info */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pb-6 border-b-2 border-[var(--accent)]">
           <div className="flex items-start gap-3.5 sm:gap-4">
-            <div className="w-20 h-16 sm:w-24 sm:h-18 shrink-0 rounded-md border border-[var(--accent)]/40 overflow-hidden bg-black/95 p-1 shadow-xs">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-xl border border-[#D4AF37]/40 overflow-hidden bg-white p-1 shadow-xs flex items-center justify-center">
               <img
                 src={shopLogo}
                 alt={shop.shop_name}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain rounded-lg"
               />
             </div>
             <div className="space-y-1">
@@ -618,13 +631,13 @@ export default async function InvoicePage({
                   )}
                 </div>
                 <div className="flex justify-between text-zinc-600">
-                  <span>CGST ({halfGstRate.toFixed(1)}%)</span>
+                  <span>CGST ({halfGstRateStr}%)</span>
                   <span className="font-mono text-zinc-800">
                     ₹{halfGstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div className="flex justify-between text-zinc-600">
-                  <span>SGST ({halfGstRate.toFixed(1)}%)</span>
+                  <span>SGST ({halfGstRateStr}%)</span>
                   <span className="font-mono text-zinc-800">
                     ₹{halfGstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>

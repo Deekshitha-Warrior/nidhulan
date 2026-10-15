@@ -50,6 +50,9 @@ export default async function AdvanceReceiptPage({
   const totalNum = Number(advance.total_amount) || 0;
   const depositNum = Number(advance.deposit_amount) || 0;
   const balanceNum = Math.max(0, totalNum - depositNum);
+  const halfGstRate = charges.gstPercentage / 2;
+  const halfGstRateStr = Number.isInteger(halfGstRate) ? halfGstRate.toString() : halfGstRate.toFixed(1);
+  const halfGstAmount = charges.gstAmount / 2;
   const modeLabel = (mode: string | null | undefined) =>
     mode === "SPLIT" ? "Cash + GPay" : mode === "GPAY" ? "GPay" : "Cash";
   const depositLabel = modeLabel(advance.deposit_payment_mode);
@@ -221,10 +224,16 @@ export default async function AdvanceReceiptPage({
                   </div>
                 )}
                 {charges.gstAmount > 0 && (
-                  <div className="flex justify-between">
-                    <span>GST ({charges.gstPercentage}%):</span>
-                    <span>{fmt(charges.gstAmount)}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between">
+                      <span>CGST ({halfGstRateStr}%):</span>
+                      <span>{fmt(halfGstAmount)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>SGST ({halfGstRateStr}%):</span>
+                      <span>{fmt(halfGstAmount)}</span>
+                    </div>
+                  </>
                 )}
                 {charges.deliveryFee > 0 && (
                   <div className="flex justify-between">
@@ -299,11 +308,11 @@ export default async function AdvanceReceiptPage({
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pb-6 border-b-2 border-[var(--accent)]">
           <div className="flex items-start gap-3.5 sm:gap-4">
-            <div className="w-20 h-16 sm:w-24 sm:h-18 shrink-0 rounded-md border border-[var(--accent)]/40 overflow-hidden bg-black/95 p-1 shadow-xs">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-xl border border-[#D4AF37]/40 overflow-hidden bg-white p-1 shadow-xs flex items-center justify-center">
               <img
                 src={shopLogo}
                 alt={shop.shop_name}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain rounded-lg"
               />
             </div>
             <div className="space-y-1">
@@ -453,10 +462,16 @@ export default async function AdvanceReceiptPage({
                   </div>
                 )}
                 {charges.gstAmount > 0 && (
-                  <div className="flex justify-between text-zinc-600">
-                    <span>GST ({charges.gstPercentage}%)</span>
-                    <span className="font-mono text-zinc-900">+ ₹{fmt(charges.gstAmount)}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between text-zinc-600">
+                      <span>CGST ({halfGstRateStr}%)</span>
+                      <span className="font-mono text-zinc-900">+ ₹{fmt(halfGstAmount)}</span>
+                    </div>
+                    <div className="flex justify-between text-zinc-600">
+                      <span>SGST ({halfGstRateStr}%)</span>
+                      <span className="font-mono text-zinc-900">+ ₹{fmt(halfGstAmount)}</span>
+                    </div>
+                  </>
                 )}
                 {charges.deliveryFee > 0 && (
                   <div className="flex justify-between text-zinc-600">
