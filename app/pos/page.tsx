@@ -182,6 +182,26 @@ const getDateRange = (
   };
 };
 
+const getAvailableDateRange = (values: string[]): DateRange => {
+  const dateKeys = values
+    .map(normalizeDateKey)
+    .filter((dateKey): dateKey is string => dateKey !== null)
+    .sort();
+  return {
+    start: dateKeys[0] ?? getLocalDate(),
+    end: dateKeys[dateKeys.length - 1] ?? getLocalDate(),
+    valid: true,
+  };
+};
+
+const getSelectedDateRange = (
+  period: Exclude<PeriodKey, "custom">,
+  values: string[],
+): DateRange => {
+  const range = getDateRange(period, "", "");
+  return period === "all" ? getAvailableDateRange(values) : range;
+};
+
 const formatDateKey = (dateKey: string): string => {
   const [year, month, day] = dateKey.split("-").map(Number);
   return new Intl.DateTimeFormat("en-IN", {
@@ -5607,8 +5627,12 @@ export default function POSBilling() {
                             key={p}
                             onClick={() => {
                               setHistoryPeriod(p);
-                              setHistoryStartDate("");
-                              setHistoryEndDate("");
+                              const range = getSelectedDateRange(
+                                p,
+                                orders.map((order) => order.date),
+                              );
+                              setHistoryStartDate(range.start ?? "");
+                              setHistoryEndDate(range.end ?? "");
                             }}
                             className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                               isActive
@@ -5976,8 +6000,12 @@ export default function POSBilling() {
                               key={p}
                               onClick={() => {
                                 setAnalyticsPeriod(p);
-                                setAnalyticsStartDate("");
-                                setAnalyticsEndDate("");
+                                const range = getSelectedDateRange(
+                                  p,
+                                  orders.map((order) => order.date),
+                                );
+                                setAnalyticsStartDate(range.start ?? "");
+                                setAnalyticsEndDate(range.end ?? "");
                               }}
                               className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                                 isActive
@@ -7229,7 +7257,17 @@ export default function POSBilling() {
                 ).map(([key, label]) => (
                   <button
                     key={key}
-                    onClick={() => setExpensePeriod(key)}
+                    onClick={() => {
+                      setExpensePeriod(key);
+                      if (key !== "custom") {
+                        const range = getSelectedDateRange(
+                          key,
+                          expenses.map((expense) => expense.expense_date),
+                        );
+                        setExpenseStartDate(range.start ?? "");
+                        setExpenseEndDate(range.end ?? "");
+                      }
+                    }}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
                       expensePeriod === key
                         ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-sm"
@@ -7242,42 +7280,46 @@ export default function POSBilling() {
               </div>
             </div>
 
-            {expensePeriod === "custom" && (
-              <div className="flex flex-wrap items-end gap-3 mb-6 bg-[#131317] border border-[#C5A059]/20 rounded-xl p-4">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE] mb-1">
-                    From
-                  </label>
-                  <input
-                    type="date"
-                    value={expenseStartDate}
-                    max={expenseEndDate || undefined}
-                    onChange={(e) => setExpenseStartDate(e.target.value)}
-                    className="bg-[#181820] border border-[#C5A059]/30 rounded-lg px-3 py-2 text-sm text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE] mb-1">
-                    To
-                  </label>
-                  <input
-                    type="date"
-                    value={expenseEndDate}
-                    min={expenseStartDate || undefined}
-                    onChange={(e) => setExpenseEndDate(e.target.value)}
-                    className="bg-[#181820] border border-[#C5A059]/30 rounded-lg px-3 py-2 text-sm text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)]"
-                  />
-                </div>
-                <p
-                  aria-live="polite"
-                  className={`basis-full text-[10px] font-semibold ${
-                    expenseDateRange.valid ? "text-[#B8B5AE]" : "text-red-400"
-                  }`}
-                >
-                  {expenseDateRangeLabel}
-                </p>
+            <div className="flex flex-wrap items-end gap-3 mb-6 bg-[#131317] border border-[#C5A059]/20 rounded-xl p-4">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE] mb-1">
+                  From
+                </label>
+                <input
+                  type="date"
+                  value={expenseStartDate}
+                  max={expenseEndDate || undefined}
+                  onChange={(e) => {
+                    setExpensePeriod("custom");
+                    setExpenseStartDate(e.target.value);
+                  }}
+                  className="bg-[#181820] border border-[#C5A059]/30 rounded-lg px-3 py-2 text-sm text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)]"
+                />
               </div>
-            )}
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE] mb-1">
+                  To
+                </label>
+                <input
+                  type="date"
+                  value={expenseEndDate}
+                  min={expenseStartDate || undefined}
+                  onChange={(e) => {
+                    setExpensePeriod("custom");
+                    setExpenseEndDate(e.target.value);
+                  }}
+                  className="bg-[#181820] border border-[#C5A059]/30 rounded-lg px-3 py-2 text-sm text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+              <p
+                aria-live="polite"
+                className={`basis-full text-[10px] font-semibold ${
+                  expenseDateRange.valid ? "text-[#B8B5AE]" : "text-red-400"
+                }`}
+              >
+                {expenseDateRangeLabel}
+              </p>
+            </div>
 
             {/* Summary cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
