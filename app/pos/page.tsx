@@ -2879,29 +2879,29 @@ export default function POSBilling() {
               </button>
             </div>
 
-            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto text-zinc-900">
               {/* Target + current stock */}
-              <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-[#181820] border border-[#C5A059]/25">
+              <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-zinc-50 border border-zinc-200">
                 <div className="min-w-0">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-[var(--accent)] mb-0.5 flex items-center gap-1.5">
-                    <Package className="w-3 h-3" /> Target Item
+                  <p className="text-[9px] font-black uppercase tracking-widest text-[#8A6815] mb-0.5 flex items-center gap-1.5">
+                    <Package className="w-3 h-3 text-[#8A6815]" /> Target Item
                   </p>
-                  <p className="text-sm font-bold text-[#FAF7F2] truncate">
+                  <p className="text-sm font-bold text-zinc-900 truncate">
                     {stockAdjustTarget.name}
                   </p>
                   {stockAdjustTarget.hsnCode && (
-                    <p className="text-[10px] font-mono text-[#B8B5AE] mt-0.5">
+                    <p className="text-[10px] font-mono text-zinc-500 mt-0.5">
                       HSN {stockAdjustTarget.hsnCode}
                     </p>
                   )}
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-[#B8B5AE]">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
                     Current Stock
                   </p>
-                  <p className="text-lg font-black text-[#FAF7F2] leading-tight">
+                  <p className="text-lg font-black text-zinc-900 leading-tight">
                     {stockAdjustTarget.stock ?? 0}
-                    <span className="text-[10px] font-bold text-[#B8B5AE] ml-1">
+                    <span className="text-[10px] font-bold text-zinc-500 ml-1">
                       units
                     </span>
                   </p>
@@ -2909,16 +2909,16 @@ export default function POSBilling() {
               </div>
               {/* Adjustment type */}
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-[#B8B5AE] mb-2">
-                  Select Adjustment Type <span className="text-red-400">*</span>
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-700 mb-2">
+                  Select Adjustment Type <span className="text-red-500">*</span>
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {(
                     [
-                      { key: "RESTOCK", label: "Restock", sub: "+ Add", Icon: Plus, tone: "text-emerald-400" },
-                      { key: "RETURN", label: "Return", sub: "+ Add", Icon: Undo2, tone: "text-blue-400" },
-                      { key: "LOSS", label: "Loss / Dmg", sub: "− Deduct", Icon: Minus, tone: "text-red-400" },
-                      { key: "RECONCILE", label: "Reconcile", sub: "Exact Set", Icon: Target, tone: "text-amber-400" },
+                      { key: "RESTOCK", label: "Restock", sub: "+ Add", Icon: Plus, tone: "text-emerald-600" },
+                      { key: "RETURN", label: "Return", sub: "+ Add", Icon: Undo2, tone: "text-blue-600" },
+                      { key: "LOSS", label: "Loss / Dmg", sub: "− Deduct", Icon: Minus, tone: "text-red-600" },
+                      { key: "RECONCILE", label: "Reconcile", sub: "Exact Set", Icon: Target, tone: "text-amber-600" },
                     ] as const
                   ).map(({ key, label, sub, Icon, tone }) => {
                     const active = stockAdjustType === key;
@@ -2934,31 +2934,31 @@ export default function POSBilling() {
                         }}
                         className={`flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-3 transition-all cursor-pointer ${
                           active
-                            ? "border-[var(--accent)] bg-[#25221B] shadow-xs"
-                            : "border-[#C5A059]/20 bg-[#181820] hover:border-[#C5A059]/50"
+                            ? "border-[#D4AF37] bg-amber-50/70 shadow-xs text-zinc-900"
+                            : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-800 hover:border-zinc-300"
                         }`}
                       >
                         <span
                           className={`w-7 h-7 rounded-full flex items-center justify-center border ${
                             active
-                              ? "border-[var(--accent)]/40 bg-[var(--accent)]/20"
-                              : "border-white/10 bg-white/5"
+                              ? "border-[#D4AF37]/50 bg-[#D4AF37]/20"
+                              : "border-zinc-200 bg-white"
                           }`}
                         >
                           <Icon
-                            className={`w-3.5 h-3.5 ${active ? "text-[var(--accent)]" : tone}`}
+                            className={`w-3.5 h-3.5 ${active ? "text-[#8A6815]" : tone}`}
                           />
                         </span>
-                        <span className="text-[10px] font-black text-[#FAF7F2] leading-tight">
+                        <span className="text-[10px] font-black text-zinc-900 leading-tight">
                           {label}
                         </span>
                         <span
                           className={`text-[9px] font-bold leading-tight ${
                             sub.startsWith("+")
-                              ? "text-emerald-400"
+                              ? "text-emerald-700"
                               : sub.startsWith("−")
-                                ? "text-red-400"
-                                : "text-amber-400"
+                                ? "text-red-700"
+                                : "text-amber-700"
                           }`}
                         >
                           {sub}
@@ -2972,23 +2972,23 @@ export default function POSBilling() {
               <div
                 className={`rounded-xl border p-3.5 transition-colors ${
                   stockAdjustType === "LOSS"
-                    ? "border-red-900/50 bg-red-950/20"
-                    : "border-[#C5A059]/30 bg-[#181820]"
+                    ? "border-red-200 bg-red-50/40"
+                    : "border-zinc-200 bg-zinc-50"
                 }`}
               >
-                <p className="text-[9px] font-black uppercase tracking-widest text-[#B8B5AE] mb-2.5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-700 mb-2.5">
                   {stockAdjustType === "RECONCILE"
                     ? "New Counted Quantity"
                     : stockAdjustType === "LOSS"
                       ? "Quantity to Deduct"
                       : "Quantity to Add"}{" "}
-                  <span className="text-red-400">*</span>
+                  <span className="text-red-500">*</span>
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setStockAdjustQty((q) => Math.max(0, q - 1))}
-                    className="w-10 h-10 shrink-0 rounded-lg border border-[#C5A059]/30 bg-[#252532] hover:bg-[#2F2F40] text-[#FAF7F2] flex items-center justify-center font-black text-lg cursor-pointer transition-colors"
+                    className="w-10 h-10 shrink-0 rounded-lg border border-zinc-300 bg-white hover:bg-zinc-100 text-zinc-900 flex items-center justify-center font-black text-lg cursor-pointer transition-colors shadow-xs"
                     aria-label="Decrease quantity"
                   >
                     −
@@ -3003,12 +3003,12 @@ export default function POSBilling() {
                     onChange={(e) =>
                       setStockAdjustQty(Math.max(0, Number(e.target.value) || 0))
                     }
-                    className="flex-1 min-w-0 text-center text-lg font-black text-[#FAF7F2] bg-[#131317] border border-[#C5A059]/30 rounded-lg px-3 py-2 focus:outline-none focus:border-[var(--accent)]"
+                    className="flex-1 min-w-0 text-center text-lg font-black text-zinc-900 bg-white border border-zinc-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] shadow-xs"
                   />
                   <button
                     type="button"
                     onClick={() => setStockAdjustQty((q) => q + 1)}
-                    className="w-10 h-10 shrink-0 rounded-lg border border-[#C5A059]/30 bg-[#252532] hover:bg-[#2F2F40] text-[#FAF7F2] flex items-center justify-center font-black text-lg cursor-pointer transition-colors"
+                    className="w-10 h-10 shrink-0 rounded-lg border border-zinc-300 bg-white hover:bg-zinc-100 text-zinc-900 flex items-center justify-center font-black text-lg cursor-pointer transition-colors shadow-xs"
                     aria-label="Increase quantity"
                   >
                     +
@@ -3016,7 +3016,7 @@ export default function POSBilling() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 mt-3">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#B8B5AE] mr-0.5">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mr-0.5">
                     Quick:
                   </span>
                   {[1, 5, 10, 25, 50, 100].map((n) => (
@@ -3028,7 +3028,7 @@ export default function POSBilling() {
                           stockAdjustType === "RECONCILE" ? n : q + n,
                         )
                       }
-                      className="px-2 py-1 rounded-md border border-[#C5A059]/25 bg-[#181820] hover:border-[var(--accent)] text-[#FAF7F2] text-[10px] font-bold cursor-pointer transition-colors"
+                      className="px-2 py-1 rounded-md border border-zinc-300 bg-white hover:border-[#D4AF37] text-zinc-800 text-[10px] font-bold cursor-pointer transition-colors shadow-xs"
                     >
                       {stockAdjustType === "RECONCILE" ? n : `+${n}`}
                     </button>
@@ -3037,15 +3037,15 @@ export default function POSBilling() {
               </div>
 
               {/* Result preview */}
-              <div className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-[#C5A059]/30 bg-[#181820] text-[11px] font-bold">
-                <span className="text-[#B8B5AE]">
+              <div className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-[11px] font-bold shadow-xs">
+                <span className="text-zinc-600">
                   Current:{" "}
-                  <span className="text-[#FAF7F2] font-black">
+                  <span className="text-zinc-900 font-black">
                     {stockAdjustTarget.stock ?? 0}
                   </span>
                   <span className="mx-1.5">→</span>
                   New Stock:{" "}
-                  <span className="text-[var(--accent)] font-black">
+                  <span className="text-[#8A6815] font-black">
                     {stockAdjustPreview}
                   </span>{" "}
                   units
@@ -3053,10 +3053,10 @@ export default function POSBilling() {
                 <span
                   className={`font-black ${
                     stockAdjustDelta > 0
-                      ? "text-emerald-400"
+                      ? "text-emerald-700"
                       : stockAdjustDelta < 0
-                        ? "text-red-400"
-                        : "text-[#B8B5AE]"
+                        ? "text-red-700"
+                        : "text-zinc-500"
                   }`}
                 >
                   {stockAdjustDelta > 0 ? `+${stockAdjustDelta}` : stockAdjustDelta}
@@ -3065,26 +3065,26 @@ export default function POSBilling() {
 
               {/* Note */}
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-[#B8B5AE] mb-1.5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-700 mb-1.5">
                   Adjustment Note{" "}
-                  <span className="text-[#B8B5AE]/60 normal-case">(optional)</span>
+                  <span className="text-zinc-400 normal-case">(optional)</span>
                 </p>
                 <input
                   value={stockAdjustNote}
                   onChange={(e) => setStockAdjustNote(e.target.value)}
                   placeholder="e.g. Received new stock shipment"
-                  className="w-full bg-[#181820] border border-[#C5A059]/25 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none focus:border-[var(--accent)] transition-colors"
+                  className="w-full bg-white border border-zinc-300 rounded-lg px-3 py-2.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#D4AF37] transition-colors shadow-xs"
                 />
               </div>
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2.5 p-5 border-t border-[#C5A059]/20 bg-[#16161D]">
+            <div className="flex items-center justify-end gap-2.5 p-5 border-t border-zinc-200 bg-[#FAF8F5]">
               <button
                 type="button"
                 onClick={closeStockAdjust}
                 disabled={isSavingStock}
-                className="px-4 py-2.5 rounded-lg border border-[#C5A059]/25 bg-[#181820] hover:bg-[#252532] text-[11px] font-black uppercase tracking-wider text-[#FAF7F2] cursor-pointer transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 rounded-lg border border-zinc-300 bg-zinc-100 hover:bg-zinc-200 text-[11px] font-black uppercase tracking-wider text-zinc-800 cursor-pointer transition-colors disabled:opacity-50 shadow-xs"
               >
                 Cancel
               </button>
@@ -3267,23 +3267,23 @@ export default function POSBilling() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(23,23,23,0.15)] border border-[#C5A059]/30 w-full max-w-md overflow-hidden transform animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(23,23,23,0.15)] border border-[#C5A059]/30 w-full max-w-md overflow-hidden transform animate-in zoom-in-95 duration-200 text-zinc-900"
           >
             {/* Header */}
             <div className="px-6 py-5 bg-[#FAF8F5] border-b border-[#C5A059]/25 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#D4AF37]/15 border border-[#D4AF37]/30 rounded-xl flex items-center justify-center text-[#8A6815]">
-                  <PackagePlus className="w-5 h-5" />
+                  <PackagePlus className="w-5 h-5 text-[#8A6815]" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base text-[#171717] tracking-tight">
+                  <h3 className="font-extrabold text-base text-zinc-900 tracking-tight">
                     {editingCatalogId
                       ? "Edit Catalog Item"
                       : newCatType === "SERVICE"
                         ? "Add New Service"
                         : "Add New Product"}
                   </h3>
-                  <p className="text-[11px] text-zinc-500 font-medium">
+                  <p className="text-[11px] text-zinc-600 font-medium">
                     {editingCatalogId
                       ? "Modify item parameters"
                       : newCatType === "SERVICE"
@@ -3299,19 +3299,19 @@ export default function POSBilling() {
                   setEditingCatalogId(null);
                   setShowCatalogModal(false);
                 }}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 transition-colors cursor-pointer shadow-xs"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-800 hover:text-black border border-zinc-300 transition-colors cursor-pointer shadow-xs"
                 aria-label="Close dialog"
                 title="Close (Esc)"
               >
-                <X className="w-4.5 h-4.5 text-zinc-700" />
+                <X className="w-4.5 h-4.5 text-zinc-800" />
               </button>
             </div>
 
             {/* Form Content */}
-            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto bg-white">
+            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto bg-white text-zinc-900">
               {/* Product ⇄ Service switch */}
               <div>
-                <p className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">
+                <p className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1.5">
                   Item Type
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -3321,10 +3321,10 @@ export default function POSBilling() {
                     className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer border ${
                       newCatType === "PRODUCT"
                         ? "bg-[#D4AF37] text-[#171717] font-black border-[#C5A02E] shadow-sm"
-                        : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:border-[#D4AF37] hover:text-[#171717]"
+                        : "bg-zinc-100 text-zinc-900 font-bold border-zinc-300 hover:bg-zinc-200 hover:text-black"
                     }`}
                   >
-                    <Package className="w-4 h-4" />
+                    <Package className={`w-4 h-4 ${newCatType === "PRODUCT" ? "text-[#171717]" : "text-zinc-800"}`} />
                     Product
                   </button>
                   <button
@@ -3333,14 +3333,14 @@ export default function POSBilling() {
                     className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer border ${
                       newCatType === "SERVICE"
                         ? "bg-[#D4AF37] text-[#171717] font-black border-[#C5A02E] shadow-sm"
-                        : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:border-[#D4AF37] hover:text-[#171717]"
+                        : "bg-zinc-100 text-zinc-900 font-bold border-zinc-300 hover:bg-zinc-200 hover:text-black"
                     }`}
                   >
-                    <Scissors className="w-4 h-4" />
+                    <Scissors className={`w-4 h-4 ${newCatType === "SERVICE" ? "text-[#171717]" : "text-zinc-800"}`} />
                     Service
                   </button>
                 </div>
-                <p className="text-[9px] text-[#B8B5AE]/80 font-semibold mt-1.5">
+                <p className="text-[10px] text-zinc-600 font-medium mt-1.5">
                   {newCatType === "SERVICE"
                     ? "Services = delivery, packing, add-ons and other chargeable work. No stock is tracked."
                     : "Products = physical items sold. Stock and low-stock alerts are tracked."}
@@ -3348,7 +3348,7 @@ export default function POSBilling() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                   {newCatType === "SERVICE" ? "Service Name" : "Product Name"}{" "}
                   <span className="text-[var(--accent)]">*</span>
                 </label>
@@ -3359,7 +3359,7 @@ export default function POSBilling() {
                       ? "e.g., Alteration Charges / Delivery"
                       : "e.g., Designer Silk Saree / Bridal Blouse"
                   }
-                  className="w-full bg-[#181820] border border-[#C5A059]/25 hover:border-[var(--accent)] focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-bold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors shadow-xs"
+                  className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   autoFocus
@@ -3367,7 +3367,7 @@ export default function POSBilling() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                   Description / Notes (Optional)
                 </label>
                 <input
@@ -3377,7 +3377,7 @@ export default function POSBilling() {
                       ? "e.g., Includes stitching and finishing"
                       : "e.g., Pure Kanjeevaram Silk, Pink & Gold Zari, Size 38"
                   }
-                  className="w-full bg-[#181820] border border-[#C5A059]/25 hover:border-[var(--accent)] focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors shadow-xs"
+                  className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                   value={newCatDesc}
                   onChange={(e) => setNewCatDesc(e.target.value)}
                 />
@@ -3385,14 +3385,14 @@ export default function POSBilling() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                  <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                     Category
                   </label>
                   <input
                     type="text"
                     list="catalog-category-list"
                     placeholder="e.g., Blouses, Sarees, Services"
-                    className="w-full bg-[#181820] border border-[#C5A059]/25 hover:border-[var(--accent)] focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors shadow-xs"
+                    className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatCategory}
                     onChange={(e) => setNewCatCategory(e.target.value)}
                   />
@@ -3401,7 +3401,7 @@ export default function POSBilling() {
                       <option key={c.id} value={c.name} />
                     ))}
                   </datalist>
-                  <p className="text-[9px] text-[#B8B5AE]/70 font-semibold mt-1">
+                  <p className="text-[10px] text-zinc-500 font-medium mt-1">
                     Pick an existing category or type a new one (it will be added automatically)
                   </p>
                 </div>
@@ -3409,14 +3409,14 @@ export default function POSBilling() {
                 {/* Stock alerts exist only for physical products */}
                 {newCatType === "PRODUCT" && (
                   <div>
-                    <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                    <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                       Low Stock Alert
                     </label>
                     <input
                       type="number"
                       min="0"
                       placeholder="5"
-                      className="w-full bg-[#181820] border border-[#C5A059]/25 hover:border-[var(--accent)] focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-bold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors shadow-xs"
+                      className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                       value={newCatLowStock}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) =>
@@ -3425,7 +3425,7 @@ export default function POSBilling() {
                         )
                       }
                     />
-                    <p className="text-[9px] text-[#B8B5AE]/70 font-semibold mt-1">
+                    <p className="text-[10px] text-zinc-500 font-medium mt-1">
                       Warns you in Inventory when stock falls to this level.
                     </p>
                   </div>
@@ -3434,14 +3434,14 @@ export default function POSBilling() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                  <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                     {newCatType === "SERVICE" ? "Service Price (₹)" : "Original Price (₹)"}{" "}
                     <span className="text-[var(--accent)]">*</span>
                   </label>
                   <input
                     type="number"
                     placeholder="0.00"
-                    className="w-full bg-[#181820] border border-[#C5A059]/25 hover:border-[var(--accent)] focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-bold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors shadow-xs"
+                    className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatPrice}
                     onWheel={(e) => e.currentTarget.blur()}
                     onChange={(e) =>
@@ -3453,13 +3453,13 @@ export default function POSBilling() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                  <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                     Cost Price (₹)
                   </label>
                   <input
                     type="number"
                     placeholder="0.00"
-                    className="w-full bg-[#181820] border border-[#C5A059]/25 hover:border-[var(--accent)] focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-bold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors shadow-xs"
+                    className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatCost}
                     onWheel={(e) => e.currentTarget.blur()}
                     onChange={(e) =>
@@ -3472,14 +3472,14 @@ export default function POSBilling() {
 
                 {newCatType === "PRODUCT" && (
                   <div>
-                    <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                    <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                       Current Stock
                     </label>
                     <input
                       type="number"
                       min="0"
                       placeholder="0"
-                      className="w-full bg-[#181820] border border-[#C5A059]/25 hover:border-[var(--accent)] focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-bold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors shadow-xs"
+                      className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                       value={newCatStock}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) =>
@@ -3492,13 +3492,13 @@ export default function POSBilling() {
                 )}
               </div>
 
-              <p className="text-[9px] text-[#B8B5AE]/70 font-semibold -mt-2">
+              <p className="text-[10px] text-zinc-500 font-medium -mt-2">
                 Cost price is for your records only — it is never used in billing.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                  <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                     GST Rate (%)
                   </label>
                   <input
@@ -3506,25 +3506,25 @@ export default function POSBilling() {
                     min="0"
                     max="28"
                     placeholder="5"
-                    className="w-full bg-[#181820] border border-[#C5A059]/25 hover:border-[var(--accent)] focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-bold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors shadow-xs"
+                    className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatGst}
                     onWheel={(e) => e.currentTarget.blur()}
                     onChange={(e) =>
                       setNewCatGst(e.target.value === "" ? "" : parseFloat(e.target.value))
                     }
                   />
-                  <p className="text-[9px] text-[#B8B5AE]/70 font-semibold mt-1">
+                  <p className="text-[10px] text-zinc-500 font-medium mt-1">
                     Pre-fills the GST % when this item is on a GST invoice.
                   </p>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                  <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                     HSN / SAC Code
                   </label>
                   <input
                     type="text"
                     placeholder="Optional"
-                    className="w-full bg-[#181820] border border-[#C5A059]/25 hover:border-[var(--accent)] focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors shadow-xs"
+                    className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatHsn}
                     onChange={(e) => setNewCatHsn(e.target.value)}
                   />
@@ -3532,15 +3532,15 @@ export default function POSBilling() {
               </div>
 
               {/* Automatic offer — applied whenever the item is added to a bill */}
-              <div className="border border-[#C5A059]/30 bg-[#181820] rounded-xl p-3.5 space-y-3">
-                <p className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-widest flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5" />
+              <div className="border border-[#C5A059]/30 bg-amber-50/40 rounded-xl p-3.5 space-y-3">
+                <p className="text-[10px] font-bold text-[#8A6815] uppercase tracking-widest flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-[#8A6815]" />
                   {newCatType === "SERVICE" ? "Service Offer" : "Product Special Offer"}{" "}
                   (Automatic on Billing)
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                    <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                       Offer Discount (%)
                     </label>
                     <input
@@ -3548,7 +3548,7 @@ export default function POSBilling() {
                       min="0"
                       max="100"
                       placeholder="e.g. 10"
-                      className="w-full bg-[#131317] border border-[#C5A059]/25 focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-bold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors"
+                      className="w-full bg-white border border-zinc-300 focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors"
                       value={newCatOfferPct}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => {
@@ -3561,7 +3561,7 @@ export default function POSBilling() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-widest mb-1.5">
+                    <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
                       Discounted Offer Price (₹)
                     </label>
                     <input
@@ -3572,7 +3572,7 @@ export default function POSBilling() {
                           ? String(computedOfferPrice)
                           : "Offer Price"
                       }
-                      className="w-full bg-[#131317] border border-[#C5A059]/25 focus:border-[var(--accent)] rounded-lg px-3.5 py-2.5 text-sm font-bold text-[#FAF7F2] placeholder-[#B8B5AE]/40 focus:outline-none transition-colors"
+                      className="w-full bg-white border border-zinc-300 focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors"
                       value={newCatOfferPrice}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => {
@@ -3585,7 +3585,7 @@ export default function POSBilling() {
                     />
                   </div>
                 </div>
-                <p className="text-[9px] text-[#B8B5AE]/70 font-semibold">
+                <p className="text-[10px] text-zinc-600 font-medium">
                   Whenever this {newCatType === "SERVICE" ? "service" : "product"} is
                   added to a bill, the offer price is applied automatically and shown
                   on the invoice.
@@ -3596,18 +3596,18 @@ export default function POSBilling() {
               <button
                 type="button"
                 onClick={() => setNewCatActive((prev) => !prev)}
-                className="w-full flex items-center gap-3 border border-[#C5A059]/25 hover:border-[var(--accent)] rounded-xl px-3.5 py-3 cursor-pointer transition-colors text-left bg-[#181820]"
+                className="w-full flex items-center gap-3 border border-zinc-300 hover:border-[#D4AF37] rounded-xl px-3.5 py-3 cursor-pointer transition-colors text-left bg-zinc-50 hover:bg-zinc-100"
               >
                 <span
                   className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${
                     newCatActive
-                      ? "bg-[var(--accent)] border-[var(--accent)] text-[#0C0C0E]"
-                      : "bg-[#131317] border-[#C5A059]/25 text-transparent"
+                      ? "bg-[#D4AF37] border-[#C5A02E] text-[#171717]"
+                      : "bg-white border-zinc-300 text-transparent"
                   }`}
                 >
                   <Check className="w-3.5 h-3.5" />
                 </span>
-                <span className="text-xs font-bold text-[#FAF7F2]">
+                <span className="text-xs font-bold text-zinc-900">
                   Active (visible in Billing Panel)
                 </span>
               </button>
@@ -3620,7 +3620,7 @@ export default function POSBilling() {
                 {isSavingCatalog ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <PackagePlus className="w-4 h-4" />
+                  <PackagePlus className="w-4 h-4 text-[#0C0C0E]" />
                 )}
                 {editingCatalogId
                   ? "Save Changes"
@@ -4729,7 +4729,7 @@ export default function POSBilling() {
                               <div className="sm:col-span-1 flex justify-end shrink-0">
                                 <button
                                   onClick={() => removeItem(item.id)}
-                                  className="text-[#FAF7F2]/50 hover:text-[#EF4444] hover:bg-[#252530] p-2 rounded-lg border border-[#C5A059]/25 transition-colors flex items-center justify-center cursor-pointer"
+                                  className="text-zinc-400 hover:text-red-600 hover:bg-zinc-100 p-2 rounded-lg border border-zinc-200 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
                                   title="Remove Item"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -4741,58 +4741,59 @@ export default function POSBilling() {
                       </div>
                     </div>
                   </div>
-                </div>{" "}
+                </div>
+
                 {/* Right Column - Premium Order Panel */}
-                <div className="w-full lg:w-[40%] xl:w-[35%] flex flex-col shrink-0 bg-[#131317] text-[#FAF7F2] border border-[#C5A059]/25 rounded-2xl shadow-xl lg:sticky lg:top-28 lg:self-start transition-all duration-500 overflow-hidden group">
-                  <div className="p-4 sm:p-6 pb-4 border-b border-[#C5A059]/20 flex justify-between items-center bg-[#181820]">
-                    <h2 className="text-base font-black flex items-center gap-3 text-[#FAF7F2] tracking-tight">
-                      <ShoppingBag className="w-4 h-4 text-[var(--accent)]" />
+                <div className="w-full lg:w-[40%] xl:w-[35%] flex flex-col shrink-0 bg-white text-zinc-900 border border-[#C5A059]/30 rounded-2xl shadow-lg lg:sticky lg:top-28 lg:self-start transition-all duration-300 overflow-hidden">
+                  <div className="p-4 sm:p-5 border-b border-[#C5A059]/25 flex justify-between items-center bg-[#FAF8F5]">
+                    <h2 className="text-base font-black flex items-center gap-2.5 text-zinc-900 tracking-tight">
+                      <ShoppingBag className="w-4 h-4 text-[#8A6815]" />
                       Current Order
                     </h2>
                     <span
-                      className={`flex items-center gap-2 bg-[#101015] border border-[#C5A059]/30 px-3 py-1 rounded-full font-bold text-[9px] ${isOnline ? "text-[#34D399]" : "text-[#FAF7F2]/80"}`}
+                      className={`flex items-center gap-1.5 bg-zinc-100 border border-zinc-300 px-3 py-1 rounded-full font-bold text-[9px] ${isOnline ? "text-emerald-700" : "text-zinc-700"}`}
                     >
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-[#34D399]" : "bg-[var(--accent)]"}`}
+                        className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-emerald-600" : "bg-[#D4AF37]"}`}
                       ></span>
                       {isOnline ? "ONLINE ORDER" : "OFFLINE (POS)"}
                     </span>
                   </div>
 
-                  <div className="p-4 sm:p-6 space-y-5">
+                  <div className="p-4 sm:p-5 space-y-4">
                     {/* Customer Details Box */}
-                    <div className="bg-[#181820] border border-[#C5A059]/20 rounded-xl p-4 space-y-2.5">
+                    <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 sm:p-4 space-y-2.5 shadow-xs">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[#FAF7F2]/65 font-semibold">
+                        <span className="text-zinc-500 font-bold text-[10px] uppercase tracking-wider">
                           SOURCE
                         </span>
                         <span
-                          className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-widest border ${isOnline ? "border-[#00A86B] text-[#34D399] bg-[#00A86B]/15" : "border-[#C5A059]/40 text-[var(--accent)] bg-[var(--accent)]/10"}`}
+                          className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-widest border ${isOnline ? "border-emerald-300 text-emerald-800 bg-emerald-50" : "border-[#C5A059]/40 text-[#8A6815] bg-[#D4AF37]/15"}`}
                         >
                           {isOnline ? "ONLINE" : "OFFLINE"}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[#FAF7F2]/65 font-semibold">
+                        <span className="text-zinc-500 font-bold text-[10px] uppercase tracking-wider">
                           CUSTOMER
                         </span>
-                        <span className="font-bold text-[#FAF7F2] truncate max-w-[65%] text-right">
+                        <span className="font-bold text-zinc-900 truncate max-w-[65%] text-right">
                           {customerName || "-"}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[#FAF7F2]/65 font-semibold">
+                        <span className="text-zinc-500 font-bold text-[10px] uppercase tracking-wider">
                           PHONE
                         </span>
-                        <span className="font-bold text-[#FAF7F2]">
+                        <span className="font-bold text-zinc-900">
                           {customerPhone || "-"}
                         </span>
                       </div>
 
                       {/* Items summary list inside customer details box */}
-                      <div className="border-t border-[#C5A059]/20 pt-2.5 mt-2.5">
+                      <div className="border-t border-zinc-200 pt-2.5 mt-2.5">
                         {items.filter((i) => i.name).length === 0 ? (
-                          <div className="text-center py-2 text-[10px] text-[#FAF7F2]/45 font-semibold italic">
+                          <div className="text-center py-2 text-[11px] text-zinc-400 font-medium italic">
                             No items added yet
                           </div>
                         ) : (
@@ -4802,12 +4803,12 @@ export default function POSBilling() {
                               .map((item) => (
                                 <div
                                   key={item.id}
-                                  className="flex justify-between items-center text-[10px]"
+                                  className="flex justify-between items-center text-[11px]"
                                 >
-                                  <span className="text-[#FAF7F2]/85 font-semibold">
+                                  <span className="text-zinc-800 font-semibold truncate mr-2">
                                     {item.qty}x {item.name}
                                   </span>
-                                  <span className="font-bold text-[var(--accent)]">
+                                  <span className="font-bold text-[#8A6815] shrink-0">
                                     ₹
                                     {(item.price * item.qty).toLocaleString(
                                       undefined,
@@ -4821,12 +4822,12 @@ export default function POSBilling() {
                       </div>
                     </div>
 
-                    {/* Discounts section */}
-                    <div className="space-y-3.5 pt-1">
+                    {/* Unified Discounts & Coupons Card */}
+                    <div className="bg-white border border-[#C5A059]/30 rounded-xl p-3.5 sm:p-4 shadow-xs space-y-3">
                       {/* Coupon Code Section */}
-                      <div className="bg-white border border-[#C5A059]/30 rounded-xl p-3 shadow-xs">
-                        <label className="block text-[10px] font-bold text-black uppercase tracking-[0.1em] mb-1.5 flex items-center justify-between">
-                          <span className="flex items-center gap-1.5">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-zinc-800 uppercase tracking-wider flex items-center gap-1.5">
                             <Tag className="w-3.5 h-3.5 text-[#8A6815]" />
                             Coupon Code
                           </span>
@@ -4835,16 +4836,16 @@ export default function POSBilling() {
                               <Check className="w-3 h-3 text-emerald-700" /> Active
                             </span>
                           )}
-                        </label>
+                        </div>
 
                         {/* Active Coupon Badge OR Input Box */}
                         {selectedCoupon !== "none" ? (
                           <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 border border-emerald-300 rounded-lg text-xs shadow-xs">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono font-black text-emerald-900 tracking-wider uppercase">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-mono font-black text-emerald-900 tracking-wider uppercase truncate">
                                 {selectedCoupon}
                               </span>
-                              <span className="text-emerald-700 font-semibold text-[11px]">
+                              <span className="text-emerald-700 font-semibold text-[11px] shrink-0">
                                 ({coupons.find((c) => c.code === selectedCoupon)?.type === "percent"
                                   ? `${coupons.find((c) => c.code === selectedCoupon)?.value}% off`
                                   : `₹${coupons.find((c) => c.code === selectedCoupon)?.value} off`})
@@ -4857,7 +4858,7 @@ export default function POSBilling() {
                                 setDiscountValue(0);
                                 setCouponMessage(null);
                               }}
-                              className="text-zinc-600 hover:text-red-600 p-1 rounded-md transition-colors cursor-pointer"
+                              className="text-zinc-600 hover:text-red-600 p-1 rounded-md transition-colors cursor-pointer shrink-0 ml-1"
                               title="Remove coupon"
                               aria-label="Remove coupon"
                             >
@@ -4866,11 +4867,11 @@ export default function POSBilling() {
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            {/* Input with Apply button */}
+                            {/* Input with Apply button - fully responsive with matching heights */}
                             <div className="flex gap-2">
                               <input
                                 type="text"
-                                placeholder="Enter coupon code (e.g. WELCOME10)"
+                                placeholder="Coupon (e.g. SAVE10)"
                                 value={couponInput}
                                 onChange={(e) => {
                                   setCouponInput(e.target.value.toUpperCase());
@@ -4882,12 +4883,12 @@ export default function POSBilling() {
                                     applyCouponCode();
                                   }
                                 }}
-                                className="flex-1 bg-white border border-[#C5A059]/30 rounded-lg px-3 py-2 text-xs font-bold text-black uppercase placeholder:normal-case placeholder:text-zinc-400 focus:outline-none focus:border-[var(--accent)] shadow-xs"
+                                className="flex-1 min-w-0 bg-white border border-zinc-300 rounded-lg px-3 py-2 text-xs font-bold text-zinc-900 uppercase placeholder:normal-case placeholder:text-zinc-400 focus:outline-none focus:border-[#D4AF37] shadow-xs h-9"
                               />
                               <button
                                 type="button"
                                 onClick={() => applyCouponCode()}
-                                className="px-3.5 py-2 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:opacity-90 text-[#0C0C0E] font-black text-xs uppercase tracking-wider rounded-lg shadow-xs active:scale-95 transition-all cursor-pointer"
+                                className="px-4 py-2 bg-[#D4AF37] hover:bg-[#C5A02E] text-[#171717] font-black text-xs uppercase tracking-wider rounded-lg shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 h-9 flex items-center justify-center"
                               >
                                 Apply
                               </button>
@@ -4906,7 +4907,7 @@ export default function POSBilling() {
                                   setCouponMessage(null);
                                 }
                               }}
-                              className="w-full bg-white border border-[#C5A059]/30 text-xs font-semibold text-black rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[var(--accent)] cursor-pointer shadow-xs"
+                              className="w-full bg-white border border-zinc-300 text-xs font-semibold text-zinc-900 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] cursor-pointer shadow-xs h-9"
                             >
                               <option value="none">-- Select from available coupons --</option>
                               {coupons
@@ -4931,9 +4932,17 @@ export default function POSBilling() {
                         )}
                       </div>
 
+                      {/* Divider */}
+                      <div className="relative flex items-center justify-center my-1">
+                        <div className="border-t border-zinc-200 w-full" />
+                        <span className="bg-white px-2.5 text-[9px] font-bold text-zinc-400 uppercase tracking-widest absolute">
+                          OR MANUAL
+                        </span>
+                      </div>
+
                       {/* Manual Discount */}
                       <div>
-                        <label className="block text-[10px] font-bold text-black uppercase tracking-[0.1em] mb-1.5">
+                        <label className="block text-[10px] font-bold text-zinc-800 uppercase tracking-wider mb-1.5">
                           Manual Discount
                         </label>
                         <div className="flex gap-2">
@@ -4946,14 +4955,14 @@ export default function POSBilling() {
                               setSelectedCoupon("none");
                               setCouponMessage(null);
                             }}
-                            className="bg-white border border-[#C5A059]/30 text-black rounded-lg px-3 py-2 text-xs font-bold focus:outline-none focus:border-[var(--accent)] cursor-pointer shadow-xs"
+                            className="w-16 shrink-0 bg-white border border-zinc-300 text-zinc-900 rounded-lg px-2.5 py-2 text-xs font-bold focus:outline-none focus:border-[#D4AF37] cursor-pointer shadow-xs text-center h-9"
                           >
                             <option value="fixed">₹</option>
                             <option value="percent">%</option>
                           </select>
                           <input
                             type="number"
-                            className="flex-1 text-right bg-white border border-[#C5A059]/30 rounded-lg px-3 py-2 text-xs font-bold text-black placeholder:text-zinc-400 focus:outline-none focus:border-[var(--accent)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none min-w-0 shadow-xs"
+                            className="flex-1 min-w-0 text-right bg-white border border-zinc-300 rounded-lg px-3 py-2 text-xs font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#D4AF37] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-xs h-9"
                             value={discountValue || ""}
                             onWheel={(e) => e.currentTarget.blur()}
                             onChange={(e) => {
@@ -4965,9 +4974,10 @@ export default function POSBilling() {
                           />
                         </div>
                       </div>
+                    </div>
 
                     {/* Subtotal & Delivery Breakdown */}
-                    <div className="space-y-2.5 pt-2 border-t border-[#C5A059]/20">
+                    <div className="space-y-3 pt-3 border-t border-[#C5A059]/25">
                       <div className="flex justify-between items-center text-xs font-semibold">
                         <span className="text-zinc-700">
                           Subtotal (
@@ -4976,7 +4986,7 @@ export default function POSBilling() {
                             .reduce((sum, i) => sum + i.qty, 0)}{" "}
                           items){applyGST && <span className="text-[9px] font-bold text-[#8A6815] uppercase"> excl. GST</span>}
                         </span>
-                        <span className="font-bold text-black">
+                        <span className="font-black text-zinc-900 text-sm">
                           ₹
                           {subtotal.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
@@ -4986,11 +4996,11 @@ export default function POSBilling() {
 
                       {calculatedDiscount > 0 && (
                         <div className="flex justify-between items-center text-xs font-bold text-emerald-700">
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1.5">
                             <Tag className="w-3.5 h-3.5 text-emerald-600" />
                             Discount {selectedCoupon !== "none" ? `(${selectedCoupon})` : discountType === "percent" ? `(${discountValue}%)` : ""}
                           </span>
-                          <span>
+                          <span className="font-black">
                             − ₹
                             {calculatedDiscount.toLocaleString(undefined, {
                               minimumFractionDigits: 2,
@@ -5000,11 +5010,13 @@ export default function POSBilling() {
                         </div>
                       )}
 
-                        <div className="flex justify-between items-center text-xs font-semibold">
-                          <span className="text-[#FAF7F2]/75">Delivery</span>
+                      <div className="flex justify-between items-center text-xs font-semibold">
+                        <span className="text-zinc-700">Delivery Charges</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-zinc-400 font-bold text-xs">₹</span>
                           <input
                             type="number"
-                            className="w-20 text-right bg-[#181820] border border-[#C5A059]/30 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#FAF7F2] placeholder:text-[#FAF7F2]/30 focus:outline-none focus:border-[var(--accent)]"
+                            className="w-24 text-right bg-white border border-zinc-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#D4AF37] shadow-xs"
                             value={deliveryFee || ""}
                             onWheel={(e) => e.currentTarget.blur()}
                             onChange={(e) =>
@@ -5013,90 +5025,90 @@ export default function POSBilling() {
                             placeholder="0"
                           />
                         </div>
+                      </div>
 
-                        {/* Bill Type: GST Invoice vs Non-GST Bill */}
-                        <div className="pt-2 space-y-2.5">
-                          <div className="flex items-center bg-[#131317] border border-[#C5A059]/30 rounded-full p-1 w-full">
-                            <button
-                              type="button"
-                              onClick={() => setGstBill(false)}
-                              className={`flex-1 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${
-                                !applyGST
-                                  ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black border border-[#E5C378] shadow-sm"
-                                  : "text-[#FAF7F2]/70 hover:text-[#FAF7F2]"
-                              }`}
-                            >
-                              Non-GST Bill
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setGstBill(true)}
-                              className={`flex-1 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${
-                                applyGST
-                                  ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black border border-[#E5C378] shadow-sm"
-                                  : "text-[#FAF7F2]/70 hover:text-[#FAF7F2]"
-                              }`}
-                            >
-                              GST Invoice
-                            </button>
-                          </div>
-                          {applyGST && (
-                            <div className="space-y-1">
-                              <div className="flex justify-between items-center">
-                                <span className="text-xs font-bold text-[#FAF7F2] uppercase tracking-wider">
-                                  GST <span className="text-[9px] font-bold text-[var(--accent)]">(+ added)</span>
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex items-center gap-1">
-                                    <input
-                                      type="number"
-                                      className="w-14 text-right bg-[#181820] border border-[#C5A059]/30 rounded-lg px-2 py-1 text-xs font-bold text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                      value={gstPercentage || ""}
-                                      onChange={(e) =>
-                                        setGstPercentage(
-                                          parseFloat(e.target.value) || 0,
-                                        )
-                                      }
-                                      placeholder="%"
-                                    />
-                                    <span className="text-xs font-bold text-[#FAF7F2]">
-                                      %
-                                    </span>
-                                  </div>
-                                  <span className="text-xs font-bold text-[var(--accent)] w-20 text-right">
-                                    ₹
-                                    {gstAmount.toLocaleString(undefined, {
-                                      minimumFractionDigits: 2,
-                                    })}
+                      {/* Bill Type: GST Invoice vs Non-GST Bill */}
+                      <div className="pt-1 space-y-2">
+                        <div className="flex items-center bg-zinc-100 border border-zinc-200 rounded-xl p-1 w-full gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setGstBill(false)}
+                            className={`flex-1 py-2 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${
+                              !applyGST
+                                ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                                : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200/60"
+                            }`}
+                          >
+                            Non-GST Bill
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setGstBill(true)}
+                            className={`flex-1 py-2 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${
+                              applyGST
+                                ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                                : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200/60"
+                            }`}
+                          >
+                            GST Invoice
+                          </button>
+                        </div>
+                        {applyGST && (
+                          <div className="space-y-1.5 bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs font-bold text-zinc-800 uppercase tracking-wider">
+                                GST <span className="text-[9px] font-bold text-[#8A6815]">(+ added)</span>
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    className="w-14 text-right bg-white border border-zinc-300 rounded-lg px-2 py-1 text-xs font-bold text-zinc-900 focus:outline-none focus:border-[#D4AF37] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-xs"
+                                    value={gstPercentage || ""}
+                                    onChange={(e) =>
+                                      setGstPercentage(
+                                        parseFloat(e.target.value) || 0,
+                                      )
+                                    }
+                                    placeholder="%"
+                                  />
+                                  <span className="text-xs font-bold text-zinc-700">
+                                    %
                                   </span>
                                 </div>
+                                <span className="text-xs font-black text-[#8A6815] w-20 text-right">
+                                  ₹
+                                  {gstAmount.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                  })}
+                                </span>
                               </div>
-                              {gstAmount > 0 && (
-                                <div className="flex justify-between text-[10px] font-semibold text-[#B8B5AE] pt-0.5">
-                                  <span>CGST ({(gstPercentage / 2).toFixed(1).replace(/\.0$/, "")}%): ₹{(gstAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                                  <span>SGST ({(gstPercentage / 2).toFixed(1).replace(/\.0$/, "")}%): ₹{(gstAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                                </div>
-                              )}
                             </div>
-                          )}
-                        </div>
+                            {gstAmount > 0 && (
+                              <div className="flex justify-between text-[10px] font-semibold text-zinc-600 pt-1 border-t border-zinc-200">
+                                <span>CGST ({(gstPercentage / 2).toFixed(1).replace(/\.0$/, "")}%): ₹{(gstAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                <span>SGST ({(gstPercentage / 2).toFixed(1).replace(/\.0$/, "")}%): ₹{(gstAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Financial Option — payment method */}
-                      <div className="pt-2 space-y-1.5">
-                        <span className="block text-[9px] font-bold text-[#FAF7F2]/70 uppercase tracking-wider">
-                          Financial Option
+                      <div className="pt-1 space-y-1.5">
+                        <span className="block text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
+                          Payment Method
                         </span>
-                        <div className="grid grid-cols-3 gap-1.5">
+                        <div className="grid grid-cols-3 gap-2">
                           {POS_PAYMENT_MODES.map((mode) => (
                             <button
                               key={mode}
                               type="button"
                               onClick={() => setPaymentMode(mode)}
-                              className={`py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer border ${
+                              className={`py-2 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all cursor-pointer border ${
                                 paymentMode === mode
-                                  ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black border-[#E5C378] shadow-[0_2px_10px_rgba(197,160,89,0.25)]"
-                                  : "bg-[#181820] text-[#FAF7F2]/80 border-[#C5A059]/25 hover:border-[var(--accent)] hover:text-[#FAF7F2]"
+                                  ? "bg-[#D4AF37] text-[#171717] font-black border-[#C5A02E] shadow-xs"
+                                  : "bg-zinc-100 text-zinc-800 border-zinc-200 hover:bg-zinc-200 hover:text-black"
                               }`}
                             >
                               {mode === "GPAY" ? "GPay" : mode === "SPLIT" ? "Split" : mode}
@@ -5106,11 +5118,11 @@ export default function POSBilling() {
                       </div>
 
                       {/* Grand Total */}
-                      <div className="flex justify-between items-center text-sm font-bold pt-4 border-t border-[#C5A059]/20">
-                        <span className="text-[#FAF7F2] uppercase tracking-wider font-extrabold">
+                      <div className="flex justify-between items-center text-sm font-bold pt-3 border-t border-[#C5A059]/25">
+                        <span className="text-zinc-900 uppercase tracking-wider font-extrabold">
                           Grand Total
                         </span>
-                        <span className="text-xl text-[var(--accent)] font-black">
+                        <span className="text-2xl text-[#8A6815] font-black">
                           ₹
                           {grandTotal.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
@@ -5120,18 +5132,18 @@ export default function POSBilling() {
 
                       {/* Payment inputs — per selected method */}
                       {paymentMode === "SPLIT" ? (
-                        <div className="bg-[#181820] border border-[#C5A059]/25 rounded-xl p-4 mt-2 space-y-3">
-                          <span className="block text-[9px] font-bold text-[#FAF7F2]/70 uppercase tracking-wider">
+                        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 mt-2 space-y-3 shadow-xs">
+                          <span className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider">
                             Split Payment
                           </span>
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="block text-[10px] font-bold text-[#FAF7F2]/75 mb-1.5">
+                              <label className="block text-[10px] font-bold text-zinc-600 mb-1">
                                 Cash (₹)
                               </label>
                               <input
                                 type="number"
-                                className="w-full bg-[#141419] border border-[#C5A059]/30 focus:border-[var(--accent)] rounded-lg px-3 py-2 text-base font-bold text-[#FAF7F2] placeholder:text-[#FAF7F2]/30 focus:outline-none transition-colors"
+                                className="w-full bg-white border border-zinc-300 focus:border-[#D4AF37] rounded-lg px-3 py-2 text-base font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                                 value={splitCash || ""}
                                 onWheel={(e) => e.currentTarget.blur()}
                                 onChange={(e) =>
@@ -5141,12 +5153,12 @@ export default function POSBilling() {
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-[#FAF7F2]/75 mb-1.5">
+                              <label className="block text-[10px] font-bold text-zinc-600 mb-1">
                                 GPay (₹)
                               </label>
                               <input
                                 type="number"
-                                className="w-full bg-[#141419] border border-[#C5A059]/30 focus:border-[var(--accent)] rounded-lg px-3 py-2 text-base font-bold text-[#FAF7F2] placeholder:text-[#FAF7F2]/30 focus:outline-none transition-colors"
+                                className="w-full bg-white border border-zinc-300 focus:border-[#D4AF37] rounded-lg px-3 py-2 text-base font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                                 value={splitGpay || ""}
                                 onWheel={(e) => e.currentTarget.blur()}
                                 onChange={(e) =>
@@ -5156,11 +5168,12 @@ export default function POSBilling() {
                               />
                             </div>
                           </div>
-                          <div className="flex justify-between items-center text-xs pt-1 border-t border-[#C5A059]/20">
-                            <span className="font-bold text-[#FAF7F2]/75 uppercase tracking-[0.05em]">
+
+                          <div className="flex justify-between items-center text-xs pt-2 border-t border-zinc-200">
+                            <span className="font-bold text-zinc-600 uppercase tracking-wider text-[10px]">
                               Total Received
                             </span>
-                            <span className="font-black text-sm text-[var(--accent)]">
+                            <span className="font-black text-sm text-[#8A6815]">
                               ₹
                               {(splitCash + splitGpay).toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
@@ -5169,10 +5182,10 @@ export default function POSBilling() {
                           </div>
                           {splitCash + splitGpay < grandTotal ? (
                             <div className="flex justify-between items-center text-xs">
-                              <span className="font-bold text-[#FAF7F2]/75 uppercase tracking-[0.05em]">
+                              <span className="font-bold text-zinc-600 uppercase tracking-wider text-[10px]">
                                 Balance Remaining
                               </span>
-                              <span className="font-black text-sm text-[#EF4444]">
+                              <span className="font-black text-sm text-red-600">
                                 ₹
                                 {(grandTotal - (splitCash + splitGpay)).toLocaleString(undefined, {
                                   minimumFractionDigits: 2,
@@ -5181,10 +5194,10 @@ export default function POSBilling() {
                             </div>
                           ) : (
                             <div className="flex justify-between items-center text-xs">
-                              <span className="font-bold text-[#FAF7F2]/75 uppercase tracking-[0.05em]">
+                              <span className="font-bold text-zinc-600 uppercase tracking-wider text-[10px]">
                                 Change to Return
                               </span>
-                              <span className="font-black text-sm text-[#10B981]">
+                              <span className="font-black text-sm text-emerald-600">
                                 ₹
                                 {(splitCash + splitGpay - grandTotal).toLocaleString(undefined, {
                                   minimumFractionDigits: 2,
@@ -5194,16 +5207,13 @@ export default function POSBilling() {
                           )}
                         </div>
                       ) : (
-                        <div className="bg-[#181820] border border-[#C5A059]/25 rounded-xl p-4 mt-2">
-                          <span className="block text-[9px] font-bold text-[#FAF7F2]/70 uppercase tracking-wider mb-0.5">
-                            {paymentMode === "CASH" ? "Cash Payment" : "GPay Payment"}
-                          </span>
-                          <label className="block text-[10px] font-bold text-[#FAF7F2]/75 mb-2.5">
+                        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 mt-2 space-y-1.5 shadow-xs">
+                          <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider">
                             {paymentMode === "CASH" ? "Amount Received (₹)" : "GPay Amount (₹)"}
                           </label>
                           <input
                             type="number"
-                            className="w-full bg-[#141419] border border-[#C5A059]/30 focus:border-[var(--accent)] rounded-lg px-3 py-2 text-base font-bold text-[#FAF7F2] placeholder:text-[#FAF7F2]/30 focus:outline-none transition-colors"
+                            className="w-full bg-white border border-zinc-300 focus:border-[#D4AF37] rounded-lg px-3 py-2 text-base font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                             value={cashReceived || ""}
                             onWheel={(e) => e.currentTarget.blur()}
                             onChange={(e) =>
@@ -5216,12 +5226,12 @@ export default function POSBilling() {
 
                       {/* Change Return — cash only */}
                       {paymentMode === "CASH" && cashReceived > 0 && (
-                        <div className="flex justify-between items-center bg-[#181820] border border-[#C5A059]/25 rounded-lg p-3 text-xs">
-                          <span className="font-bold text-[#FAF7F2]/75 uppercase tracking-[0.05em]">
+                        <div className="flex justify-between items-center bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-xs shadow-xs">
+                          <span className="font-bold text-zinc-700 uppercase tracking-wider text-[10px]">
                             Change Return
                           </span>
                           <span
-                            className={`font-black text-sm ${cashReceived >= grandTotal ? "text-[#10B981]" : "text-[#EF4444]"}`}
+                            className={`font-black text-sm ${cashReceived >= grandTotal ? "text-emerald-700" : "text-red-700"}`}
                           >
                             ₹
                             {Math.max(
@@ -5238,7 +5248,7 @@ export default function POSBilling() {
                       <button
                         onClick={() => completeSale()}
                         disabled={isSubmittingOrder}
-                        className={`w-full mt-2 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 text-[#0C0C0E] py-3.5 rounded-xl font-black text-xs uppercase tracking-[0.16em] flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_6px_22px_rgba(197,160,89,0.32)] border border-[#E5C378] ${
+                        className={`w-full mt-2 bg-[#D4AF37] hover:bg-[#C5A02E] text-[#171717] py-3.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-sm border border-[#C5A02E] ${
                           isSubmittingOrder
                             ? "opacity-60 cursor-not-allowed"
                             : "cursor-pointer"
@@ -5246,12 +5256,12 @@ export default function POSBilling() {
                       >
                         {isSubmittingOrder ? (
                           <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-4 h-4 animate-spin text-[#171717]" />
                             <span>Processing Sale...</span>
                           </>
                         ) : (
                           <>
-                            <Check className="w-4 h-4" />
+                            <Check className="w-4 h-4 text-[#171717]" />
                             <span>Complete Sale</span>
                           </>
                         )}
@@ -5261,7 +5271,7 @@ export default function POSBilling() {
                       <button
                         onClick={openAdvanceSaveModal}
                         disabled={isSubmittingOrder}
-                        className={`w-full mt-2 bg-[#1A1A22] border border-[#D97706]/40 hover:bg-[#252530] text-[#F59E0B] py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.12em] flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+                        className={`w-full mt-2 bg-amber-50/70 border border-amber-300 hover:bg-amber-100 text-amber-900 py-3 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
                           isSubmittingOrder ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
                         }`}
                       >
