@@ -3383,16 +3383,18 @@ export default function POSBilling() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
-                    Category
-                  </label>
+              <div className={`grid grid-cols-1 ${newCatType === "PRODUCT" ? "sm:grid-cols-2" : ""} gap-3`}>
+                <div className="flex flex-col justify-between">
+                  <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                    <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                      Category
+                    </label>
+                  </div>
                   <input
                     type="text"
                     list="catalog-category-list"
                     placeholder="e.g., Blouses, Sarees, Services"
-                    className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                    className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatCategory}
                     onChange={(e) => setNewCatCategory(e.target.value)}
                   />
@@ -3408,15 +3410,17 @@ export default function POSBilling() {
 
                 {/* Stock alerts exist only for physical products */}
                 {newCatType === "PRODUCT" && (
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
-                      Low Stock Alert
-                    </label>
+                  <div className="flex flex-col justify-between">
+                    <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                        Low Stock Alert
+                      </label>
+                    </div>
                     <input
                       type="number"
                       min="0"
                       placeholder="5"
-                      className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                      className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                       value={newCatLowStock}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) =>
@@ -3432,16 +3436,22 @@ export default function POSBilling() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
-                    {newCatType === "SERVICE" ? "Service Price (₹)" : "Original Price (₹)"}{" "}
-                    <span className="text-[var(--accent)]">*</span>
-                  </label>
+              <div
+                className={`grid grid-cols-1 ${
+                  newCatType === "PRODUCT" ? "sm:grid-cols-3" : "sm:grid-cols-2"
+                } gap-3`}
+              >
+                <div className="flex flex-col justify-between">
+                  <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                    <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                      {newCatType === "SERVICE" ? "Service Price (₹)" : "Original Price (₹)"}
+                      <span className="text-red-500 ml-0.5">*</span>
+                    </label>
+                  </div>
                   <input
                     type="number"
                     placeholder="0.00"
-                    className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                    className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatPrice}
                     onWheel={(e) => e.currentTarget.blur()}
                     onChange={(e) =>
@@ -3452,14 +3462,16 @@ export default function POSBilling() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
-                    Cost Price (₹)
-                  </label>
+                <div className="flex flex-col justify-between">
+                  <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                    <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                      Cost Price (₹)
+                    </label>
+                  </div>
                   <input
                     type="number"
                     placeholder="0.00"
-                    className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                    className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatCost}
                     onWheel={(e) => e.currentTarget.blur()}
                     onChange={(e) =>
@@ -3471,15 +3483,17 @@ export default function POSBilling() {
                 </div>
 
                 {newCatType === "PRODUCT" && (
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
-                      Current Stock
-                    </label>
+                  <div className="flex flex-col justify-between">
+                    <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                        Current Stock
+                      </label>
+                    </div>
                     <input
                       type="number"
                       min="0"
                       placeholder="0"
-                      className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                      className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                       value={newCatStock}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) =>
@@ -3497,16 +3511,18 @@ export default function POSBilling() {
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
-                    GST Rate (%)
-                  </label>
+                <div className="flex flex-col justify-between">
+                  <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                    <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                      GST Rate (%)
+                    </label>
+                  </div>
                   <input
                     type="number"
                     min="0"
                     max="28"
                     placeholder="5"
-                    className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                    className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatGst}
                     onWheel={(e) => e.currentTarget.blur()}
                     onChange={(e) =>
@@ -3517,17 +3533,20 @@ export default function POSBilling() {
                     Pre-fills the GST % when this item is on a GST invoice.
                   </p>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
-                    HSN / SAC Code
-                  </label>
+                <div className="flex flex-col justify-between">
+                  <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                    <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                      HSN / SAC Code
+                    </label>
+                  </div>
                   <input
                     type="text"
                     placeholder="Optional"
-                    className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                    className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatHsn}
                     onChange={(e) => setNewCatHsn(e.target.value)}
                   />
+                  <div className="min-h-[16px] mt-1" />
                 </div>
               </div>
 
@@ -3539,16 +3558,18 @@ export default function POSBilling() {
                   (Automatic on Billing)
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
-                      Offer Discount (%)
-                    </label>
+                  <div className="flex flex-col justify-between">
+                    <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                        Offer Discount (%)
+                      </label>
+                    </div>
                     <input
                       type="number"
                       min="0"
                       max="100"
                       placeholder="e.g. 10"
-                      className="w-full bg-white border border-zinc-300 focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors"
+                      className="w-full h-10 bg-white border border-zinc-300 focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                       value={newCatOfferPct}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => {
@@ -3560,10 +3581,12 @@ export default function POSBilling() {
                       }}
                     />
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
-                      Discounted Offer Price (₹)
-                    </label>
+                  <div className="flex flex-col justify-between">
+                    <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                        Discounted Offer Price (₹)
+                      </label>
+                    </div>
                     <input
                       type="number"
                       min="0"
@@ -3572,7 +3595,7 @@ export default function POSBilling() {
                           ? String(computedOfferPrice)
                           : "Offer Price"
                       }
-                      className="w-full bg-white border border-zinc-300 focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors"
+                      className="w-full h-10 bg-white border border-zinc-300 focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                       value={newCatOfferPrice}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => {
