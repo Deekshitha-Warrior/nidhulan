@@ -4310,34 +4310,41 @@ export default function POSBilling() {
                 {/* Left Column */}
                 <div className="w-full lg:w-[60%] xl:w-[65%] flex flex-col gap-6 h-auto lg:h-full">
                   {/* Customer Details */}
-                  <div className="flex-shrink-0 bg-[#131317] border border-[#C5A059]/25 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-all duration-300 relative overflow-hidden group">
-                    <h2 className="text-base font-black flex items-center gap-3 text-[#FAF7F2] mb-6 tracking-tight">
-                      <User className="w-4 h-4 text-[var(--accent)]" />
+                  <div className="flex-shrink-0 bg-white border border-[#C5A059]/30 rounded-xl p-4 sm:p-5 shadow-xs transition-all duration-300 relative">
+                    <h2 className="text-base font-black flex items-center gap-2.5 text-zinc-900 mb-4 tracking-tight">
+                      <User className="w-4 h-4 text-[#8A6815]" />
                       Customer Details
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
-                      <div>
-                        <label className="block text-[10px] font-bold text-[#FAF7F2]/75 uppercase tracking-[0.15em] mb-2">
-                          Customer Name
-                        </label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                      <div className="flex flex-col justify-between">
+                        <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                          <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider">
+                            Customer Name
+                          </label>
+                        </div>
                         <input
                           type="text"
                           placeholder="Walk-in Customer"
-                          className="w-full bg-[#181820] border border-[#C5A059]/30 hover:border-[#C5A059]/50 focus:border-[var(--accent)] focus:bg-[#1E1E26] rounded-lg px-4 py-2.5 text-[#FAF7F2] text-sm font-semibold focus:outline-none transition-colors placeholder:text-[#FAF7F2]/30 shadow-inner"
+                          className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                           value={customerName}
                           onChange={(e) => setCustomerName(e.target.value)}
                         />
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-[#FAF7F2]/75 uppercase tracking-[0.15em] mb-2">
-                          Mobile Number (WhatsApp)
-                        </label>
+                      <div className="flex flex-col justify-between">
+                        <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                          <label className="w-full text-[10px] font-bold text-zinc-700 uppercase tracking-wider flex items-center justify-between gap-1 leading-tight">
+                            <span>Mobile Number</span>
+                            <span className="text-[9px] text-emerald-700 font-bold normal-case tracking-normal">
+                              (WhatsApp)
+                            </span>
+                          </label>
+                        </div>
                         <input
                           type="tel"
-                          placeholder="Enter 10-digit number"
+                          placeholder="10-digit mobile"
                           maxLength={10}
-                          className="w-full bg-[#181820] border border-[#C5A059]/30 hover:border-[#C5A059]/50 focus:border-[var(--accent)] focus:bg-[#1E1E26] rounded-lg px-4 py-2.5 text-[#FAF7F2] text-sm font-semibold focus:outline-none transition-colors placeholder:text-[#FAF7F2]/30 shadow-inner"
+                          className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                           value={customerPhone}
                           onChange={(e) =>
                             setCustomerPhone(
@@ -4346,33 +4353,35 @@ export default function POSBilling() {
                           }
                         />
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-[#FAF7F2]/75 uppercase tracking-[0.15em] mb-2 flex items-center justify-between">
-                          <span className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-[var(--accent)]" />
-                            Bill Date
-                          </span>
-                          <span className="text-[9px] text-[var(--accent)] font-extrabold uppercase">
-                            Custom / Past
-                          </span>
-                        </label>
+                      <div className="flex flex-col justify-between">
+                        <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                          <label className="w-full text-[10px] font-bold text-zinc-700 uppercase tracking-wider flex items-center justify-between gap-1 leading-tight">
+                            <span className="flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-[#8A6815]" />
+                              Bill Date
+                            </span>
+                            <span className="text-[9px] text-[#8A6815] font-extrabold uppercase tracking-normal">
+                              Custom / Past
+                            </span>
+                          </label>
+                        </div>
                         <input
                           type="date"
                           max={new Date().toISOString().split("T")[0]}
-                          className="w-full bg-[#181820] border border-[#C5A059]/30 hover:border-[#C5A059]/50 focus:border-[var(--accent)] focus:bg-[#1E1E26] rounded-lg px-4 py-2.5 text-[#FAF7F2] text-sm font-bold focus:outline-none transition-colors cursor-pointer shadow-inner"
+                          className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3 text-sm font-bold text-zinc-900 focus:outline-none transition-colors cursor-pointer shadow-xs"
                           value={customOrderDate}
                           onChange={(e) => setCustomOrderDate(e.target.value)}
                         />
                       </div>
                     </div>
-                    <div className="mt-6">
-                      <label className="block text-[10px] font-bold text-[#FAF7F2]/75 uppercase tracking-[0.15em] mb-2">
+                    <div className="mt-4 sm:mt-5">
+                      <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
                         Customer Address (Optional)
                       </label>
                       <input
                         type="text"
                         placeholder="Enter full address"
-                        className="w-full bg-[#181820] border border-[#C5A059]/30 hover:border-[#C5A059]/50 focus:border-[var(--accent)] focus:bg-[#1E1E26] rounded-lg px-4 py-2.5 text-[#FAF7F2] text-sm font-semibold focus:outline-none transition-colors placeholder:text-[#FAF7F2]/30 shadow-inner"
+                        className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                         value={customerAddress}
                         onChange={(e) => setCustomerAddress(e.target.value)}
                       />
