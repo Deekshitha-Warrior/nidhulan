@@ -41,6 +41,7 @@ import {
   TrendingDown,
   Coins,
   Tag,
+  AlertCircle,
   Banknote,
   PiggyBank,
   ArrowUpDown,
@@ -238,6 +239,15 @@ const isDateInPeriod = (
   const range = getDateRange(period, startStr, endStr);
   if (!range.valid) return false;
   return (!range.start || dateKey >= range.start) && (!range.end || dateKey <= range.end);
+};
+
+type CouponItem = {
+  code: string;
+  label: string;
+  type: "percent" | "fixed";
+  value: number;
+  description?: string;
+  isActive?: boolean;
 };
 
 type CatalogItem = {
@@ -874,27 +884,121 @@ export default function POSBilling() {
   const [couponInput, setCouponInput] = useState<string>("");
   const [couponMessage, setCouponMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
-  const coupons = [
-    { code: "none", label: "No Coupon", type: "fixed", value: 0 },
+  // Dynamic coupons with localStorage persistence
+  const [coupons, setCoupons] = useState<CouponItem[]>([
+    { code: "none", label: "No Coupon", type: "fixed", value: 0, isActive: true },
     {
       code: "WELCOME10",
       label: "WELCOME10 (10% Off)",
       type: "percent",
       value: 10,
+      description: "Welcome discount for new customers",
+      isActive: true,
     },
     {
       code: "SUPERPOS",
       label: "SUPERPOS (₹100 Off)",
       type: "fixed",
       value: 100,
+      description: "Special ₹100 flat instant voucher",
+      isActive: true,
     },
     {
       code: "FESTIVE15",
       label: "FESTIVE15 (15% Off)",
       type: "percent",
       value: 15,
+      description: "Festive season celebration discount",
+      isActive: true,
     },
-  ];
+  ]);
+  const [showAddCouponModal, setShowAddCouponModal] = useState<boolean>(false);
+  const [newCouponCode, setNewCouponCode] = useState<string>("");
+  const [newCouponType, setNewCouponType] = useState<"percent" | "fixed">("percent");
+  const [newCouponValue, setNewCouponValue] = useState<number | "">(10);
+  const [newCouponDescription, setNewCouponDescription] = useState<string>("");
+  const [couponError, setCouponError] = useState<string>("");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("nidhulan_pos_coupons");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const hasNone = parsed.some((c: CouponItem) => c.code === "none");
+          const merged = hasNone
+            ? parsed
+            : [{ code: "none", label: "No Coupon", type: "fixed", value: 0, isActive: true }, ...parsed];
+          setCoupons(merged);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to read coupons from localStorage", e);
+    }
+  }, []);
+
+  const saveCouponsToStorage = (updatedList: CouponItem[]) => {
+    setCoupons(updatedList);
+    try {
+      localStorage.setItem("nidhulan_pos_coupons", JSON.stringify(updatedList));
+    } catch (e) {
+      console.error("Failed to save coupons to localStorage", e);
+    }
+  };
+
+  const handleCreateCoupon = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanCode = newCouponCode.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+    if (!cleanCode) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+    if (cleanCode === "NONE") {
+      setCouponError("Invalid coupon code");
+      return;
+    }
+    if (coupons.some((c) => c.code.toUpperCase() === cleanCode)) {
+      setCouponError(`Coupon code "${cleanCode}" already exists`);
+      return;
+    }
+    const val = Number(newCouponValue);
+    if (!val || val <= 0) {
+      setCouponError("Please enter a valid discount value greater than 0");
+      return;
+    }
+    if (newCouponType === "percent" && val > 100) {
+      setCouponError("Percentage discount cannot exceed 100%");
+      return;
+    }
+
+    const label = `${cleanCode} (${newCouponType === "percent" ? `${val}% Off` : `₹${val} Off`})`;
+    const newCoupon: CouponItem = {
+      code: cleanCode,
+      label,
+      type: newCouponType,
+      value: val,
+      description: newCouponDescription.trim() || undefined,
+      isActive: true,
+    };
+
+    const updated = [...coupons, newCoupon];
+    saveCouponsToStorage(updated);
+    setShowAddCouponModal(false);
+    setNewCouponCode("");
+    setNewCouponValue(10);
+    setNewCouponDescription("");
+    setCouponError("");
+  };
+
+  const handleDeleteCoupon = (codeToDelete: string) => {
+    if (codeToDelete === "none") return;
+    const updated = coupons.filter((c) => c.code !== codeToDelete);
+    saveCouponsToStorage(updated);
+    if (selectedCoupon === codeToDelete) {
+      setSelectedCoupon("none");
+      setDiscountValue(0);
+    }
+  };
 
   const handleCouponChange = (code: string) => {
     setSelectedCoupon(code);
@@ -6752,28 +6856,35 @@ export default function POSBilling() {
                         const positive = netProfit >= 0;
                         const accent = positive ? "#059669" : "#B91C1C";
                         return (
-                          <div
-                            className="rounded-2xl p-5 shadow-sm text-white hover:shadow-md transition-all"
-                            style={{
-                              background: `linear-gradient(135deg, ${accent}, #18181B)`,
-                            }}
-                          >
+                          <div className="bg-[#131317] border border-[#059669]/30 rounded-2xl p-5 shadow-sm hover:border-[#059669]/50 transition-all">
                             <div className="flex justify-between items-start mb-2">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-white/90">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE]">
                                 Net Earnings
                               </span>
-                              <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
-                                <PiggyBank className="w-4 h-4 text-white" />
+                              <div
+                                className={`w-8 h-8 rounded-full ${
+                                  positive ? "bg-[#059669]/15" : "bg-[#B91C1C]/15"
+                                } flex items-center justify-center`}
+                              >
+                                <PiggyBank
+                                  className={`w-4 h-4 ${
+                                    positive ? "text-[#10B981]" : "text-[#EF4444]"
+                                  }`}
+                                />
                               </div>
                             </div>
-                            <div className="text-2xl font-black text-white">
+                            <div
+                              className={`text-2xl font-black ${
+                                positive ? "text-[#10B981]" : "text-[#EF4444]"
+                              }`}
+                            >
                               {positive ? "" : "− "}₹
                               {Math.abs(netProfit).toLocaleString("en-IN", {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}
                             </div>
-                            <div className="text-[9px] text-white/95 font-black mt-1 tracking-wide">
+                            <div className="text-[9px] text-[#B8B5AE] font-semibold mt-1">
                               GST + Non-GST − Expenses
                             </div>
                           </div>
@@ -8832,18 +8943,33 @@ export default function POSBilling() {
                     Coupons &amp; Promotions
                   </h2>
                   <p className="text-xs text-[#B8B5AE] mt-1">
-                    Track coupon redemption, discount analytics, and promotional campaign performance.
+                    Manage active store coupons, discount campaigns, and customer incentives.
                   </p>
                 </div>
-                <button
-                  onClick={() => {
-                    setActiveTab("analytics");
-                    setAnalyticsSubTab("coupons");
-                  }}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black text-xs uppercase tracking-wider shadow-sm transition-all cursor-pointer"
-                >
-                  View Full Analytics
-                </button>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={() => {
+                      setNewCouponCode("");
+                      setNewCouponValue(10);
+                      setNewCouponType("percent");
+                      setNewCouponDescription("");
+                      setCouponError("");
+                      setShowAddCouponModal(true);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black text-xs uppercase tracking-wider shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" /> Add Coupon
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("analytics");
+                      setAnalyticsSubTab("coupons");
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-[#181820] hover:bg-[#202028] border border-[#C5A059]/25 text-[#FAF7F2] font-bold text-xs uppercase tracking-wider shadow-xs transition-all cursor-pointer"
+                  >
+                    View Analytics
+                  </button>
+                </div>
               </div>
 
               {/* Coupons List / Performance View */}
@@ -8877,22 +9003,172 @@ export default function POSBilling() {
                       <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider">Coupon Code</th>
                       <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider">Type</th>
                       <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider text-right">Value</th>
+                      <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider">Description</th>
+                      <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {coupons.filter(c => c.code !== "none").map(c => (
                       <tr key={c.code} className="hover:bg-white/[0.03]">
                         <td className="p-3 font-mono font-bold text-xs text-[var(--accent)]">{c.code}</td>
-                        <td className="p-3 text-xs font-semibold text-[#FAF7F2] capitalize">{c.type}</td>
+                        <td className="p-3 text-xs font-semibold text-[#FAF7F2] capitalize">{c.type === "percent" ? "Percentage (%)" : "Flat Amount (₹)"}</td>
                         <td className="p-3 text-xs font-bold text-[#FAF7F2] text-right">
                           {c.type === "percent" ? `${c.value}%` : `₹${c.value}`}
                         </td>
+                        <td className="p-3 text-xs text-[#B8B5AE] font-medium">
+                          {c.description || "—"}
+                        </td>
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCoupon(c.code)}
+                            className="p-1.5 text-zinc-400 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer inline-flex items-center justify-center"
+                            title="Delete coupon"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </button>
+                        </td>
                       </tr>
                     ))}
+                    {coupons.filter(c => c.code !== "none").length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-zinc-500 text-xs">
+                          No coupons created yet. Click "+ Add Coupon" to create your first promotion.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
+
+            {/* ADD NEW COUPON MODAL */}
+            {showAddCouponModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+                <div className="bg-white rounded-2xl border border-[#C5A059]/35 shadow-2xl max-w-md w-full p-6 text-zinc-900 animate-in fade-in zoom-in-95">
+                  <div className="flex items-center justify-between pb-3.5 border-b border-zinc-200 mb-4">
+                    <h3 className="text-base font-black text-zinc-900 tracking-tight flex items-center gap-2">
+                      <Tag className="w-4.5 h-4.5 text-[#8A6815]" />
+                      Add New Coupon
+                    </h3>
+                    <button
+                      onClick={() => setShowAddCouponModal(false)}
+                      className="p-1.5 text-zinc-500 hover:text-zinc-900 rounded-lg cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {couponError && (
+                    <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-semibold flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                      {couponError}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleCreateCoupon} className="space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                        Coupon Code *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. FESTIVE20, SAVE100"
+                        value={newCouponCode}
+                        onChange={(e) => {
+                          setNewCouponCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""));
+                          setCouponError("");
+                        }}
+                        autoFocus
+                        required
+                        className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 uppercase placeholder:normal-case placeholder:font-normal placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                      />
+                      <p className="text-[10px] text-zinc-500 font-medium mt-1">
+                        Use uppercase letters and numbers (e.g., FESTIVE15, DIWALI500)
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                        Discount Type *
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setNewCouponType("percent")}
+                          className={`py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider border cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+                            newCouponType === "percent"
+                              ? "bg-[#D4AF37] border-[#C5A02E] text-[#171717] font-black shadow-xs"
+                              : "bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100"
+                          }`}
+                        >
+                          <span>% Percentage</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewCouponType("fixed")}
+                          className={`py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider border cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+                            newCouponType === "fixed"
+                              ? "bg-[#D4AF37] border-[#C5A02E] text-[#171717] font-black shadow-xs"
+                              : "bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100"
+                          }`}
+                        >
+                          <span>₹ Flat Amount</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                        {newCouponType === "percent" ? "Discount Percentage (%) *" : "Discount Amount (₹) *"}
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max={newCouponType === "percent" ? 100 : 100000}
+                        placeholder={newCouponType === "percent" ? "e.g. 15" : "e.g. 200"}
+                        value={newCouponValue}
+                        onChange={(e) => {
+                          setNewCouponValue(e.target.value === "" ? "" : parseFloat(e.target.value));
+                          setCouponError("");
+                        }}
+                        required
+                        className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                        Description / Campaign Note (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Festive season special promotion"
+                        value={newCouponDescription}
+                        onChange={(e) => setNewCouponDescription(e.target.value)}
+                        className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                      />
+                    </div>
+
+                    <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-zinc-200">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddCouponModal(false)}
+                        className="px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-600 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black text-xs uppercase tracking-wider shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Plus className="w-4 h-4" /> Save Coupon
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
