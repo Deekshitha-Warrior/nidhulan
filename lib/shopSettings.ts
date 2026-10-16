@@ -42,22 +42,39 @@ const toSettings = (row: Record<string, unknown>): ShopSettings => {
 };
 
 function describeSettingsError(error: unknown): string {
-  if (error instanceof Error) return `${error.name}: ${error.message}`;
+  if (error instanceof Error) {
+    const cause = (error as Error & { cause?: unknown }).cause;
+    if (cause) {
+      return `${error.name}: ${error.message} (cause: ${String(cause)})`;
+    }
+    return `${error.name}: ${error.message}`;
+  }
 
   if (typeof error === 'object' && error !== null) {
     const parts: string[] = [];
-    if ('code' in error && typeof error.code === 'string') parts.push(`code=${error.code}`);
-    if ('message' in error && typeof error.message === 'string') parts.push(error.message);
-    if ('hint' in error && typeof error.hint === 'string') parts.push(`hint=${error.hint}`);
+    const obj = error as Record<string, unknown>;
+    if (typeof obj.code === 'string' && obj.code.trim()) parts.push(`code=${obj.code}`);
+    if (typeof obj.message === 'string' && obj.message.trim()) parts.push(obj.message);
+    if (typeof obj.hint === 'string' && obj.hint.trim()) parts.push(`hint=${obj.hint}`);
+    if (typeof obj.details === 'string' && obj.details.trim()) parts.push(`details=${obj.details}`);
     if (parts.length > 0) return parts.join(': ');
   }
 
   return String(error);
 }
 
+// In-memory cache to prevent repeated database queries across rapid requests
+// and serve gracefully if connection drops momentarily.
+let memoryCache: { settings: ShopSettings; timestamp: number } | null = null;
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
 /** Read the shop profile, seeding defaults on first run. */
 export const getShopSettings = cache(async (): Promise<ShopSettings> => {
-  if (!isDatabaseConfigured()) return DEFAULT_SHOP_SETTINGS;
+  if (memoryCache && Date.now() - memoryCache.timestamp < CACHE_TTL_MS) {
+    return memoryCache.settings;
+  }
+
+  if (!isDatabaseConfigured()) return memoryCache?.settings || DEFAULT_SHOP_SETTINGS;
   const client = getSupabaseClient();
 
   try {
@@ -67,7 +84,11 @@ export const getShopSettings = cache(async (): Promise<ShopSettings> => {
       .eq('id', SETTINGS_ID)
       .maybeSingle();
     if (error) throw error;
-    if (data) return toSettings(data);
+    if (data) {
+      const parsed = toSettings(data);
+      memoryCache = { settings: parsed, timestamp: Date.now() };
+      return parsed;
+    }
 
     const { data: seeded, error: seedError } = await client
       .from('shop_settings')
@@ -82,10 +103,18 @@ export const getShopSettings = cache(async (): Promise<ShopSettings> => {
       .select('*')
       .maybeSingle();
     if (seedError) throw seedError;
-    if (seeded) return toSettings(seeded);
+    if (seeded) {
+      const parsed = toSettings(seeded);
+      memoryCache = { settings: parsed, timestamp: Date.now() };
+      return parsed;
+    }
     return DEFAULT_SHOP_SETTINGS;
   } catch (err) {
     console.error(`Failed to load shop settings from Supabase: ${describeSettingsError(err)}`);
+    // Fall back to memory cache if available, otherwise default settings
+    if (memoryCache) {
+      return memoryCache.settings;
+    }
     return DEFAULT_SHOP_SETTINGS;
   }
 });
@@ -120,5 +149,7 @@ export async function saveShopSettings(input: ShopSettings): Promise<ShopSetting
 
   if (error) throw error;
   if (!data) throw new Error('Supabase did not return the saved shop settings.');
-  return toSettings(data);
+  const parsed = toSettings(data);
+  memoryCache = { settings: parsed, timestamp: Date.now() };
+  return parsed;
 }

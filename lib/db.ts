@@ -60,6 +60,24 @@ export function getSupabaseClient(): SupabaseClient {
       detectSessionInUrl: false,
       persistSession: false,
     },
+    global: {
+      fetch: async (input, init) => {
+        const timeoutMs = 8000;
+        try {
+          const signal = init?.signal || AbortSignal.timeout(timeoutMs);
+          return await fetch(input, { ...init, signal });
+        } catch (err) {
+          // If network aborted or timed out, retry once quickly
+          try {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            const retrySignal = init?.signal || AbortSignal.timeout(timeoutMs);
+            return await fetch(input, { ...init, signal: retrySignal });
+          } catch {
+            throw err;
+          }
+        }
+      },
+    },
   });
   return client;
 }
