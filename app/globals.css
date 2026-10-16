@@ -668,9 +668,24 @@ input[type="number"] {
   color: #171717 !important;
 }
 
-.birthday-dashboard .birthday-preview {
-  background-color: #f0fdf4 !important;
-  border-color: rgba(16, 185, 129, 0.4) !important;
-  color: #065f46 !important;
+/* WhatsApp message preview in Birthday Panel */
+.whatsapp-preview-card,
+.birthday-dashboard .whatsapp-preview-card {
+  background-color: #EFEAE2 !important;
+  border-color: #D1C7B7 !important;
+}
+
+.whatsapp-bubble,
+.birthday-dashboard .whatsapp-bubble,
+.whatsapp-preview-card .whatsapp-bubble {
+  background-color: #D9FDD3 !important;
+  border-color: #C2E7BD !important;
+  color: #111B21 !important;
+}
+
+.whatsapp-bubble div,
+.whatsapp-bubble p,
+.whatsapp-bubble span:not([class*="text-[#53BDEB]"]):not([class*="text-[#667781]"]) {
+  color: #111B21 !important;
 }
 

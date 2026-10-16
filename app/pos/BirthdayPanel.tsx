@@ -1360,13 +1360,26 @@ export default function BirthdayPanel({
                   </p>
                 </div>
 
-                {/* MESSAGE PREVIEW */}
-                <div className="birthday-preview bg-[#0D1812] border border-emerald-500/35 rounded-xl p-4 sm:p-5 shadow-inner">
-                  <span className="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                    Message Preview
-                  </span>
-                  <div className="text-sm text-emerald-100 whitespace-pre-line leading-relaxed font-sans">
-                    {previewText}
+                {/* MESSAGE PREVIEW - Authentic WhatsApp Chat Bubble */}
+                <div className="whatsapp-preview-card bg-[#EFEAE2] border border-[#D1C7B7] rounded-2xl p-4 sm:p-5 shadow-inner">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#075E54] flex items-center gap-1.5">
+                      <MessageCircle className="w-4 h-4 text-[#25D366] fill-[#25D366]" />
+                      WhatsApp Message Preview
+                    </span>
+                    <span className="text-[10px] font-bold text-[#667781] bg-black/5 px-2.5 py-0.5 rounded-full">
+                      End-to-end encrypted
+                    </span>
+                  </div>
+
+                  <div className="whatsapp-bubble max-w-[95%] sm:max-w-[85%] ml-auto bg-[#D9FDD3] border border-[#C2E7BD] rounded-2xl rounded-tr-xs p-3.5 sm:p-4 shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
+                    <div className="text-[13.5px] sm:text-sm text-[#111B21] font-medium whitespace-pre-line leading-relaxed font-sans select-text">
+                      {previewText}
+                    </div>
+                    <div className="flex items-center justify-end gap-1 text-[11px] text-[#667781] mt-2 font-medium select-none">
+                      <span>10:30 AM</span>
+                      <span className="text-[#53BDEB] font-bold text-xs tracking-tighter">✓✓</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1695,8 +1708,20 @@ export default function BirthdayPanel({
               </div>
 
               {/* Message Sample */}
-              <div className="bg-[#0D1812] border border-emerald-500/35 rounded-xl p-4 text-sm text-emerald-100 whitespace-pre-line leading-relaxed font-sans">
-                {buildPersonalizedMessage(sendTargetCustomer?.name || "Customer Name")}
+              <div className="whatsapp-preview-card bg-[#EFEAE2] border border-[#D1C7B7] rounded-xl p-3 sm:p-3.5 shadow-inner">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#075E54] mb-2">
+                  <MessageCircle className="w-3.5 h-3.5 text-[#25D366] fill-[#25D366]" />
+                  <span>WhatsApp Message Preview</span>
+                </div>
+                <div className="whatsapp-bubble bg-[#D9FDD3] border border-[#C2E7BD] rounded-xl rounded-tr-xs p-3.5 shadow-xs">
+                  <div className="text-sm text-[#111B21] font-medium whitespace-pre-line leading-relaxed font-sans select-text">
+                    {buildPersonalizedMessage(sendTargetCustomer?.name || "Customer Name")}
+                  </div>
+                  <div className="flex items-center justify-end gap-1 text-[10.5px] text-[#667781] mt-1.5 font-medium select-none">
+                    <span>10:30 AM</span>
+                    <span className="text-[#53BDEB] font-bold text-xs tracking-tighter">✓✓</span>
+                  </div>
+                </div>
               </div>
 
               <div className="p-3.5 bg-[#C5A059]/10 rounded-xl border border-[#C5A059]/30 text-xs text-[#FAF7F2]/90 flex items-start gap-2.5">
