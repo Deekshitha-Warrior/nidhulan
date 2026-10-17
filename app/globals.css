@@ -45,12 +45,104 @@ body {
 .pos-dashboard {
   background-color: #F7F7F8 !important;
   color: #171717 !important;
-  --accent-strong: #A47B16 !important;
 }
 
 #pos-main {
   background-color: #F7F7F8 !important;
   color: #171717 !important;
+}
+
+/* =====================================================================
+   POS Left Sidebar (Themed with Chosen Accent Color)
+   - Background dynamically reflects the selected accent color.
+   - Text & icons are WHITE at all times for unselected items and top header.
+   - Active / selected option button has WHITE background and BLACK text.
+   ===================================================================== */
+aside.pos-sidebar,
+.pos-dashboard aside.pos-sidebar {
+  background-color: var(--accent) !important;
+  color: #ffffff !important;
+}
+
+/* ALL sidebar unselected content (header, titles, subtitles, unselected buttons) is PURE WHITE */
+aside.pos-sidebar .sidebar-brand-name,
+aside.pos-sidebar .sidebar-brand-tagline,
+aside.pos-sidebar .sidebar-admin-badge,
+aside.pos-sidebar .sidebar-title,
+aside.pos-sidebar .sidebar-subtitle,
+.pos-dashboard aside.pos-sidebar .sidebar-brand-name,
+.pos-dashboard aside.pos-sidebar .sidebar-brand-tagline,
+.pos-dashboard aside.pos-sidebar .sidebar-admin-badge,
+.pos-dashboard aside.pos-sidebar .sidebar-title,
+.pos-dashboard aside.pos-sidebar .sidebar-subtitle,
+aside.pos-sidebar header,
+aside.pos-sidebar header *,
+aside.pos-sidebar footer,
+aside.pos-sidebar footer *,
+aside.pos-sidebar button:not([data-active="true"]),
+aside.pos-sidebar button:not([data-active="true"]) *,
+.pos-dashboard aside.pos-sidebar button:not([data-active="true"]),
+.pos-dashboard aside.pos-sidebar button:not([data-active="true"]) * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Active / Selected option in left sidebar: White background, PURE BLACK text & icon */
+aside.pos-sidebar button[data-active="true"],
+.pos-dashboard aside.pos-sidebar button[data-active="true"] {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border-color: #ffffff !important;
+}
+
+aside.pos-sidebar button[data-active="true"] *,
+aside.pos-sidebar button[data-active="true"] span:not(.badge-count),
+aside.pos-sidebar button[data-active="true"] .sidebar-tab-label,
+.pos-dashboard aside.pos-sidebar button[data-active="true"] *,
+.pos-dashboard aside.pos-sidebar button[data-active="true"] span:not(.badge-count),
+.pos-dashboard aside.pos-sidebar button[data-active="true"] .sidebar-tab-label {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  background-color: transparent !important;
+}
+
+aside.pos-sidebar button[data-active="true"] svg,
+.pos-dashboard aside.pos-sidebar button[data-active="true"] svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
+  background-color: transparent !important;
+}
+
+/* Red / Amber notification badges inside active/inactive buttons */
+.pos-dashboard aside.pos-sidebar button span.bg-\[\#DC2626\],
+.pos-dashboard aside.pos-sidebar button span[class*="bg-red-"] {
+  background-color: #DC2626 !important;
+  color: #ffffff !important;
+}
+.pos-dashboard aside.pos-sidebar button span.bg-\[\#D97706\],
+.pos-dashboard aside.pos-sidebar button span[class*="bg-amber-"] {
+  background-color: #D97706 !important;
+  color: #ffffff !important;
+}
+
+/* Scrollbar styling for sidebar nav */
+.pos-sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+.pos-sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+.pos-sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pos-sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+}
+.pos-sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.6);
 }
 
 /* Headings */
@@ -139,6 +231,22 @@ body {
   box-shadow: 0 20px 45px rgba(23, 23, 23, 0.12) !important;
 }
 
+/* Order Details Modal: all text, labels, headers, and amounts must be pure black */
+.order-details-modal,
+.order-details-modal *,
+.pos-dashboard .order-details-modal,
+.pos-dashboard .order-details-modal * {
+  color: #000000 !important;
+}
+
+/* All analytics chart & progress bars: always pure black */
+.chart-bar-black,
+.pos-dashboard .chart-bar-black,
+#pos-main .chart-bar-black {
+  background-color: #000000 !important;
+  background-image: none !important;
+}
+
 /* Form Inputs, Selects, and Textareas */
 .pos-dashboard input:not([type="checkbox"]):not([type="radio"]),
 .pos-dashboard select,
@@ -224,13 +332,6 @@ body {
 #pos-main [class*="text-gray-200"],
 #pos-main [class*="text-slate-100"],
 #pos-main [class*="text-slate-200"],
-.birthday-dashboard .text-white,
-.birthday-dashboard [class*="text-white"],
-.birthday-dashboard [class*="text-[#FAF7F2]"],
-.birthday-dashboard [class*="text-[#FAF8F5]"],
-.birthday-dashboard [class*="text-[#FAF5EE]"],
-.birthday-dashboard [class*="text-[#FFFFFF]"],
-.birthday-dashboard [class*="text-[#ffffff]"],
 [class*="bg-white"] .text-white,
 [class*="bg-white"] [class*="text-white"],
 [class*="bg-white"] [class*="text-[#FAF7F2]"],
@@ -250,9 +351,6 @@ body {
 #pos-main [class*="text-[#FAF7F2]/"],
 #pos-main [class*="text-[#B8B5AE]"],
 #pos-main [class*="text-[#E8E2D8]"],
-.birthday-dashboard [class*="text-[#FAF7F2]/"],
-.birthday-dashboard [class*="text-[#B8B5AE]"],
-.birthday-dashboard [class*="text-[#E8E2D8]"],
 [class*="bg-white"] [class*="text-[#B8B5AE]"],
 [class*="bg-[#FFFFFF]"] [class*="text-[#B8B5AE]"],
 [class*="bg-[#FAF8F5]"] [class*="text-[#B8B5AE]"] {
@@ -329,58 +427,98 @@ select option {
   color: #0C0C0E !important;
 }
 
-.pos-dashboard button[class*="bg-red-"],
-.pos-dashboard button[class*="bg-red-"] *,
-.pos-dashboard a[class*="bg-red-"],
-.pos-dashboard a[class*="bg-red-"] *,
-.pos-dashboard button[class*="bg-emerald-"],
-.pos-dashboard button[class*="bg-emerald-"] *,
-.pos-dashboard a[class*="bg-emerald-"],
-.pos-dashboard a[class*="bg-emerald-"] *,
-.pos-dashboard button[class*="bg-green-"],
-.pos-dashboard button[class*="bg-green-"] *,
-.pos-dashboard a[class*="bg-green-"],
-.pos-dashboard a[class*="bg-green-"] *,
-.pos-dashboard button[class*="bg-blue-"],
-.pos-dashboard button[class*="bg-blue-"] *,
-.pos-dashboard a[class*="bg-blue-"],
-.pos-dashboard a[class*="bg-blue-"] *,
-.pos-dashboard button[class*="bg-[#DC2626]"],
-.pos-dashboard button[class*="bg-[#DC2626]"] *,
-.pos-dashboard button[class*="bg-[#16A34A]"],
-.pos-dashboard button[class*="bg-[#16A34A]"] *,
-.pos-dashboard button[class*="bg-[#2563EB]"],
-.pos-dashboard button[class*="bg-[#2563EB]"] *,
-#pos-main button[class*="bg-red-"],
-#pos-main button[class*="bg-red-"] *,
-#pos-main a[class*="bg-red-"],
-#pos-main a[class*="bg-red-"] *,
-#pos-main button[class*="bg-emerald-"],
-#pos-main button[class*="bg-emerald-"] *,
-#pos-main a[class*="bg-emerald-"],
-#pos-main a[class*="bg-emerald-"] *,
-#pos-main button[class*="bg-green-"],
-#pos-main button[class*="bg-green-"] *,
-#pos-main a[class*="bg-green-"],
-#pos-main a[class*="bg-green-"] *,
-#pos-main button[class*="bg-blue-"],
-#pos-main button[class*="bg-blue-"] *,
-#pos-main a[class*="bg-blue-"],
-#pos-main a[class*="bg-blue-"] *,
-#pos-main button[class*="bg-[#DC2626]"],
-#pos-main button[class*="bg-[#DC2626]"] *,
-#pos-main button[class*="bg-[#16A34A]"],
-#pos-main button[class*="bg-[#16A34A]"] *,
-#pos-main button[class*="bg-[#2563EB]"],
-#pos-main button[class*="bg-[#2563EB]"] *,
-button[class*="bg-zinc-900"],
-button[class*="bg-zinc-900"] *,
-button[class*="bg-zinc-800"],
-button[class*="bg-zinc-800"] *,
+.pos-dashboard button[class~="bg-red-600"],
+.pos-dashboard button[class~="bg-red-700"],
+.pos-dashboard button[class~="bg-[#DC2626]"],
+.pos-dashboard button[class~="bg-emerald-600"],
+.pos-dashboard button[class~="bg-emerald-700"],
+.pos-dashboard button[class~="bg-[#16A34A]"],
+.pos-dashboard button[class~="bg-green-600"],
+.pos-dashboard button[class~="bg-green-700"],
+.pos-dashboard button[class~="bg-blue-600"],
+.pos-dashboard button[class~="bg-blue-700"],
+.pos-dashboard button[class~="bg-[#2563EB]"],
+.pos-dashboard a[class~="bg-red-600"],
+.pos-dashboard a[class~="bg-red-700"],
+.pos-dashboard a[class~="bg-emerald-600"],
+.pos-dashboard a[class~="bg-[#16A34A]"],
+.pos-dashboard a[class~="bg-green-600"],
+.pos-dashboard a[class~="bg-blue-600"],
+.pos-dashboard a[class~="bg-[#2563EB]"],
+#pos-main button[class~="bg-red-600"],
+#pos-main button[class~="bg-red-700"],
+#pos-main button[class~="bg-[#DC2626]"],
+#pos-main button[class~="bg-emerald-600"],
+#pos-main button[class~="bg-emerald-700"],
+#pos-main button[class~="bg-[#16A34A]"],
+#pos-main button[class~="bg-green-600"],
+#pos-main button[class~="bg-green-700"],
+#pos-main button[class~="bg-blue-600"],
+#pos-main button[class~="bg-blue-700"],
+#pos-main button[class~="bg-[#2563EB]"],
+#pos-main a[class~="bg-red-600"],
+#pos-main a[class~="bg-red-700"],
+#pos-main a[class~="bg-emerald-600"],
+#pos-main a[class~="bg-[#16A34A]"],
+#pos-main a[class~="bg-green-600"],
+#pos-main a[class~="bg-blue-600"],
+#pos-main a[class~="bg-[#2563EB]"],
+button[class~="bg-zinc-900"],
+button[class~="bg-zinc-800"],
 button[class~="bg-black"],
-button[class~="bg-black"] *,
 a[class~="bg-black"],
+.pos-dashboard button[class~="bg-red-600"] *,
+.pos-dashboard button[class~="bg-red-700"] *,
+.pos-dashboard button[class~="bg-[#DC2626]"] *,
+.pos-dashboard button[class~="bg-emerald-600"] *,
+.pos-dashboard button[class~="bg-emerald-700"] *,
+.pos-dashboard button[class~="bg-[#16A34A]"] *,
+.pos-dashboard button[class~="bg-green-600"] *,
+.pos-dashboard button[class~="bg-green-700"] *,
+.pos-dashboard button[class~="bg-blue-600"] *,
+.pos-dashboard button[class~="bg-blue-700"] *,
+.pos-dashboard button[class~="bg-[#2563EB]"] *,
+.pos-dashboard a[class~="bg-red-600"] *,
+.pos-dashboard a[class~="bg-red-700"] *,
+.pos-dashboard a[class~="bg-emerald-600"] *,
+.pos-dashboard a[class~="bg-[#16A34A]"] *,
+.pos-dashboard a[class~="bg-green-600"] *,
+.pos-dashboard a[class~="bg-blue-600"] *,
+.pos-dashboard a[class~="bg-[#2563EB]"] *,
+#pos-main button[class~="bg-red-600"] *,
+#pos-main button[class~="bg-red-700"] *,
+#pos-main button[class~="bg-[#DC2626]"] *,
+#pos-main button[class~="bg-emerald-600"] *,
+#pos-main button[class~="bg-emerald-700"] *,
+#pos-main button[class~="bg-[#16A34A]"] *,
+#pos-main button[class~="bg-green-600"] *,
+#pos-main button[class~="bg-green-700"] *,
+#pos-main button[class~="bg-blue-600"] *,
+#pos-main button[class~="bg-blue-700"] *,
+#pos-main button[class~="bg-[#2563EB]"] *,
+#pos-main a[class~="bg-red-600"] *,
+#pos-main a[class~="bg-red-700"] *,
+#pos-main a[class~="bg-emerald-600"] *,
+#pos-main a[class~="bg-[#16A34A]"] *,
+#pos-main a[class~="bg-green-600"] *,
+#pos-main a[class~="bg-blue-600"] *,
+#pos-main a[class~="bg-[#2563EB]"] *,
+button[class~="bg-zinc-900"] *,
+button[class~="bg-zinc-800"] *,
+button[class~="bg-black"] *,
 a[class~="bg-black"] * {
+  color: #ffffff !important;
+}
+
+/* Also ensure hover states turn text white when hover brings a saturated dark background */
+.pos-dashboard button:hover[class*="hover:bg-[#DC2626]"],
+.pos-dashboard button:hover[class*="hover:bg-[#DC2626]"] *,
+.pos-dashboard button:hover[class*="hover:bg-red-600"],
+.pos-dashboard button:hover[class*="hover:bg-red-600"] *,
+#pos-main button:hover[class*="hover:bg-[#DC2626]"],
+#pos-main button:hover[class*="hover:bg-[#DC2626]"] *,
+#pos-main button:hover[class*="hover:bg-red-600"],
+#pos-main button:hover[class*="hover:bg-red-600"] * {
   color: #ffffff !important;
 }
 
@@ -660,32 +798,4 @@ input[type="number"] {
   }
 }
 
-/* =====================================================================
-   Date of Birth / Birthday Management Dashboard (Light Luxury Theme)
-   ===================================================================== */
-.birthday-dashboard {
-  background-color: transparent !important;
-  color: #171717 !important;
-}
-
-/* WhatsApp message preview in Birthday Panel */
-.whatsapp-preview-card,
-.birthday-dashboard .whatsapp-preview-card {
-  background-color: #EFEAE2 !important;
-  border-color: #D1C7B7 !important;
-}
-
-.whatsapp-bubble,
-.birthday-dashboard .whatsapp-bubble,
-.whatsapp-preview-card .whatsapp-bubble {
-  background-color: #D9FDD3 !important;
-  border-color: #C2E7BD !important;
-  color: #111B21 !important;
-}
-
-.whatsapp-bubble div,
-.whatsapp-bubble p,
-.whatsapp-bubble span:not([class*="text-[#53BDEB]"]):not([class*="text-[#667781]"]) {
-  color: #111B21 !important;
-}
 

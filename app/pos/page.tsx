@@ -51,14 +51,11 @@ import {
   Clock,
   MessageSquare,
   Settings2,
-  Scissors,
   SlidersHorizontal,
   Undo2,
   Target,
   CheckCircle2,
   Minus,
-  UserCheck,
-  Gift,
 } from "lucide-react";
 import {
   verifyPasscode,
@@ -87,11 +84,8 @@ import {
   fetchShopSettings,
 } from "@/app/pos/actions";
 import { Product, Expense, Category, AdvanceOrderWithRelations, AdvanceOrderStatus, ShopSettings, ItemType, effectivePrice } from "@/lib/types";
-import { DEFAULT_SHOP_SETTINGS } from "@/lib/shopProfile";
+import { DEFAULT_SHOP_SETTINGS, DEFAULT_ACCENT, accentCssVars, normalizeHex } from "@/lib/shopProfile";
 import SettingsPanel from "./SettingsPanel";
-import AttendancePanel from "./AttendancePanel";
-import BirthdayPanel from "./BirthdayPanel";
-import StaffPunch from "./StaffPunch";
 import LowStockAlarm, { type LowStockItem } from "./LowStockAlarm";
 import { advanceCharges } from "@/lib/advanceCharges";
 
@@ -311,9 +305,7 @@ type PosTab =
   | "inventory"
   | "expenses"
   | "advance"
-  | "attendance"
   | "settings"
-  | "birthdays"
   | "coupons";
 
 type PrintPrefs = {
@@ -330,9 +322,7 @@ const POS_TABS: PosTab[] = [
   "inventory",
   "expenses",
   "advance",
-  "attendance",
   "settings",
-  "birthdays",
   "coupons",
 ];
 
@@ -443,8 +433,15 @@ export default function POSBilling() {
   const activeTab = urlTab;
   const setActiveTab = updateActiveTab;
   const [showLowStockAlarm, setShowLowStockAlarm] = useState(false);
-  // Shop profile (name, contact details, logo) — editable from the Settings tab.
-  const [shopSettings, setShopSettings] = useState<ShopSettings>(DEFAULT_SHOP_SETTINGS);
+  const [shopSettings, setShopSettings] = useState<ShopSettings>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("nidhulan_accent_color");
+      if (cached && /^#[0-9A-Fa-f]{3,6}$/.test(cached)) {
+        return { ...DEFAULT_SHOP_SETTINGS, accent_color: cached };
+      }
+    }
+    return DEFAULT_SHOP_SETTINGS;
+  });
   // The defaults point at the bundled /logo.svg, so logos stay hidden until the
   // real settings arrive — otherwise the old logo flashes before the uploaded one.
   const [shopSettingsLoaded, setShopSettingsLoaded] = useState(false);
@@ -469,8 +466,6 @@ export default function POSBilling() {
 
   const [selectedAdvance, setSelectedAdvance] = useState<AdvanceOrderWithRelations | null>(null);
   const [advanceViewMode, setAdvanceViewMode] = useState<"view" | "receive" | null>(null);
-  const [receiveDiscountType, setReceiveDiscountType] = useState<"FIXED" | "PERCENT">("FIXED");
-  const [receiveDiscountValue, setReceiveDiscountValue] = useState<number | "">("");
   const [receivePaymentMode, setReceivePaymentMode] = useState<OrderPaymentMode>("CASH");
   const [receiveIsGst, setReceiveIsGst] = useState(false);
   const [receiveGstPct, setReceiveGstPct] = useState<number>(18);
@@ -577,6 +572,24 @@ export default function POSBilling() {
     }
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [activeTab, analyticsSubTab, analyticsGstFilter]);
+
+  // Synchronize chosen accent color CSS variables onto <html> whenever shopSettings updates or on mount
+  useEffect(() => {
+    let color = shopSettings?.accent_color;
+    if (!color && typeof window !== "undefined") {
+      color = localStorage.getItem("nidhulan_accent_color") || DEFAULT_ACCENT;
+    }
+    if (color) {
+      const valid = normalizeHex(color) || DEFAULT_ACCENT;
+      const vars = accentCssVars(valid);
+      Object.entries(vars).forEach(([k, v]) => {
+        document.documentElement.style.setProperty(k, v);
+      });
+      try {
+        localStorage.setItem("nidhulan_accent_color", valid);
+      } catch {}
+    }
+  }, [shopSettings?.accent_color]);
 
   const handleVerifyPasscode = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -1086,7 +1099,7 @@ export default function POSBilling() {
     setNewCatDesc("");
     setNewCatPrice("");
     setNewCatCost("");
-    setNewCatGst(5);
+    setNewCatGst(0);
     setNewCatHsn("");
     setNewCatCategory("");
     setNewCatType("PRODUCT");
@@ -1102,7 +1115,7 @@ export default function POSBilling() {
     setNewCatName(catItem.name || "");
     setNewCatDesc(catItem.desc || "");
     setNewCatPrice(catItem.price ?? "");
-    setNewCatGst(typeof catItem.gstRate === "number" ? catItem.gstRate : 18);
+    setNewCatGst(typeof catItem.gstRate === "number" ? catItem.gstRate : 0);
     setNewCatHsn(catItem.hsnCode || "");
     setNewCatCategory(catItem.category || "");
     setNewCatType(catItem.itemType || "PRODUCT");
@@ -1520,8 +1533,6 @@ export default function POSBilling() {
   const openReceiveBalance = (adv: AdvanceOrderWithRelations) => {
     setSelectedAdvance(adv);
     setAdvanceViewMode("receive");
-    setReceiveDiscountType("FIXED");
-    setReceiveDiscountValue("");
     setReceivePaymentMode("CASH");
     setReceiveIsGst(false);
     setReceiveGstPct(18);
@@ -1609,24 +1620,13 @@ export default function POSBilling() {
     );
   });
 
-  const receiveBalanceDiscountAmount = (() => {
-    if (!selectedAdvance) return 0;
-    const base = balanceRemaining(selectedAdvance);
-    const val = Number(receiveDiscountValue) || 0;
-    return receiveDiscountType === "PERCENT" ? base * (val / 100) : val;
-  })();
-
   const receiveBalanceFinalAmount = (() => {
     if (!selectedAdvance) return 0;
-    return Math.max(0, balanceRemaining(selectedAdvance) - receiveBalanceDiscountAmount);
+    return Math.max(0, balanceRemaining(selectedAdvance));
   })();
 
   const confirmReceiveBalance = async () => {
     if (!selectedAdvance || isFinalizing) return;
-    if (receiveBalanceDiscountAmount > balanceRemaining(selectedAdvance)) {
-      alert("Discount cannot exceed the remaining balance.");
-      return;
-    }
     setIsFinalizing(true);
     try {
       const invoiceId = `INV-${new Date().getFullYear()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
@@ -1635,9 +1635,9 @@ export default function POSBilling() {
         invoiceId,
         isGst: receiveIsGst,
         gstPercentage: receiveIsGst ? receiveGstPct : 0,
-        discountType: receiveDiscountType,
-        discountValue: Number(receiveDiscountValue) || 0,
-        discountAmount: receiveBalanceDiscountAmount,
+        discountType: "FIXED",
+        discountValue: 0,
+        discountAmount: 0,
         deliveryFee: 0,
         paymentMode: receivePaymentMode,
         billDate: new Date().toISOString(),
@@ -2661,11 +2661,11 @@ export default function POSBilling() {
   if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-[#F7F7F8] text-[#171717] flex flex-col items-center justify-center p-4 sm:p-6 font-sans">
-        <div className="w-full max-w-[420px] bg-white border border-[#D4AF37]/40 rounded-[2rem] sm:rounded-[2.25rem] p-6 sm:p-8 shadow-[0_20px_55px_rgba(23,23,23,0.10)] flex flex-col items-center text-center">
-          <div className="w-full h-1 bg-[#D4AF37] rounded-full mb-6" />
+        <div className="w-full max-w-[420px] bg-white border border-[var(--accent)]/40 rounded-[2rem] sm:rounded-[2.25rem] p-6 sm:p-8 shadow-[0_20px_55px_rgba(23,23,23,0.10)] flex flex-col items-center text-center">
+          <div className="w-full h-1 bg-[var(--accent)] rounded-full mb-6" />
 
           <div className="mb-4">
-            <div className="w-28 h-28 sm:w-32 sm:h-32 mx-auto rounded-2xl bg-white border border-[#D4AF37]/40 p-2 overflow-hidden flex items-center justify-center shadow-xs">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 mx-auto rounded-2xl bg-white border border-[var(--accent)]/40 p-2 overflow-hidden flex items-center justify-center shadow-xs">
               <img
                 src={shopSettings.logo_data_url || "/nidulan-logo.jpeg"}
                 alt={`${shopSettings.shop_name} - THE PRECIOUS PEARLS`}
@@ -2678,7 +2678,7 @@ export default function POSBilling() {
           <h1 className="text-xl sm:text-2xl font-serif font-extrabold text-[#171717] tracking-[0.18em] uppercase mb-1">
             {shopSettings.shop_name}
           </h1>
-          <p className="text-[#A47B16] text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-[0.24em] mb-5 sm:mb-6">
+          <p className="text-[var(--accent-strong)] text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-[0.24em] mb-5 sm:mb-6">
             THE PRECIOUS PEARLS • TERMINAL ACCESS
           </p>
 
@@ -2688,11 +2688,11 @@ export default function POSBilling() {
             className="w-full space-y-4 text-left"
           >
             <div className="space-y-2">
-              <label className="text-[9px] font-bold text-[#8A6815] uppercase tracking-[0.22em] ml-1">
+              <label className="text-[9px] font-bold text-[var(--accent-strong)] uppercase tracking-[0.22em] ml-1">
                 Security Passcode
               </label>
               <div className="relative group/input">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A47B16] group-focus-within/input:text-[#171717] transition-colors">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent-strong)] group-focus-within/input:text-[#171717] transition-colors">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -2700,7 +2700,7 @@ export default function POSBilling() {
                   name="update-pos-passcode"
                   autoComplete="new-password"
                   placeholder="••••••••"
-                  className="w-full bg-white border border-[#D1D5DB] hover:border-[#D4AF37] focus:border-[#D4AF37] focus:bg-white rounded-xl sm:rounded-2xl pl-11 pr-11 py-3 text-[#171717] font-mono tracking-widest text-base sm:text-lg focus:outline-none transition-all placeholder:text-[#9CA3AF] shadow-sm"
+                  className="w-full bg-white border border-[#D1D5DB] hover:border-[var(--accent)] focus:border-[var(--accent)] focus:bg-white rounded-xl sm:rounded-2xl pl-11 pr-11 py-3 text-[#171717] font-mono tracking-widest text-base sm:text-lg focus:outline-none transition-all placeholder:text-[#9CA3AF] shadow-sm"
                   value={passcode}
                   onChange={(e) => {
                     setPasscode(e.target.value);
@@ -2711,7 +2711,7 @@ export default function POSBilling() {
                 <button
                   type="button"
                   onClick={() => setShowPasscode(!showPasscode)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#8A6815] transition-colors cursor-pointer"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[var(--accent-strong)] transition-colors cursor-pointer"
                 >
                   {showPasscode ? (
                     <EyeOff className="w-4 h-4" />
@@ -2729,7 +2729,7 @@ export default function POSBilling() {
 
             <button
               type="submit"
-              className="w-full py-3 sm:py-3.5 bg-[#D4AF37] hover:bg-[#C5A02E] active:scale-[0.98] text-[#171717] rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-[0.22em] transition-all shadow-sm flex items-center justify-center gap-2 mt-4 cursor-pointer border border-[#C5A02E]"
+              className="w-full py-3 sm:py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-strong)] active:scale-[0.98] text-[var(--accent-on)] rounded-xl sm:rounded-2xl font-black text-xs uppercase tracking-[0.22em] transition-all shadow-sm flex items-center justify-center gap-2 mt-4 cursor-pointer border border-[var(--accent-strong)]"
             >
               Authenticate
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -2737,9 +2737,9 @@ export default function POSBilling() {
           </form>
 
           {/* Status Badge */}
-          <div className="mt-5 inline-flex items-center gap-2 px-3 py-1 bg-[#D4AF37]/10 border border-[#D4AF37]/35 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#A47B16] animate-pulse" />
-            <span className="text-[9px] font-bold text-[#8A6815] tracking-[0.2em] uppercase">
+          <div className="mt-5 inline-flex items-center gap-2 px-3 py-1 bg-[var(--accent)]/10 border border-[var(--accent)]/35 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
+            <span className="text-[9px] font-bold text-[var(--accent-strong)] tracking-[0.2em] uppercase">
               SYSTEM ONLINE • ENCRYPTED
             </span>
           </div>
@@ -2961,7 +2961,7 @@ export default function POSBilling() {
             {/* Header */}
             <div className="flex items-start justify-between gap-3 p-5 bg-[#FAF8F5] border-b border-[#C5A059]/25 text-[#171717]">
               <div className="flex items-start gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#8A6815] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[var(--accent)]/15 border border-[var(--accent)]/30 text-[var(--accent-strong)] flex items-center justify-center shrink-0">
                   <SlidersHorizontal className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -3038,19 +3038,19 @@ export default function POSBilling() {
                         }}
                         className={`flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-3 transition-all cursor-pointer ${
                           active
-                            ? "border-[#D4AF37] bg-amber-50/70 shadow-xs text-zinc-900"
+                            ? "border-[var(--accent)] bg-[var(--accent)]/10 shadow-xs text-zinc-900"
                             : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-800 hover:border-zinc-300"
                         }`}
                       >
                         <span
                           className={`w-7 h-7 rounded-full flex items-center justify-center border ${
                             active
-                              ? "border-[#D4AF37]/50 bg-[#D4AF37]/20"
+                              ? "border-[var(--accent)]/50 bg-[var(--accent)]/20"
                               : "border-zinc-200 bg-white"
                           }`}
                         >
                           <Icon
-                            className={`w-3.5 h-3.5 ${active ? "text-[#8A6815]" : tone}`}
+                            className={`w-3.5 h-3.5 ${active ? "text-[var(--accent-strong)]" : tone}`}
                           />
                         </span>
                         <span className="text-[10px] font-black text-zinc-900 leading-tight">
@@ -3196,7 +3196,7 @@ export default function POSBilling() {
                 type="button"
                 onClick={saveStockAdjustment}
                 disabled={isSavingStock}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] disabled:opacity-50 text-[#0C0C0E] text-[11px] font-black uppercase tracking-wider cursor-pointer transition-colors shadow-xs"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-strong)] disabled:opacity-50 text-[var(--accent-on)] text-[11px] font-black uppercase tracking-wider cursor-pointer transition-colors shadow-xs"
               >
                 {isSavingStock ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -3276,7 +3276,7 @@ export default function POSBilling() {
                 <button
                   onClick={handleAddCategory}
                   disabled={isSavingCategory}
-                  className="py-2.5 px-4 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 text-[#0C0C0E] rounded-lg font-black text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="py-2.5 px-4 bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] rounded-lg font-black text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isSavingCategory ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -3334,19 +3334,21 @@ export default function POSBilling() {
                             {cat.name}
                           </span>
                           <button
+                            type="button"
                             onClick={() => {
                               setEditingCategoryId(cat.id);
                               setEditCategoryName(cat.name);
                             }}
-                            className="text-[10px] font-bold text-[#8A6815] hover:text-[#0C0C0E] hover:bg-[#FAF8F5] border border-[#C5A059]/40 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1"
+                            className="text-[10px] font-bold text-[#8A6815] hover:text-[#0C0C0E] bg-white hover:bg-[#FAF8F5] border border-[#C5A059]/40 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1 shadow-xs"
                           >
-                            <Pencil className="w-3 h-3" /> Edit
+                            <Pencil className="w-3 h-3 text-[#8A6815]" /> Edit
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDeleteCategory(cat)}
-                            className="text-[10px] font-bold text-[#DC2626] hover:text-white hover:bg-[#DC2626] border border-[#DC2626]/30 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1"
+                            className="text-[10px] font-bold text-white bg-[#DC2626] hover:bg-[#B91C1C] active:bg-[#991B1B] border border-[#DC2626] px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1 shadow-xs"
                           >
-                            <Trash2 className="w-3 h-3" /> Delete
+                            <Trash2 className="w-3 h-3 text-white" /> Delete
                           </button>
                         </>
                       )}
@@ -3376,23 +3378,19 @@ export default function POSBilling() {
             {/* Header */}
             <div className="px-6 py-5 bg-[#FAF8F5] border-b border-[#C5A059]/25 flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#D4AF37]/15 border border-[#D4AF37]/30 rounded-xl flex items-center justify-center text-[#8A6815]">
-                  <PackagePlus className="w-5 h-5 text-[#8A6815]" />
+                <div className="w-10 h-10 bg-[var(--accent)]/15 border border-[var(--accent)]/30 rounded-xl flex items-center justify-center text-[var(--accent-strong)]">
+                  <PackagePlus className="w-5 h-5 text-[var(--accent-strong)]" />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base text-zinc-900 tracking-tight">
                     {editingCatalogId
                       ? "Edit Catalog Item"
-                      : newCatType === "SERVICE"
-                        ? "Add New Service"
-                        : "Add New Product"}
+                      : "Add New Product"}
                   </h3>
                   <p className="text-[11px] text-zinc-600 font-medium">
                     {editingCatalogId
                       ? "Modify item parameters"
-                      : newCatType === "SERVICE"
-                        ? "Register a chargeable service"
-                        : "Set pricing, stock and category for this item"}
+                      : "Set pricing, stock and category for this item"}
                   </p>
                 </div>
               </div>
@@ -3413,56 +3411,13 @@ export default function POSBilling() {
 
             {/* Form Content */}
             <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto bg-white text-zinc-900">
-              {/* Product ⇄ Service switch */}
-              <div>
-                <p className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1.5">
-                  Item Type
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewCatType("PRODUCT")}
-                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer border ${
-                      newCatType === "PRODUCT"
-                        ? "bg-[#D4AF37] text-[#171717] font-black border-[#C5A02E] shadow-sm"
-                        : "bg-zinc-100 text-zinc-900 font-bold border-zinc-300 hover:bg-zinc-200 hover:text-black"
-                    }`}
-                  >
-                    <Package className={`w-4 h-4 ${newCatType === "PRODUCT" ? "text-[#171717]" : "text-zinc-800"}`} />
-                    Product
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewCatType("SERVICE")}
-                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer border ${
-                      newCatType === "SERVICE"
-                        ? "bg-[#D4AF37] text-[#171717] font-black border-[#C5A02E] shadow-sm"
-                        : "bg-zinc-100 text-zinc-900 font-bold border-zinc-300 hover:bg-zinc-200 hover:text-black"
-                    }`}
-                  >
-                    <Scissors className={`w-4 h-4 ${newCatType === "SERVICE" ? "text-[#171717]" : "text-zinc-800"}`} />
-                    Service
-                  </button>
-                </div>
-                <p className="text-[10px] text-zinc-600 font-medium mt-1.5">
-                  {newCatType === "SERVICE"
-                    ? "Services = delivery, packing, add-ons and other chargeable work. No stock is tracked."
-                    : "Products = physical items sold. Stock and low-stock alerts are tracked."}
-                </p>
-              </div>
-
               <div>
                 <label className="block text-[11px] font-bold text-zinc-800 uppercase tracking-widest mb-1.5">
-                  {newCatType === "SERVICE" ? "Service Name" : "Product Name"}{" "}
-                  <span className="text-[var(--accent)]">*</span>
+                  Product Name <span className="text-[var(--accent)]">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder={
-                    newCatType === "SERVICE"
-                      ? "e.g., Alteration Charges / Delivery"
-                      : "e.g., Designer Silk Saree / Bridal Blouse"
-                  }
+                  placeholder="e.g., Designer Silk Saree / Bridal Blouse"
                   className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
@@ -3476,18 +3431,14 @@ export default function POSBilling() {
                 </label>
                 <input
                   type="text"
-                  placeholder={
-                    newCatType === "SERVICE"
-                      ? "e.g., Includes stitching and finishing"
-                      : "e.g., Pure Kanjeevaram Silk, Pink & Gold Zari, Size 38"
-                  }
+                  placeholder="e.g., Pure Kanjeevaram Silk, Pink & Gold Zari, Size 38"
                   className="w-full bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 py-2.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                   value={newCatDesc}
                   onChange={(e) => setNewCatDesc(e.target.value)}
                 />
               </div>
 
-              <div className={`grid grid-cols-1 ${newCatType === "PRODUCT" ? "sm:grid-cols-2" : ""} gap-3`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col justify-between">
                   <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
                     <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
@@ -3497,7 +3448,7 @@ export default function POSBilling() {
                   <input
                     type="text"
                     list="catalog-category-list"
-                    placeholder="e.g., Blouses, Sarees, Services"
+                    placeholder="e.g., Blouses, Sarees, Bangles"
                     className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                     value={newCatCategory}
                     onChange={(e) => setNewCatCategory(e.target.value)}
@@ -3512,43 +3463,36 @@ export default function POSBilling() {
                   </p>
                 </div>
 
-                {/* Stock alerts exist only for physical products */}
-                {newCatType === "PRODUCT" && (
-                  <div className="flex flex-col justify-between">
-                    <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
-                      <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
-                        Low Stock Alert
-                      </label>
-                    </div>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="5"
-                      className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
-                      value={newCatLowStock}
-                      onWheel={(e) => e.currentTarget.blur()}
-                      onChange={(e) =>
-                        setNewCatLowStock(
-                          e.target.value === "" ? "" : parseFloat(e.target.value),
-                        )
-                      }
-                    />
-                    <p className="text-[10px] text-zinc-500 font-medium mt-1">
-                      Warns you in Inventory when stock falls to this level.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className={`grid grid-cols-1 ${
-                  newCatType === "PRODUCT" ? "sm:grid-cols-3" : "sm:grid-cols-2"
-                } gap-3`}
-              >
                 <div className="flex flex-col justify-between">
                   <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
                     <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
-                      {newCatType === "SERVICE" ? "Service Price (₹)" : "Original Price (₹)"}
+                      Low Stock Alert
+                    </label>
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="5"
+                    className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                    value={newCatLowStock}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    onChange={(e) =>
+                      setNewCatLowStock(
+                        e.target.value === "" ? "" : parseFloat(e.target.value),
+                      )
+                    }
+                  />
+                  <p className="text-[10px] text-zinc-500 font-medium mt-1">
+                    Warns you in Inventory when stock falls to this level.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex flex-col justify-between">
+                  <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                    <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                      Original Price (₹)
                       <span className="text-red-500 ml-0.5">*</span>
                     </label>
                   </div>
@@ -3586,73 +3530,33 @@ export default function POSBilling() {
                   />
                 </div>
 
-                {newCatType === "PRODUCT" && (
-                  <div className="flex flex-col justify-between">
-                    <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
-                      <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
-                        Current Stock
-                      </label>
-                    </div>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
-                      value={newCatStock}
-                      onWheel={(e) => e.currentTarget.blur()}
-                      onChange={(e) =>
-                        setNewCatStock(
-                          e.target.value === "" ? "" : parseFloat(e.target.value),
-                        )
-                      }
-                    />
+                <div className="flex flex-col justify-between">
+                  <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
+                    <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
+                      Current Stock
+                    </label>
                   </div>
-                )}
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
+                    value={newCatStock}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    onChange={(e) =>
+                      setNewCatStock(
+                        e.target.value === "" ? "" : parseFloat(e.target.value),
+                      )
+                    }
+                  />
+                </div>
               </div>
 
               <p className="text-[10px] text-zinc-500 font-medium -mt-2">
                 Cost price is for your records only — it is never used in billing.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex flex-col justify-between">
-                  <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
-                    <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
-                      GST Rate (%)
-                    </label>
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    max="28"
-                    placeholder="5"
-                    className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
-                    value={newCatGst}
-                    onWheel={(e) => e.currentTarget.blur()}
-                    onChange={(e) =>
-                      setNewCatGst(e.target.value === "" ? "" : parseFloat(e.target.value))
-                    }
-                  />
-                  <p className="text-[10px] text-zinc-500 font-medium mt-1">
-                    Pre-fills the GST % when this item is on a GST invoice.
-                  </p>
-                </div>
-                <div className="flex flex-col justify-between">
-                  <div className="min-h-[28px] sm:min-h-[32px] flex items-end pb-1.5">
-                    <label className="block text-[10px] sm:text-[11px] font-bold text-zinc-800 uppercase tracking-wider leading-tight">
-                      HSN / SAC Code
-                    </label>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Optional"
-                    className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
-                    value={newCatHsn}
-                    onChange={(e) => setNewCatHsn(e.target.value)}
-                  />
-                  <div className="min-h-[16px] mt-1" />
-                </div>
-              </div>
+
 
               {/* Automatic offer — applied whenever the item is added to a bill */}
               <div className="border border-[#C5A059]/30 bg-amber-50/40 rounded-xl p-3.5 space-y-3">
@@ -3713,7 +3617,7 @@ export default function POSBilling() {
                   </div>
                 </div>
                 <p className="text-[10px] text-zinc-600 font-medium">
-                  Whenever this {newCatType === "SERVICE" ? "service" : "product"} is
+                  Whenever this product is
                   added to a bill, the offer price is applied automatically and shown
                   on the invoice.
                 </p>
@@ -3723,12 +3627,12 @@ export default function POSBilling() {
               <button
                 type="button"
                 onClick={() => setNewCatActive((prev) => !prev)}
-                className="w-full flex items-center gap-3 border border-zinc-300 hover:border-[#D4AF37] rounded-xl px-3.5 py-3 cursor-pointer transition-colors text-left bg-zinc-50 hover:bg-zinc-100"
+                className="w-full flex items-center gap-3 border border-zinc-300 hover:border-[var(--accent)] rounded-xl px-3.5 py-3 cursor-pointer transition-colors text-left bg-zinc-50 hover:bg-zinc-100"
               >
                 <span
                   className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${
                     newCatActive
-                      ? "bg-[#D4AF37] border-[#C5A02E] text-[#171717]"
+                      ? "bg-[var(--accent)] border-[var(--accent-strong)] text-[var(--accent-on)]"
                       : "bg-white border-zinc-300 text-transparent"
                   }`}
                 >
@@ -3742,18 +3646,16 @@ export default function POSBilling() {
               <button
                 onClick={addToCatalog}
                 disabled={isSavingCatalog}
-                className="w-full py-3.5 mt-2 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 text-[#0C0C0E] rounded-xl font-black text-xs uppercase tracking-widest transition-colors shadow-sm cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3.5 mt-2 bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] rounded-xl font-black text-xs uppercase tracking-widest transition-colors shadow-sm cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isSavingCatalog ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <PackagePlus className="w-4 h-4 text-[#0C0C0E]" />
+                  <PackagePlus className="w-4 h-4 text-[var(--accent-on)]" />
                 )}
                 {editingCatalogId
                   ? "Save Changes"
-                  : newCatType === "SERVICE"
-                    ? "Save Service"
-                    : "Save Product to Catalog"}
+                  : "Save Product to Catalog"}
               </button>
             </div>
           </div>
@@ -3771,274 +3673,339 @@ export default function POSBilling() {
       {/* Collapsible Left Sidebar */}
       {/* Collapsible Left Sidebar */}
       <aside
-        className={`fixed lg:sticky top-0 bottom-0 left-0 bg-white border-r border-[#C5A059]/25 text-[#171717] flex flex-col justify-between h-screen shrink-0 shadow-lg z-40 transition-all duration-300 ease-in-out ${isSidebarOpen ? "w-64 translate-x-0" : "w-0 min-w-0 border-r-0 -translate-x-64 overflow-hidden"}`}
+        className={`pos-sidebar fixed lg:sticky top-0 bottom-0 left-0 border-r border-white/15 flex flex-col h-screen shrink-0 shadow-2xl z-40 transition-all duration-300 ease-in-out ${isSidebarOpen ? "w-64 translate-x-0" : "w-0 min-w-0 border-r-0 -translate-x-64 overflow-hidden"}`}
+        style={{ backgroundColor: "var(--accent)" }}
       >
-        <div className="w-64 flex flex-col justify-between h-full shrink-0 overflow-hidden relative">
-          <div className="flex flex-col">
-            {/* Header branding */}
-            <div className="p-5 border-b border-[#C5A059]/20 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 aspect-square bg-white rounded-xl flex items-center justify-center shadow-xs overflow-hidden shrink-0 border border-[#D4AF37]/40 p-0.5">
-                  <img
-                    src={shopSettings.logo_data_url || "/nidulan-logo.jpeg"}
-                    alt="Logo"
-                    className="w-full h-full object-contain rounded-lg"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-black text-sm tracking-tight text-[#171717] block leading-tight">
-                      {shopSettings.shop_name || "NIDHULAN"}
-                    </span>
-                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded border border-amber-600 text-amber-700 bg-amber-50 tracking-widest">
-                      ADMIN
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-[#A47B16] font-bold tracking-wider block mt-0.5">
-                    {(!shopSettings.tagline || shopSettings.tagline === "POS & INVENTORY MANAGEMENT" || shopSettings.tagline === "Customer birthdays & retail POS")
-                      ? "THE PRECIOUS PEARLS"
-                      : shopSettings.tagline}
+        <div className="w-64 flex flex-col h-full shrink-0 overflow-hidden relative">
+          {/* Header branding */}
+          <div className="p-4 sm:p-5 border-b border-white/15 flex items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 aspect-square bg-white rounded-xl flex items-center justify-center shadow-xs overflow-hidden shrink-0 border border-white/40 p-0.5">
+                <img
+                  src={shopSettings.logo_data_url || "/nidulan-logo.jpeg"}
+                  alt="Logo"
+                  className="w-full h-full object-contain rounded-lg"
+                />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+                    className="sidebar-brand-name font-black text-sm tracking-tight text-white block leading-tight truncate"
+                  >
+                    {shopSettings.shop_name || "NIDHULAN"}
+                  </span>
+                  <span
+                    style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+                    className="sidebar-admin-badge text-[9px] font-black uppercase px-1.5 py-0.5 rounded border border-white/30 text-white bg-white/20 tracking-widest shrink-0"
+                  >
+                    ADMIN
                   </span>
                 </div>
+                <span
+                  style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+                  className="sidebar-brand-tagline text-[9px] text-white font-bold tracking-wider block mt-0.5 truncate"
+                >
+                  {(!shopSettings.tagline || shopSettings.tagline === "POS & INVENTORY MANAGEMENT")
+                    ? "THE PRECIOUS PEARLS"
+                    : shopSettings.tagline}
+                </span>
               </div>
-
-              {/* Collapse Button Inside Sidebar */}
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="w-7 h-7 rounded-lg bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-700 transition-all cursor-pointer border border-zinc-200"
-                title="Collapse Sidebar"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
             </div>
 
-            {/* Navigation Links */}
-            <nav className="px-3 py-5 space-y-1.5">
-              {/* 1. Billing Panel */}
-              <button
-                onClick={() => {
-                  setActiveTab("billing");
-                  setCompletedBillData(null);
-                  if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
-                  window.scrollTo({ top: 0, behavior: "instant" });
-                }}
-                className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === "billing"
-                    ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
-                    : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
-                }`}
+            {/* Collapse Button Inside Sidebar */}
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(false)}
+              className="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-all cursor-pointer border border-white/20 shrink-0"
+              title="Collapse Sidebar"
+            >
+              <ChevronLeft className="w-4 h-4 text-white" />
+            </button>
+          </div>
+
+          {/* Navigation Links (flex-1 overflow-y-auto so the sidebar scrolls!) */}
+          <nav className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-3 py-4 space-y-1.5 pos-sidebar-nav">
+            {/* 1. Billing Panel */}
+            <button
+              type="button"
+              data-active={activeTab === "billing"}
+              onClick={() => {
+                setActiveTab("billing");
+                setCompletedBillData(null);
+                if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
+                window.scrollTo({ top: 0, behavior: "instant" });
+              }}
+              style={activeTab === "billing" ? { backgroundColor: "#ffffff", color: "#000000", WebkitTextFillColor: "#000000" } : { color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+              className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
+                activeTab === "billing"
+                  ? "bg-white text-black font-black shadow-md border border-white"
+                  : "font-bold text-xs text-white hover:bg-white/15 border border-transparent hover:border-white/20"
+              }`}
+            >
+              <Receipt
+                style={{ color: activeTab === "billing" ? "#000000" : "#ffffff", stroke: activeTab === "billing" ? "#000000" : "#ffffff" }}
+                className={`w-4.5 h-4.5 shrink-0 ${activeTab === "billing" ? "text-black" : "text-white"}`}
+              />
+              <span
+                style={{ color: activeTab === "billing" ? "#000000" : "#ffffff", WebkitTextFillColor: activeTab === "billing" ? "#000000" : "#ffffff" }}
+                className={`sidebar-tab-label ${activeTab === "billing" ? "text-black font-black text-xs" : "text-white font-bold text-xs"}`}
               >
-                <Receipt className={`w-4.5 h-4.5 shrink-0 ${activeTab === "billing" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                 Billing Panel
-              </button>
+              </span>
+            </button>
 
-              {/* 2. Inventory & Barcodes */}
-              {role === "admin" && (
-                <button
-                  onClick={() => {
-                    setActiveTab("inventory");
-                    setCompletedBillData(null);
-                    if (lowStockItems.length > 0) setShowLowStockAlarm(true);
-                    if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
-                    window.scrollTo({ top: 0, behavior: "instant" });
-                  }}
-                  className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                    activeTab === "inventory"
-                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
-                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
-                  }`}
-                >
-                  <Boxes className={`w-4.5 h-4.5 shrink-0 ${activeTab === "inventory" ? "text-[#171717]" : "text-[#8A6815]"}`} />
-                  Inventory &amp; Barcodes
-                  {lowStockItems.length > 0 && (
-                    <span className="ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full text-[10px] font-black flex items-center justify-center bg-[#DC2626] text-white">
-                      {lowStockItems.length}
-                    </span>
-                  )}
-                </button>
-              )}
-
-              {/* 3. Advance Orders */}
+            {/* 2. Inventory & Barcodes */}
+            {role === "admin" && (
               <button
+                type="button"
+                data-active={activeTab === "inventory"}
                 onClick={() => {
-                  setActiveTab("advance");
+                  setActiveTab("inventory");
                   setCompletedBillData(null);
+                  if (lowStockItems.length > 0) setShowLowStockAlarm(true);
                   if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
                   window.scrollTo({ top: 0, behavior: "instant" });
                 }}
-                className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer relative ${
-                  activeTab === "advance"
-                    ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
-                    : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
+                style={activeTab === "inventory" ? { backgroundColor: "#ffffff", color: "#000000", WebkitTextFillColor: "#000000" } : { color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+                className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
+                  activeTab === "inventory"
+                    ? "bg-white text-black font-black shadow-md border border-white"
+                    : "font-bold text-xs text-white hover:bg-white/15 border border-transparent hover:border-white/20"
                 }`}
               >
-                <Clock className={`w-4.5 h-4.5 shrink-0 ${activeTab === "advance" ? "text-[#171717]" : "text-[#8A6815]"}`} />
-                Advance Orders
-                {advanceOrders.filter((a) => a.status === "PENDING" || a.status === "READY").length > 0 && (
-                  <span className="ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full text-[10px] font-black flex items-center justify-center bg-[#D97706] text-white">
-                    {advanceOrders.filter((a) => a.status === "PENDING" || a.status === "READY").length}
+                <Boxes
+                  style={{ color: activeTab === "inventory" ? "#000000" : "#ffffff", stroke: activeTab === "inventory" ? "#000000" : "#ffffff" }}
+                  className={`w-4.5 h-4.5 shrink-0 ${activeTab === "inventory" ? "text-black" : "text-white"}`}
+                />
+                <span
+                  style={{ color: activeTab === "inventory" ? "#000000" : "#ffffff", WebkitTextFillColor: activeTab === "inventory" ? "#000000" : "#ffffff" }}
+                  className={`sidebar-tab-label ${activeTab === "inventory" ? "text-black font-black text-xs" : "text-white font-bold text-xs"}`}
+                >
+                  Inventory &amp; Barcodes
+                </span>
+                {lowStockItems.length > 0 && (
+                  <span className={`badge-count ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full text-[10px] font-black flex items-center justify-center ${
+                    activeTab === "inventory" ? "bg-[#DC2626] text-white" : "bg-[#DC2626] text-white border border-white/30"
+                  }`}>
+                    {lowStockItems.length}
                   </span>
                 )}
               </button>
+            )}
 
-              {/* 4. Birthdays */}
+            {/* 3. Advance Orders */}
+            <button
+              type="button"
+              data-active={activeTab === "advance"}
+              onClick={() => {
+                setActiveTab("advance");
+                setCompletedBillData(null);
+                if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
+                window.scrollTo({ top: 0, behavior: "instant" });
+              }}
+              style={activeTab === "advance" ? { backgroundColor: "#ffffff", color: "#000000", WebkitTextFillColor: "#000000" } : { color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+              className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl uppercase tracking-wider transition-all cursor-pointer relative ${
+                activeTab === "advance"
+                  ? "bg-white text-black font-black shadow-md border border-white"
+                  : "font-bold text-xs text-white hover:bg-white/15 border border-transparent hover:border-white/20"
+              }`}
+            >
+              <Clock
+                style={{ color: activeTab === "advance" ? "#000000" : "#ffffff", stroke: activeTab === "advance" ? "#000000" : "#ffffff" }}
+                className={`w-4.5 h-4.5 shrink-0 ${activeTab === "advance" ? "text-black" : "text-white"}`}
+              />
+              <span
+                style={{ color: activeTab === "advance" ? "#000000" : "#ffffff", WebkitTextFillColor: activeTab === "advance" ? "#000000" : "#ffffff" }}
+                className={`sidebar-tab-label ${activeTab === "advance" ? "text-black font-black text-xs" : "text-white font-bold text-xs"}`}
+              >
+                Advance Orders
+              </span>
+              {advanceOrders.filter((a) => a.status === "PENDING" || a.status === "READY").length > 0 && (
+                <span className={`badge-count ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full text-[10px] font-black flex items-center justify-center ${
+                  activeTab === "advance" ? "bg-[#D97706] text-white" : "bg-[#D97706] text-white border border-white/30"
+                }`}>
+                  {advanceOrders.filter((a) => a.status === "PENDING" || a.status === "READY").length}
+                </span>
+              )}
+            </button>
+
+            {/* 4. Expenses */}
+            {role === "admin" && (
               <button
+                type="button"
+                data-active={activeTab === "expenses"}
                 onClick={() => {
-                  setActiveTab("birthdays");
+                  setActiveTab("expenses");
                   setCompletedBillData(null);
                   if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
                   window.scrollTo({ top: 0, behavior: "instant" });
                 }}
-                className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === "birthdays"
-                    ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
-                    : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
+                style={activeTab === "expenses" ? { backgroundColor: "#ffffff", color: "#000000", WebkitTextFillColor: "#000000" } : { color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+                className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
+                  activeTab === "expenses"
+                    ? "bg-white text-black font-black shadow-md border border-white"
+                    : "font-bold text-xs text-white hover:bg-white/15 border border-transparent hover:border-white/20"
                 }`}
               >
-                <Gift className={`w-4.5 h-4.5 shrink-0 ${activeTab === "birthdays" ? "text-[#171717]" : "text-[#8A6815]"}`} />
-                Birthdays
-              </button>
-
-              {/* 5. Expenses */}
-              {role === "admin" && (
-                <button
-                  onClick={() => {
-                    setActiveTab("expenses");
-                    setCompletedBillData(null);
-                    if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
-                    window.scrollTo({ top: 0, behavior: "instant" });
-                  }}
-                  className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                    activeTab === "expenses"
-                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
-                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
-                  }`}
+                <Wallet
+                  style={{ color: activeTab === "expenses" ? "#000000" : "#ffffff", stroke: activeTab === "expenses" ? "#000000" : "#ffffff" }}
+                  className={`w-4.5 h-4.5 shrink-0 ${activeTab === "expenses" ? "text-black" : "text-white"}`}
+                />
+                <span
+                  style={{ color: activeTab === "expenses" ? "#000000" : "#ffffff", WebkitTextFillColor: activeTab === "expenses" ? "#000000" : "#ffffff" }}
+                  className={`sidebar-tab-label ${activeTab === "expenses" ? "text-black font-black text-xs" : "text-white font-bold text-xs"}`}
                 >
-                  <Wallet className={`w-4.5 h-4.5 shrink-0 ${activeTab === "expenses" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                   Expenses
-                </button>
-              )}
+                </span>
+              </button>
+            )}
 
-              {/* 6. Order History */}
+            {/* 5. Order History */}
+            <button
+              type="button"
+              data-active={activeTab === "orders"}
+              onClick={() => {
+                setActiveTab("orders");
+                setCompletedBillData(null);
+                if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
+                window.scrollTo({ top: 0, behavior: "instant" });
+              }}
+              style={activeTab === "orders" ? { backgroundColor: "#ffffff", color: "#000000", WebkitTextFillColor: "#000000" } : { color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+              className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
+                activeTab === "orders"
+                  ? "bg-white text-black font-black shadow-md border border-white"
+                  : "font-bold text-xs text-white hover:bg-white/15 border border-transparent hover:border-white/20"
+              }`}
+            >
+              <History
+                style={{ color: activeTab === "orders" ? "#000000" : "#ffffff", stroke: activeTab === "orders" ? "#000000" : "#ffffff" }}
+                className={`w-4.5 h-4.5 shrink-0 ${activeTab === "orders" ? "text-black" : "text-white"}`}
+              />
+              <span
+                style={{ color: activeTab === "orders" ? "#000000" : "#ffffff", WebkitTextFillColor: activeTab === "orders" ? "#000000" : "#ffffff" }}
+                className={`sidebar-tab-label ${activeTab === "orders" ? "text-black font-black text-xs" : "text-white font-bold text-xs"}`}
+              >
+                Order History
+              </span>
+            </button>
+
+            {/* 6. Analytics Dashboard */}
+            {role === "admin" && (
               <button
+                type="button"
+                data-active={activeTab === "analytics"}
                 onClick={() => {
-                  setActiveTab("orders");
+                  setActiveTab("analytics");
                   setCompletedBillData(null);
                   if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
                   window.scrollTo({ top: 0, behavior: "instant" });
                 }}
-                className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === "orders"
-                    ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
-                    : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
+                style={activeTab === "analytics" ? { backgroundColor: "#ffffff", color: "#000000", WebkitTextFillColor: "#000000" } : { color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+                className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
+                  activeTab === "analytics"
+                    ? "bg-white text-black font-black shadow-md border border-white"
+                    : "font-bold text-xs text-white hover:bg-white/15 border border-transparent hover:border-white/20"
                 }`}
               >
-                <History className={`w-4.5 h-4.5 shrink-0 ${activeTab === "orders" ? "text-[#171717]" : "text-[#8A6815]"}`} />
-                Order History
-              </button>
-
-              {/* 7. Analytics Dashboard */}
-              {role === "admin" && (
-                <button
-                  onClick={() => {
-                    setActiveTab("analytics");
-                    setCompletedBillData(null);
-                    if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
-                    window.scrollTo({ top: 0, behavior: "instant" });
-                  }}
-                  className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                    activeTab === "analytics"
-                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
-                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
-                  }`}
+                <BarChart2
+                  style={{ color: activeTab === "analytics" ? "#000000" : "#ffffff", stroke: activeTab === "analytics" ? "#000000" : "#ffffff" }}
+                  className={`w-4.5 h-4.5 shrink-0 ${activeTab === "analytics" ? "text-black" : "text-white"}`}
+                />
+                <span
+                  style={{ color: activeTab === "analytics" ? "#000000" : "#ffffff", WebkitTextFillColor: activeTab === "analytics" ? "#000000" : "#ffffff" }}
+                  className={`sidebar-tab-label ${activeTab === "analytics" ? "text-black font-black text-xs" : "text-white font-bold text-xs"}`}
                 >
-                  <BarChart2 className={`w-4.5 h-4.5 shrink-0 ${activeTab === "analytics" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                   Analytics Dashboard
-                </button>
-              )}
+                </span>
+              </button>
+            )}
 
-              {/* 8. Coupons */}
-              {role === "admin" && (
-                <button
-                  onClick={() => {
-                    setActiveTab("coupons");
-                    setCompletedBillData(null);
-                    if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
-                    window.scrollTo({ top: 0, behavior: "instant" });
-                  }}
-                  className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                    activeTab === "coupons"
-                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
-                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
-                  }`}
+            {/* 7. Coupons */}
+            {role === "admin" && (
+              <button
+                type="button"
+                data-active={activeTab === "coupons"}
+                onClick={() => {
+                  setActiveTab("coupons");
+                  setCompletedBillData(null);
+                  if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
+                  window.scrollTo({ top: 0, behavior: "instant" });
+                }}
+                style={activeTab === "coupons" ? { backgroundColor: "#ffffff", color: "#000000", WebkitTextFillColor: "#000000" } : { color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+                className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
+                  activeTab === "coupons"
+                    ? "bg-white text-black font-black shadow-md border border-white"
+                    : "font-bold text-xs text-white hover:bg-white/15 border border-transparent hover:border-white/20"
+                }`}
+              >
+                <Tag
+                  style={{ color: activeTab === "coupons" ? "#000000" : "#ffffff", stroke: activeTab === "coupons" ? "#000000" : "#ffffff" }}
+                  className={`w-4.5 h-4.5 shrink-0 ${activeTab === "coupons" ? "text-black" : "text-white"}`}
+                />
+                <span
+                  style={{ color: activeTab === "coupons" ? "#000000" : "#ffffff", WebkitTextFillColor: activeTab === "coupons" ? "#000000" : "#ffffff" }}
+                  className={`sidebar-tab-label ${activeTab === "coupons" ? "text-black font-black text-xs" : "text-white font-bold text-xs"}`}
                 >
-                  <Tag className={`w-4.5 h-4.5 shrink-0 ${activeTab === "coupons" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                   Coupons
-                </button>
-              )}
+                </span>
+              </button>
+            )}
 
-              {/* Attendance */}
-              {(role === "admin" || role === "staff") && (
-                <button
-                  onClick={() => {
-                    setActiveTab("attendance");
-                    setCompletedBillData(null);
-                    if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
-                    window.scrollTo({ top: 0, behavior: "instant" });
-                  }}
-                  className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                    activeTab === "attendance"
-                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
-                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
-                  }`}
+            {/* 8. Settings */}
+            {role === "admin" && (
+              <button
+                type="button"
+                data-active={activeTab === "settings"}
+                onClick={() => {
+                  setActiveTab("settings");
+                  setCompletedBillData(null);
+                  if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
+                  window.scrollTo({ top: 0, behavior: "instant" });
+                }}
+                style={activeTab === "settings" ? { backgroundColor: "#ffffff", color: "#000000", WebkitTextFillColor: "#000000" } : { color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+                className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
+                  activeTab === "settings"
+                    ? "bg-white text-black font-black shadow-md border border-white"
+                    : "font-bold text-xs text-white hover:bg-white/15 border border-transparent hover:border-white/20"
+                }`}
+              >
+                <Settings2
+                  style={{ color: activeTab === "settings" ? "#000000" : "#ffffff", stroke: activeTab === "settings" ? "#000000" : "#ffffff" }}
+                  className={`w-4.5 h-4.5 shrink-0 ${activeTab === "settings" ? "text-black" : "text-white"}`}
+                />
+                <span
+                  style={{ color: activeTab === "settings" ? "#000000" : "#ffffff", WebkitTextFillColor: activeTab === "settings" ? "#000000" : "#ffffff" }}
+                  className={`sidebar-tab-label ${activeTab === "settings" ? "text-black font-black text-xs" : "text-white font-bold text-xs"}`}
                 >
-                  <UserCheck className={`w-4.5 h-4.5 shrink-0 ${activeTab === "attendance" ? "text-[#171717]" : "text-[#8A6815]"}`} />
-                  Attendance
-                </button>
-              )}
-
-              {/* Settings */}
-              {role === "admin" && (
-                <button
-                  onClick={() => {
-                    setActiveTab("settings");
-                    setCompletedBillData(null);
-                    if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
-                    window.scrollTo({ top: 0, behavior: "instant" });
-                  }}
-                  className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                    activeTab === "settings"
-                      ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
-                      : "text-zinc-700 hover:bg-[#FAF8F2] hover:text-[#8A6815] border border-transparent hover:border-[#D4AF37]/30"
-                  }`}
-                >
-                  <Settings2 className={`w-4.5 h-4.5 shrink-0 ${activeTab === "settings" ? "text-[#171717]" : "text-[#8A6815]"}`} />
                   Settings
-                </button>
-              )}
+                </span>
+              </button>
+            )}
 
-              <div className="pt-4 border-t border-[#C5A059]/20 mt-4">
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-[#171717] bg-[#F3F4F6] hover:bg-[#E5E7EB] hover:shadow-xs border border-zinc-300 hover:border-[#D4AF37] transition-all cursor-pointer"
-                >
-                  <LogOut className="w-4.5 h-4.5 text-[#8A6815]" />
-                  Log Out
-                </button>
-              </div>
-            </nav>
-          </div>
+            {/* Log Out Button inside scrollable nav */}
+            <div className="pt-3 border-t border-white/20 mt-3">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all cursor-pointer shadow-xs"
+              >
+                <LogOut className="w-4.5 h-4.5 text-white shrink-0" />
+                <span className="text-white font-bold text-xs">Log Out</span>
+              </button>
+            </div>
+          </nav>
 
-          {/* Footer branding */}
-          <div className="p-4 border-t border-[#C5A059]/20 bg-[#F9FAFB] flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center text-[#8A6815] font-black text-xs uppercase">
+          {/* Footer branding (shrink-0) */}
+          <div className="p-3.5 border-t border-white/15 bg-black/15 flex items-center gap-3 shrink-0">
+            <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-black text-xs uppercase shrink-0">
               {role === "admin" ? "A" : "S"}
             </div>
-            <div>
-              <span className="text-xs font-bold text-[#171717] block uppercase tracking-wider">
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-white block uppercase tracking-wider truncate">
                 {role === "admin" ? "Admin Access" : "Staff Access"}
               </span>
-              <span className="text-[9px] text-[#A47B16] font-bold tracking-wider block">
+              <span className="text-[9px] text-white/75 font-bold tracking-wider block truncate">
                 NIDHULAN • TERMINAL
               </span>
             </div>
@@ -4146,7 +4113,7 @@ export default function POSBilling() {
                   </button>
                   <button
                     onClick={() => setCompletedBillData(null)}
-                    className="bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] hover:brightness-110 px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                    className="bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     New Sale
@@ -4307,7 +4274,7 @@ export default function POSBilling() {
         {/* ── Advance Order created — shareable receipt modal ─────── */}
         {advanceReceipt && (
           <div
-            className="fixed inset-0 z-[395] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            className="fixed inset-0 z-[395] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => {
               setAdvanceReceipt(null);
               setActiveTab("advance");
@@ -4315,99 +4282,128 @@ export default function POSBilling() {
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="flex flex-col gap-4 w-full max-w-[520px] min-w-0 bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl p-4 sm:p-5 max-h-[94vh] overflow-y-auto animate-in zoom-in-95 duration-200"
+              className="flex flex-col gap-5 w-full max-w-[480px] min-w-0 bg-white border border-zinc-200 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.18)] p-6 sm:p-7 max-h-[94vh] overflow-y-auto animate-in zoom-in-95 duration-200 text-zinc-900"
             >
-              <div className="flex justify-between items-center pb-2 border-b border-[#C5A059]/25">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-xl sm:text-2xl font-black text-[#FAF7F2] tracking-tight">
-                      Advance Order Saved
-                    </h1>
-                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#FEF3C7]/15 border border-[#FEF3C7]/30 text-[#F59E0B]">
-                      Deposit
-                    </span>
+              {/* Header */}
+              <div className="flex justify-between items-start pb-4 border-b border-zinc-100">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
+                    <Clock className="w-5 h-5 text-amber-600" />
                   </div>
-                  <p className="text-[11px] font-mono font-bold text-[var(--accent)] mt-0.5">
-                    #{advanceReceipt.id}
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg sm:text-xl font-black text-zinc-900 tracking-tight">
+                        Advance Order Saved
+                      </h2>
+                      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                        Deposit
+                      </span>
+                    </div>
+                    <p className="text-xs font-mono font-bold text-zinc-500 mt-0.5">
+                      #{advanceReceipt.id}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAdvanceReceipt(null);
-                      setActiveTab("advance");
-                    }}
-                    className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
-                    aria-label="Close receipt"
-                    title="Close (Esc)"
-                  >
-                    <X className="w-4.5 h-4.5 text-zinc-700" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAdvanceReceipt(null);
-                      setActiveTab("advance");
-                    }}
-                    className="bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] hover:brightness-110 px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    New Sale
-                  </button>
-                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdvanceReceipt(null);
+                    setActiveTab("advance");
+                  }}
+                  className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                  aria-label="Close receipt"
+                  title="Close (Esc)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Deposit Receipt Card */}
-              <div className="bg-[#181820] rounded-xl p-4 sm:p-5 border border-[#C5A059]/25 shadow-xs space-y-3">
-                <div className="text-[10px] font-extrabold text-[#B8B5AE] uppercase tracking-widest border-b border-white/5 pb-2">
-                  Advance Receipt — {advanceReceipt.customerName}
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-[#B8B5AE]">Order Total</span>
-                  <span className="text-lg font-black text-[#FAF7F2]">
-                    ₹{advanceReceipt.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {/* Receipt Summary Card */}
+              <div className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-4 sm:p-5 space-y-3.5">
+                <div className="flex items-center justify-between border-b border-zinc-200/70 pb-2.5">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                    Customer Name
+                  </span>
+                  <span className="text-xs font-black text-zinc-900">
+                    {advanceReceipt.customerName || "Walk-in Customer"}
                   </span>
                 </div>
+
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-[#B8B5AE]">Deposit Paid</span>
-                  <span className="text-sm font-black text-[#34D399]">
-                    ₹{advanceReceipt.deposit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  <span className="font-semibold text-zinc-600">Total Order Amount</span>
+                  <span className="text-base sm:text-lg font-black text-zinc-900 font-mono">
+                    ₹{advanceReceipt.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
-                <div className="bg-red-950/25 border border-red-500/30 rounded-lg p-3 sm:p-3.5 flex justify-between items-center mt-1">
-                  <span className="text-xs font-bold text-red-400">Balance Due</span>
-                  <span className="text-base sm:text-lg font-black text-red-400">
-                    ₹{advanceReceipt.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-zinc-600">Deposit Received</span>
+                  <span className="text-sm sm:text-base font-black text-emerald-600 font-mono flex items-center gap-1">
+                    <span>✓</span> ₹{advanceReceipt.deposit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                {/* Highlighted Balance Due Banner */}
+                <div
+                  className="rounded-xl p-3.5 flex justify-between items-center border"
+                  style={{
+                    backgroundColor: advanceReceipt.balance > 0 ? "#FFFBEB" : "#ECFDF5",
+                    borderColor: advanceReceipt.balance > 0 ? "#FDE68A" : "#A7F3D0",
+                  }}
+                >
+                  <div>
+                    <span
+                      className="text-[10px] font-black uppercase tracking-wider block"
+                      style={{ color: advanceReceipt.balance > 0 ? "#92400E" : "#065F46" }}
+                    >
+                      {advanceReceipt.balance > 0 ? "Remaining Balance Due" : "Payment Status"}
+                    </span>
+                    <span
+                      className="text-[10px] font-medium block"
+                      style={{ color: advanceReceipt.balance > 0 ? "#B45309" : "#047857" }}
+                    >
+                      {advanceReceipt.balance > 0 ? "Payable upon collection" : "Fully settled"}
+                    </span>
+                  </div>
+                  <span
+                    className="text-lg sm:text-xl font-black font-mono tracking-tight"
+                    style={{ color: advanceReceipt.balance > 0 ? "#78350F" : "#065F46" }}
+                  >
+                    ₹{advanceReceipt.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
 
               {/* Action Buttons Bar */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                 <button
+                  type="button"
                   onClick={() => printAdvanceReceipt(advanceReceipt.id)}
-                  className="bg-[#181820] border border-[#C5A059]/25 hover:bg-[#252532] text-[#FAF7F2] py-2.5 px-3 rounded-lg font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-900 py-3 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
                 >
-                  <Printer className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  <Printer className="w-4 h-4 text-zinc-700" />
                   Print Receipt
                 </button>
                 <button
+                  type="button"
                   onClick={() => shareAdvanceReceiptWhatsApp(advanceReceipt)}
-                  className="bg-[#10B981] hover:bg-[#059669] text-white py-2.5 px-3 rounded-lg font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                  className="bg-[#25D366] hover:bg-[#20BD5A] text-white py-3 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.012c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
                   </svg>
                   WhatsApp
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setAdvanceReceipt(null);
                     setActiveTab("advance");
                   }}
-                  className="bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] hover:brightness-110 py-2.5 px-3 rounded-lg font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                  className="bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] py-3 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer border border-[var(--accent-strong)]"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                   New Sale
                 </button>
               </div>
@@ -4532,17 +4528,6 @@ export default function POSBilling() {
                         <button
                           onClick={() => {
                             resetCatalogForm();
-                            setNewCatType("SERVICE");
-                            setCatalogTargetRowId(null);
-                            setShowCatalogModal(true);
-                          }}
-                          className="text-[10px] font-bold text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 border border-[var(--accent)]/30 px-4 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <Scissors className="w-3.5 h-3.5" /> Add Service
-                        </button>
-                        <button
-                          onClick={() => {
-                            resetCatalogForm();
                             setNewCatType("PRODUCT");
                             setCatalogTargetRowId(null);
                             setShowCatalogModal(true);
@@ -4554,7 +4539,7 @@ export default function POSBilling() {
                         </button>
                         <button
                           onClick={addItem}
-                          className="text-[10px] font-bold text-[#0C0C0E] bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:brightness-110 border border-[#E5C378] px-4 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer font-black shadow-xs"
+                          className="text-[10px] font-black text-[var(--accent-on)] bg-[var(--accent)] hover:bg-[var(--accent-strong)] border border-[var(--accent-strong)] px-4 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                         >
                           <Plus className="w-3.5 h-3.5" /> Add Custom Item
                         </button>
@@ -5019,12 +5004,12 @@ export default function POSBilling() {
                                     applyCouponCode();
                                   }
                                 }}
-                                className="flex-1 min-w-0 bg-white border border-zinc-300 rounded-lg px-3 py-2 text-xs font-bold text-zinc-900 uppercase placeholder:normal-case placeholder:text-zinc-400 focus:outline-none focus:border-[#D4AF37] shadow-xs h-9"
+                                className="flex-1 min-w-0 bg-white border border-zinc-300 rounded-lg px-3 py-2 text-xs font-bold text-zinc-900 uppercase placeholder:normal-case placeholder:text-zinc-400 focus:outline-none focus:border-[var(--accent)] shadow-xs h-9"
                               />
                               <button
                                 type="button"
                                 onClick={() => applyCouponCode()}
-                                className="px-4 py-2 bg-[#D4AF37] hover:bg-[#C5A02E] text-[#171717] font-black text-xs uppercase tracking-wider rounded-lg shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 h-9 flex items-center justify-center"
+                                className="px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] font-black text-xs uppercase tracking-wider rounded-lg shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 h-9 flex items-center justify-center"
                               >
                                 Apply
                               </button>
@@ -5171,7 +5156,7 @@ export default function POSBilling() {
                             onClick={() => setGstBill(false)}
                             className={`flex-1 py-2 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${
                               !applyGST
-                                ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                                ? "bg-[var(--accent)] text-[var(--accent-on)] font-black shadow-xs border border-[var(--accent-strong)]"
                                 : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200/60"
                             }`}
                           >
@@ -5182,7 +5167,7 @@ export default function POSBilling() {
                             onClick={() => setGstBill(true)}
                             className={`flex-1 py-2 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${
                               applyGST
-                                ? "bg-[#D4AF37] text-[#171717] font-black shadow-xs border border-[#C5A02E]"
+                                ? "bg-[var(--accent)] text-[var(--accent-on)] font-black shadow-xs border border-[var(--accent-strong)]"
                                 : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200/60"
                             }`}
                           >
@@ -5243,7 +5228,7 @@ export default function POSBilling() {
                               onClick={() => setPaymentMode(mode)}
                               className={`py-2 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all cursor-pointer border ${
                                 paymentMode === mode
-                                  ? "bg-[#D4AF37] text-[#171717] font-black border-[#C5A02E] shadow-xs"
+                                  ? "bg-[var(--accent)] text-[var(--accent-on)] font-black border-[var(--accent-strong)] shadow-xs"
                                   : "bg-zinc-100 text-zinc-800 border-zinc-200 hover:bg-zinc-200 hover:text-black"
                               }`}
                             >
@@ -5384,7 +5369,7 @@ export default function POSBilling() {
                       <button
                         onClick={() => completeSale()}
                         disabled={isSubmittingOrder}
-                        className={`w-full mt-2 bg-[#D4AF37] hover:bg-[#C5A02E] text-[#171717] py-3.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-sm border border-[#C5A02E] ${
+                        className={`w-full mt-2 bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] py-3.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-sm border border-[var(--accent-strong)] ${
                           isSubmittingOrder
                             ? "opacity-60 cursor-not-allowed"
                             : "cursor-pointer"
@@ -5392,12 +5377,12 @@ export default function POSBilling() {
                       >
                         {isSubmittingOrder ? (
                           <>
-                            <Loader2 className="w-4 h-4 animate-spin text-[#171717]" />
+                            <Loader2 className="w-4 h-4 animate-spin text-[var(--accent-on)]" />
                             <span>Processing Sale...</span>
                           </>
                         ) : (
                           <>
-                            <Check className="w-4 h-4 text-[#171717]" />
+                            <Check className="w-4 h-4 text-[var(--accent-on)]" />
                             <span>Complete Sale</span>
                           </>
                         )}
@@ -5481,7 +5466,7 @@ export default function POSBilling() {
                         key={mode}
                         onClick={() => setAdvDepositPaymentMode(mode)}
                         className={`py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all cursor-pointer ${
-                          advDepositPaymentMode === mode ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black border-[var(--accent)]" : "bg-[#181820] text-[#B8B5AE] border-[#C5A059]/20 hover:border-[var(--accent)]"
+                          advDepositPaymentMode === mode ? "bg-[var(--accent)] text-[var(--accent-on)] font-black border-[var(--accent)]" : "bg-[#181820] text-[#B8B5AE] border-[#C5A059]/20 hover:border-[var(--accent)]"
                         }`}
                       >
                         {mode === "GPAY" ? "GPay" : mode}
@@ -5521,7 +5506,7 @@ export default function POSBilling() {
                   <button
                     onClick={saveAdvanceOrder}
                     disabled={isSavingAdvance}
-                    className={`flex-1 py-3 rounded-lg font-black text-[11px] uppercase tracking-[0.1em] flex items-center justify-center gap-2 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] hover:brightness-110 shadow-md transition-all ${
+                    className={`flex-1 py-3 rounded-lg font-black text-[11px] uppercase tracking-[0.1em] flex items-center justify-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] shadow-md transition-all ${
                       isSavingAdvance ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
                     }`}
                   >
@@ -5626,17 +5611,17 @@ export default function POSBilling() {
                 })()}
 
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-[#181820] border border-[#C5A059]/25 rounded-lg p-2.5">
-                    <p className="text-[9px] font-bold text-[#B8B5AE] uppercase tracking-wider">Total</p>
-                    <p className="text-sm font-black text-[#FAF7F2]">₹{Number(selectedAdvance.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-2.5">
+                    <p className="text-[9px] font-black text-zinc-600 uppercase tracking-wider">Total</p>
+                    <p className="text-sm font-black text-black">₹{Number(selectedAdvance.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                   </div>
-                  <div className="bg-emerald-950/25 border border-emerald-500/30 rounded-lg p-2.5">
-                    <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">Paid</p>
-                    <p className="text-sm font-black text-emerald-400">₹{Number(selectedAdvance.deposit_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5">
+                    <p className="text-[9px] font-black text-emerald-800 uppercase tracking-wider">Paid</p>
+                    <p className="text-sm font-black text-emerald-700">₹{Number(selectedAdvance.deposit_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                   </div>
-                  <div className="bg-red-950/25 border border-red-500/30 rounded-lg p-2.5">
-                    <p className="text-[9px] font-bold text-red-400 uppercase tracking-wider">Balance</p>
-                    <p className="text-sm font-black text-red-400">₹{balanceRemaining(selectedAdvance).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  <div className="bg-rose-50 border border-rose-200 rounded-xl p-2.5">
+                    <p className="text-[9px] font-black text-rose-800 uppercase tracking-wider">Balance</p>
+                    <p className="text-sm font-black text-rose-700">₹{balanceRemaining(selectedAdvance).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
 
@@ -5695,36 +5680,14 @@ export default function POSBilling() {
                 {advanceViewMode === "receive" && selectedAdvance.status !== "COMPLETED" && selectedAdvance.status !== "CANCELLED" && (
                   <div className="pt-3 border-t border-[#C5A059]/20 space-y-3">
                     <div>
-                      <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-wider mb-1.5">Manual Discount</label>
-                      <div className="flex gap-2">
-                        <select
-                          value={receiveDiscountType}
-                          onChange={(e) => setReceiveDiscountType(e.target.value as "FIXED" | "PERCENT")}
-                          className="bg-[#181820] border border-[#C5A059]/25 text-[#FAF7F2] rounded-lg px-2 py-2 text-xs font-bold focus:outline-none cursor-pointer"
-                        >
-                          <option value="FIXED">₹</option>
-                          <option value="PERCENT">%</option>
-                        </select>
-                        <input
-                          type="number"
-                          value={receiveDiscountValue}
-                          onChange={(e) => setReceiveDiscountValue(e.target.value === "" ? "" : parseFloat(e.target.value))}
-                          onWheel={(e) => e.currentTarget.blur()}
-                          className="flex-1 bg-[#181820] border border-[#C5A059]/25 focus:border-[var(--accent)] rounded-lg px-3 py-2 text-sm font-bold text-[#FAF7F2] focus:outline-none"
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-wider mb-1.5">Payment Method</label>
+                      <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1.5">Payment Method</label>
                       <div className="grid grid-cols-2 gap-1.5">
                         {ORDER_PAYMENT_MODES.map((mode) => (
                           <button
                             key={mode}
                             onClick={() => setReceivePaymentMode(mode)}
-                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all cursor-pointer ${
-                              receivePaymentMode === mode ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black border-[var(--accent)]" : "bg-[#181820] text-[#B8B5AE] border-[#C5A059]/20 hover:border-[var(--accent)]"
+                            className={`py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+                              receivePaymentMode === mode ? "bg-[var(--accent)] text-[var(--accent-on)] font-black border-[var(--accent-strong)] shadow-xs" : "bg-zinc-100 text-zinc-700 border-zinc-200 hover:border-zinc-300"
                             }`}
                           >
                             {mode === "GPAY" ? "GPay" : mode}
@@ -5733,13 +5696,13 @@ export default function POSBilling() {
                       </div>
                     </div>
 
-                    <div className="bg-emerald-950/30 border border-emerald-500/40 rounded-lg p-3 text-center">
-                      <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Final Amount to Collect</p>
-                      <p className="text-2xl font-black text-emerald-400">₹{receiveBalanceFinalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 text-center">
+                      <p className="text-[11px] font-black text-emerald-800 uppercase tracking-wider">Final Amount to Collect</p>
+                      <p className="text-2xl sm:text-3xl font-black text-emerald-700 mt-0.5">₹{receiveBalanceFinalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </div>
 
-                    <p className="text-[10px] font-bold text-[var(--accent)] bg-[#181820] border border-[#C5A059]/30 rounded-lg p-2.5">
-                      Confirmation marks the order Completed, creates one official invoice, and recognizes the full ₹{Number(selectedAdvance.total_amount - receiveBalanceDiscountAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })} as revenue.
+                    <p className="text-[11px] font-bold text-zinc-800 bg-amber-50/80 border border-amber-200 rounded-xl p-3">
+                      Confirmation marks the order Completed, creates one official invoice, and recognizes the full ₹{Number(selectedAdvance.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })} as revenue.
                     </p>
 
                     <div className="flex gap-2">
@@ -5820,7 +5783,7 @@ export default function POSBilling() {
                             }}
                             className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                               isActive
-                                ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-sm"
+                                ? "bg-[var(--accent)] text-[var(--accent-on)] font-black shadow-sm"
                                 : "text-[#FAF7F2]/80 hover:bg-[#1E1E26]"
                             }`}
                           >
@@ -5934,7 +5897,7 @@ export default function POSBilling() {
                     key={s}
                     onClick={() => setAdvStatusFilter(s)}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                      advStatusFilter === s ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] shadow-sm" : "bg-[#181820] text-[#FAF7F2]/80 border border-[#C5A059]/20 hover:bg-[#202028]"
+                      advStatusFilter === s ? "bg-[var(--accent)] text-[var(--accent-on)] shadow-sm" : "bg-[#181820] text-[#FAF7F2]/80 border border-[#C5A059]/20 hover:bg-[#202028]"
                     }`}
                   >
                     {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
@@ -5966,10 +5929,10 @@ export default function POSBilling() {
                 return filtered.map((a) => {
                   const bal = balanceRemaining(a);
                   const statusStyles: Record<AdvanceOrderStatus, string> = {
-                    PENDING: "bg-[#FEF3C7]/15 text-[#F59E0B] border-[#F59E0B]/30",
-                    READY: "bg-[#DBEAFE]/15 text-[#60A5FA] border-[#2563EB]/30",
-                    COMPLETED: "bg-[#DCFCE7]/15 text-[#34D399] border-[#16A34A]/30",
-                    CANCELLED: "bg-[#FEE2E2]/15 text-[#EF4444] border-[#DC2626]/30",
+                    PENDING: "bg-[#FEF3C7] text-black border-[#F59E0B]/40 font-black",
+                    READY: "bg-[#DBEAFE] text-black border-[#2563EB]/40 font-black",
+                    COMPLETED: "bg-[#DCFCE7] text-black border-[#16A34A]/40 font-black",
+                    CANCELLED: "bg-[#FEE2E2] text-black border-[#DC2626]/40 font-black",
                   };
                   return (
                     <div key={a.id} className="grid grid-cols-1 md:grid-cols-[1.1fr_1.3fr_1.5fr_1.5fr_0.9fr_1.1fr_1.4fr] gap-3 px-4 py-3 border-b border-[#C5A059]/15 items-center text-xs hover:bg-[#181820]/60">
@@ -6061,18 +6024,30 @@ export default function POSBilling() {
           <div className="flex-1 flex flex-col max-w-[1400px] mx-auto w-full pb-8 pr-2 animate-in fade-in duration-300">
             {/* Header Panel */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
-              <div>
-                <h2 className="text-[28px] font-black text-[#FAF7F2] tracking-tight flex items-center gap-3">
-                  <History className="w-7 h-7 text-[var(--accent)]" />
+              <div className="shrink-0">
+                <h2 className="text-[28px] font-black text-[#FAF7F2] tracking-tight flex items-center gap-3 whitespace-nowrap">
+                  <History className="w-7 h-7 text-[var(--accent)] shrink-0" />
                   Order History
                 </h2>
-                <p className="text-xs text-[#B8B5AE] font-semibold mt-1">
-                  Manage and track past invoices
-                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <p className="text-xs text-[#B8B5AE] font-semibold">
+                    Manage and track past invoices
+                  </p>
+                  {orders.length > 0 && historyDateRangeLabel && (
+                    <span
+                      aria-live="polite"
+                      className={`text-[11px] font-medium ${
+                        historyDateRange.valid ? "text-[#B8B5AE]" : "text-red-400"
+                      }`}
+                    >
+                      • {historyDateRangeLabel}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {orders.length > 0 && (
-                <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
                   <div className="flex flex-wrap items-center bg-[#131317] border border-[#C5A059]/25 rounded-xl p-1 gap-1 max-w-full">
                     <span className="text-[9px] font-bold text-[#B8B5AE] uppercase tracking-wider px-2">
                       Period:
@@ -6102,9 +6077,9 @@ export default function POSBilling() {
                               setHistoryStartDate(range.start ?? "");
                               setHistoryEndDate(range.end ?? "");
                             }}
-                            className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                               isActive
-                                ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-sm"
+                                ? "bg-[var(--accent)] text-[var(--accent-on)] font-black shadow-sm"
                                 : "text-[#FAF7F2]/80 hover:bg-[#1E1E26]"
                             }`}
                           >
@@ -6115,7 +6090,7 @@ export default function POSBilling() {
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center border border-[#C5A059]/25 rounded-xl px-3 py-1.5 gap-2 shadow-sm bg-[#131317] min-w-0">
+                  <div className="flex items-center border border-[#C5A059]/25 rounded-xl px-2.5 py-1.5 gap-2 shadow-sm bg-[#131317] shrink-0">
                     <div className="flex items-center gap-1">
                       <span className="text-[9px] font-bold uppercase tracking-wider text-[#B8B5AE]">
                         From:
@@ -6128,7 +6103,7 @@ export default function POSBilling() {
                           setHistoryPeriod("custom");
                           setHistoryStartDate(e.target.value);
                         }}
-                        className="text-xs font-bold bg-transparent border-none outline-none focus:ring-0 cursor-pointer text-[#FAF7F2] w-[115px]"
+                        className="text-xs font-bold bg-transparent border-none outline-none focus:ring-0 cursor-pointer text-[#FAF7F2] w-[110px]"
                       />
                     </div>
                     <div className="flex items-center gap-1">
@@ -6143,23 +6118,14 @@ export default function POSBilling() {
                           setHistoryPeriod("custom");
                           setHistoryEndDate(e.target.value);
                         }}
-                        className="text-xs font-bold bg-transparent border-none outline-none focus:ring-0 cursor-pointer text-[#FAF7F2] w-[115px]"
+                        className="text-xs font-bold bg-transparent border-none outline-none focus:ring-0 cursor-pointer text-[#FAF7F2] w-[110px]"
                       />
                     </div>
                   </div>
 
-                  <span
-                    aria-live="polite"
-                    className={`basis-full text-[10px] font-semibold text-right ${
-                      historyDateRange.valid ? "text-[#B8B5AE]" : "text-red-400"
-                    }`}
-                  >
-                    {historyDateRangeLabel}
-                  </span>
-
                   <button
                     onClick={handleExportCSV}
-                    className="flex items-center gap-1.5 px-4 py-2 border-2 border-[var(--accent)] bg-transparent text-[var(--accent)] hover:bg-[var(--accent)] hover:text-[#0C0C0E] rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-sm"
+                    className="flex items-center gap-1.5 px-3.5 py-2 border-2 border-[var(--accent)] bg-transparent text-[var(--accent)] hover:bg-[var(--accent)] hover:text-[#0C0C0E] rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-sm shrink-0"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Export CSV
@@ -6255,26 +6221,29 @@ export default function POSBilling() {
                       <table className="w-full text-left border-collapse">
                         <thead>
                           <tr className="bg-[#181820] border-b border-[#C5A059]/25 select-none">
-                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest">
+                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest text-left">
                               Order ID
                             </th>
-                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest">
+                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest text-left">
                               Date &amp; Time
                             </th>
-                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest">
+                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest text-left">
                               Customer Name
                             </th>
-                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest">
+                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest text-left">
                               Mobile Number
                             </th>
-                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest">
+                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest text-left">
                               Source
                             </th>
-                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest">
+                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest text-left">
                               Total Due
                             </th>
-                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest text-right">
+                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest text-center">
                               Status
+                            </th>
+                            <th className="p-4 text-[10px] font-bold text-[#C5A059] uppercase tracking-widest text-right">
+                              Actions
                             </th>
                           </tr>
                         </thead>
@@ -6284,7 +6253,7 @@ export default function POSBilling() {
                               key={order.id}
                               className="border-b border-white/5 hover:bg-[#181820] transition-colors"
                             >
-                              <td className="p-4 text-xs font-semibold text-[#FAF7F2]">
+                              <td className="p-4 text-xs font-semibold text-[#FAF7F2] whitespace-nowrap">
                                 {order.id}
                               </td>
                               <td className="p-4 text-xs font-bold text-[#FAF7F2] whitespace-nowrap">
@@ -6309,10 +6278,10 @@ export default function POSBilling() {
                               <td className="p-4 text-xs font-bold text-[#FAF7F2]">
                                 {order.customerName}
                               </td>
-                              <td className="p-4 text-xs font-mono font-bold text-[#FAF7F2]">
+                              <td className="p-4 text-xs font-mono font-bold text-[#FAF7F2] whitespace-nowrap">
                                 {order.customerPhone || "-"}
                               </td>
-                              <td className="p-4">
+                              <td className="p-4 whitespace-nowrap">
                                 <div className="flex flex-col items-start gap-1">
                                   <span
                                     className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-widest border ${order.source === "ONLINE" ? "border-[#00A86B] text-[#00A86B] bg-[#00A86B]/10" : "border-[#C5A059]/30 text-[#B8B5AE] bg-[#181820]"}`}
@@ -6326,19 +6295,22 @@ export default function POSBilling() {
                                   </span>
                                 </div>
                               </td>
-                              <td className="p-4 text-sm font-black text-[var(--accent)]">
+                              <td className="p-4 text-sm font-black text-[var(--accent)] whitespace-nowrap">
                                 ₹{order.grandTotal.toLocaleString()}
                               </td>
-                              <td className="p-4 text-right">
+                              <td className="p-4 text-center whitespace-nowrap">
+                                <span className="px-2.5 py-1 rounded-md bg-[#DCFCE7] border border-[#16A34A]/40 text-black text-[10px] font-black uppercase tracking-wider inline-block">
+                                  {order.status}
+                                </span>
+                              </td>
+                              <td className="p-4 text-right whitespace-nowrap">
                                 <div className="flex flex-row items-center justify-end gap-1.5">
-                                  <span className="px-3 py-1 rounded bg-[#10B981]/15 border border-[#10B981]/30 text-[#10B981] text-[10px] font-bold uppercase tracking-wider hidden lg:inline-block mr-1">
-                                    {order.status}
-                                  </span>
                                   <button
+                                    type="button"
                                     onClick={() => resendWhatsApp(order)}
                                     title="Send on WhatsApp"
                                     aria-label="Send on WhatsApp"
-                                    className="flex items-center justify-center w-8 h-8 bg-[#10B981]/10 hover:bg-[#10B981]/20 text-[#10B981] rounded-md transition-colors cursor-pointer"
+                                    className="flex items-center justify-center w-8 h-8 bg-[#10B981]/10 hover:bg-[#10B981]/20 text-[#10B981] rounded-md transition-colors cursor-pointer border border-[#10B981]/20"
                                   >
                                     <svg
                                       className="w-4 h-4"
@@ -6349,10 +6321,20 @@ export default function POSBilling() {
                                     </svg>
                                   </button>
                                   <button
+                                    type="button"
+                                    onClick={() => openPrintModal({ id: order.id, type: "invoice" })}
+                                    title="Print bill / invoice"
+                                    aria-label="Print bill / invoice"
+                                    className="flex items-center justify-center w-8 h-8 bg-[var(--accent)]/15 hover:bg-[var(--accent)]/25 text-[var(--accent)] rounded-md transition-colors cursor-pointer border border-[var(--accent)]/30"
+                                  >
+                                    <Printer className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
                                     onClick={() => setActiveInvoiceId(order.id)}
                                     title="View invoice"
                                     aria-label="View invoice"
-                                    className="flex items-center justify-center w-8 h-8 bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 text-[var(--accent)] rounded-md transition-colors cursor-pointer"
+                                    className="flex items-center justify-center w-8 h-8 bg-white/5 hover:bg-white/10 text-[#FAF7F2] rounded-md transition-colors cursor-pointer border border-white/5"
                                   >
                                     <svg
                                       className="w-4 h-4"
@@ -6369,6 +6351,7 @@ export default function POSBilling() {
                                     </svg>
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => setSelectedOrder(order)}
                                     title="Order details"
                                     aria-label="Order details"
@@ -6396,12 +6379,13 @@ export default function POSBilling() {
                                   </button>
                                   {role === "admin" && (
                                     <button
+                                      type="button"
                                       onClick={() =>
                                         handleDeleteOrder(order.id)
                                       }
                                       title="Delete order"
                                       aria-label="Delete order"
-                                      className="flex items-center justify-center w-8 h-8 bg-[#DC2626]/10 hover:bg-[#DC2626]/20 text-[#DC2626] rounded-md transition-colors cursor-pointer"
+                                      className="flex items-center justify-center w-8 h-8 bg-[#DC2626]/10 hover:bg-[#DC2626]/20 text-[#DC2626] rounded-md transition-colors cursor-pointer border border-[#DC2626]/20"
                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </button>
@@ -6477,7 +6461,7 @@ export default function POSBilling() {
                               }}
                               className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                                 isActive
-                                  ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-sm"
+                                  ? "bg-[var(--accent)] text-[var(--accent-on)] font-black shadow-sm"
                                   : "text-[#FAF7F2]/80 hover:bg-[#1E1E26]"
                               }`}
                             >
@@ -6549,7 +6533,7 @@ export default function POSBilling() {
                     onClick={() => setAnalyticsGstFilter(key)}
                     className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                       isActive
-                        ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-sm"
+                        ? "bg-[var(--accent)] text-[var(--accent-on)] font-black shadow-sm"
                         : "text-[#FAF7F2]/80 hover:bg-[#1E1E26]"
                     }`}
                   >
@@ -7221,7 +7205,7 @@ export default function POSBilling() {
                                 tabIndex={0}
                               >
                                 {/* Monthly sales text on top for mobile/visibility */}
-                                <span className="text-[8px] font-black text-[var(--accent)] h-3 flex items-end">
+                                <span className="text-[8px] font-black text-black h-3 flex items-end">
                                   {monthRevenue[i] > 0
                                     ? monthRevenue[i] >= 1000
                                       ? `₹${(monthRevenue[i] / 1000).toFixed(1)}k`
@@ -7238,7 +7222,7 @@ export default function POSBilling() {
                                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#0C0C0E]"></div>
                                 </div>
                                 <div
-                                  className="w-full max-w-[24px] bg-[var(--accent)] rounded-t-sm transition-all duration-1000 group-hover/bar:bg-[#E5C378] cursor-pointer min-h-[4px]"
+                                  className="w-full max-w-[24px] chart-bar-black bg-black rounded-t-sm transition-all duration-1000 group-hover/bar:bg-zinc-800 cursor-pointer min-h-[4px]"
                                   style={{
                                     height: `${Math.max(4, (monthRevenue[i] / maxMonthRevenue) * 100)}px`,
                                   }}
@@ -7285,7 +7269,7 @@ export default function POSBilling() {
                               className="flex flex-col items-center gap-3 w-full group/bar relative outline-none"
                               tabIndex={0}
                             >
-                              <span className="text-[9px] font-black text-[var(--accent)]">
+                              <span className="text-[9px] font-black text-black">
                                 {weekRevenue[i] > 0
                                   ? `₹${weekRevenue[i] >= 1000 ? (weekRevenue[i] / 1000).toFixed(1) + "k" : weekRevenue[i]}`
                                   : ""}
@@ -7302,7 +7286,7 @@ export default function POSBilling() {
 
                               <div className="w-full max-w-[20px] h-32 bg-[#181820] rounded-full relative overflow-hidden cursor-pointer border border-white/5">
                                 <div
-                                  className="absolute bottom-0 w-full bg-[var(--accent)] rounded-full transition-all duration-1000 group-hover/bar:bg-[#E5C378]"
+                                  className="absolute bottom-0 w-full chart-bar-black bg-black rounded-full transition-all duration-1000 group-hover/bar:bg-zinc-800"
                                   style={{
                                     height: `${(weekRevenue[i] / maxWeekRevenue) * 100}%`,
                                   }}
@@ -7337,7 +7321,7 @@ export default function POSBilling() {
                             </span>
                             <div className="flex-1 h-2.5 bg-[#181820] rounded-full overflow-hidden border border-white/5">
                               <div
-                                className="h-full bg-[#C5A059] rounded-full transition-all duration-700"
+                                className="h-full chart-bar-black bg-black rounded-full transition-all duration-700"
                                 style={{
                                   width: `${(offlineOrders / totalOrdersCount) * 100}%`,
                                 }}
@@ -7353,7 +7337,7 @@ export default function POSBilling() {
                             </span>
                             <div className="flex-1 h-2.5 bg-[#181820] rounded-full overflow-hidden border border-white/5">
                               <div
-                                className="h-full bg-[#00A86B] rounded-full transition-all duration-700"
+                                className="h-full chart-bar-black bg-black rounded-full transition-all duration-700"
                                 style={{
                                   width: `${(onlineOrders / totalOrdersCount) * 100}%`,
                                 }}
@@ -7383,7 +7367,7 @@ export default function POSBilling() {
                               key={item.name}
                               className="flex items-center gap-3"
                             >
-                              <span className="text-[11px] font-black text-[#C5A059] w-4">
+                              <span className="text-[11px] font-black text-black w-4">
                                 {idx + 1}
                               </span>
                               <div className="flex-1">
@@ -7391,13 +7375,13 @@ export default function POSBilling() {
                                   <span className="text-xs font-bold text-[#FAF7F2]">
                                     {item.name}
                                   </span>
-                                  <span className="text-xs font-black text-[var(--accent)]">
+                                  <span className="text-xs font-black text-black">
                                     ₹{item.revenue.toLocaleString()}
                                   </span>
                                 </div>
                                 <div className="h-1.5 bg-[#181820] rounded-full overflow-hidden border border-white/5">
                                   <div
-                                    className="h-full bg-[var(--accent)] rounded-full transition-all duration-700"
+                                    className="h-full chart-bar-black bg-black rounded-full transition-all duration-700"
                                     style={{
                                       width: `${(item.revenue / topItems[0].revenue) * 100}%`,
                                     }}
@@ -7504,14 +7488,14 @@ export default function POSBilling() {
                                   <td className="p-3 text-xs font-bold text-[#FAF7F2] text-right">
                                     {item.qty} pcs
                                   </td>
-                                  <td className="p-3 text-xs font-black text-[var(--accent)] text-right">
+                                  <td className="p-3 text-xs font-black text-black text-right">
                                     ₹{item.revenue.toLocaleString()}
                                   </td>
                                   <td className="p-3 w-1/4">
                                     <div className="flex items-center gap-3">
                                       <div className="flex-1 h-2 bg-[#181820] rounded-full overflow-hidden border border-white/5">
                                         <div
-                                          className="h-full bg-[var(--accent)] rounded-full"
+                                          className="h-full chart-bar-black bg-black rounded-full"
                                           style={{ width: `${share}%` }}
                                         />
                                       </div>
@@ -7745,7 +7729,7 @@ export default function POSBilling() {
                     }}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
                       expensePeriod === key
-                        ? "bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black shadow-sm"
+                        ? "bg-[var(--accent)] text-[var(--accent-on)] font-black shadow-sm"
                         : "text-[#B8B5AE] hover:text-[#FAF7F2] hover:bg-white/5"
                     }`}
                   >
@@ -7823,8 +7807,8 @@ export default function POSBilling() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE]">
                     Entries
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 flex items-center justify-center">
-                    <Receipt className="w-4 h-4 text-[#8A6815]" />
+                  <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center">
+                    <Receipt className="w-4 h-4 text-[var(--accent-strong)]" />
                   </div>
                 </div>
                 <div className="text-2xl font-black text-black">
@@ -7839,8 +7823,8 @@ export default function POSBilling() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE]">
                     Top Category
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 flex items-center justify-center">
-                    <Tag className="w-4 h-4 text-[#8A6815]" />
+                  <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center">
+                    <Tag className="w-4 h-4 text-[var(--accent-strong)]" />
                   </div>
                 </div>
                 <div className="text-lg font-black text-black truncate">
@@ -7973,7 +7957,7 @@ export default function POSBilling() {
                   <button
                     onClick={handleAddExpense}
                     disabled={isSavingExpense}
-                    className="w-full mt-1 bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:opacity-90 disabled:opacity-60 text-[#0C0C0E] py-3 rounded-lg font-black text-[11px] uppercase tracking-[0.1em] flex items-center justify-center gap-2 transition-transform active:scale-[0.98] shadow-sm cursor-pointer"
+                    className="w-full mt-1 bg-[var(--accent)] hover:bg-[var(--accent-strong)] disabled:opacity-60 text-[var(--accent-on)] py-3 rounded-lg font-black text-[11px] uppercase tracking-[0.1em] flex items-center justify-center gap-2 transition-transform active:scale-[0.98] shadow-sm cursor-pointer"
                   >
                     {editingExpenseId ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     {isSavingExpense
@@ -8257,24 +8241,12 @@ export default function POSBilling() {
                 <button
                   onClick={() => {
                     resetCatalogForm();
-                    setNewCatType("SERVICE");
-                    setEditingCatalogId(null);
-                    setCatalogTargetRowId(null);
-                    setShowCatalogModal(true);
-                  }}
-                  className="text-[10px] font-black text-[#0C0C0E] bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:opacity-90 px-3 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
-                >
-                  <Scissors className="w-3.5 h-3.5" /> Add Service
-                </button>
-                <button
-                  onClick={() => {
-                    resetCatalogForm();
                     setNewCatType("PRODUCT");
                     setEditingCatalogId(null);
                     setCatalogTargetRowId(null);
                     setShowCatalogModal(true);
                   }}
-                  className="text-[10px] font-black text-[#0C0C0E] bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:opacity-90 px-3 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  className="text-[10px] font-black text-[var(--accent-on)] bg-[var(--accent)] hover:bg-[var(--accent-strong)] px-3 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Product
                 </button>
@@ -8299,7 +8271,7 @@ export default function POSBilling() {
                     setCatalogTargetRowId(null);
                     setShowCatalogModal(true);
                   }}
-                  className="text-[10px] font-black text-[#0C0C0E] bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:opacity-90 px-4 py-2 rounded-lg uppercase tracking-wider inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  className="text-[10px] font-black text-[var(--accent-on)] bg-[var(--accent)] hover:bg-[var(--accent-strong)] px-4 py-2 rounded-lg uppercase tracking-wider inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add First Product
                 </button>
@@ -8511,7 +8483,7 @@ export default function POSBilling() {
                                       <div className="flex items-center gap-2">
                                         <button
                                           onClick={() => openEditCatalog(p)}
-                                          className="text-[10px] font-black text-[#0C0C0E] bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:opacity-90 px-3 py-1.5 rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 shadow-xs"
+                                          className="text-[10px] font-black text-[var(--accent-on)] bg-[var(--accent)] hover:bg-[var(--accent-strong)] px-3 py-1.5 rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 shadow-xs"
                                         >
                                           <Pencil className="w-3 h-3" /> Edit
                                         </button>
@@ -8591,113 +8563,113 @@ export default function POSBilling() {
         {/* Order Details Modal */}
         {selectedOrder && (
           <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-xs p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
             onClick={() => setSelectedOrder(null)}
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#131317] border border-[#C5A059]/30 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="order-details-modal bg-white border border-zinc-200 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               {/* Modal Header */}
-              <div className="p-6 border-b border-[#C5A059]/20 flex justify-between items-center bg-[#181820]">
+              <div className="p-6 border-b border-zinc-200 flex justify-between items-center bg-white">
                 <div>
-                  <h3 className="text-xl font-bold text-[#FAF7F2]">
+                  <h3 className="text-xl font-black text-black">
                     Order Details
                   </h3>
-                  <p className="text-sm text-[#B8B5AE] font-mono mt-1">
+                  <p className="text-sm text-black font-mono font-bold mt-1">
                     {selectedOrder.id}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedOrder(null)}
-                  className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                  className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-black border border-zinc-300 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
                   aria-label="Close dialog"
                   title="Close (Esc)"
                 >
-                  <X className="w-4.5 h-4.5 text-zinc-700" />
+                  <X className="w-4.5 h-4.5 text-black" />
                 </button>
               </div>
 
               {/* Modal Body */}
-              <div className="p-6 overflow-y-auto">
+              <div className="p-6 overflow-y-auto bg-white text-black">
                 <div className="grid grid-cols-2 gap-6 mb-8">
                   <div>
-                    <div className="text-[10px] font-bold text-[#B8B5AE] uppercase tracking-wider mb-1">
+                    <div className="text-[10px] font-black text-black uppercase tracking-wider mb-1">
                       Customer Name
                     </div>
-                    <div className="text-sm font-semibold text-[#FAF7F2]">
+                    <div className="text-sm font-bold text-black">
                       {selectedOrder.customerName}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-bold text-[#B8B5AE] uppercase tracking-wider mb-1">
+                    <div className="text-[10px] font-black text-black uppercase tracking-wider mb-1">
                       Contact Number
                     </div>
-                    <div className="text-sm font-semibold text-[#FAF7F2] font-mono">
+                    <div className="text-sm font-bold text-black font-mono">
                       {selectedOrder.customerPhone || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-bold text-[#B8B5AE] uppercase tracking-wider mb-1">
+                    <div className="text-[10px] font-black text-black uppercase tracking-wider mb-1">
                       Address
                     </div>
-                    <div className="text-sm font-semibold text-[#FAF7F2]">
+                    <div className="text-sm font-bold text-black">
                       {selectedOrder.customerAddress || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-bold text-[#B8B5AE] uppercase tracking-wider mb-1">
+                    <div className="text-[10px] font-black text-black uppercase tracking-wider mb-1">
                       Order Source
                     </div>
-                    <div className="text-sm font-semibold text-[#FAF7F2]">
+                    <div className="text-sm font-bold text-black">
                       {selectedOrder.source}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">
+                    <div className="text-[10px] font-black text-black uppercase tracking-wider mb-1">
                       Bill Type
                     </div>
                     <span
-                      className={`inline-block text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded border ${selectedOrder.isGst ? "bg-[var(--accent)]/15 text-[var(--accent)] border-[var(--accent)]/30" : "bg-zinc-100 text-black border-zinc-300"}`}
+                      className="inline-block text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded border bg-zinc-100 text-black border-zinc-400"
                     >
                       {selectedOrder.isGst ? "GST Invoice" : "Non-GST Bill"}
                     </span>
                   </div>
                   <div>
-                    <div className="text-[10px] font-bold text-[#B8B5AE] uppercase tracking-wider mb-1">
+                    <div className="text-[10px] font-black text-black uppercase tracking-wider mb-1">
                       Date & Time
                     </div>
-                    <div className="text-sm font-semibold text-[#FAF7F2]">
+                    <div className="text-sm font-bold text-black">
                       {new Date(selectedOrder.date).toLocaleString()}
                     </div>
                   </div>
                 </div>
 
-                <div className="mb-4 text-[11px] font-bold text-[#C5A059] uppercase tracking-[0.1em] border-b border-[#C5A059]/20 pb-2">
+                <div className="mb-4 text-xs font-black text-black uppercase tracking-[0.1em] border-b border-zinc-200 pb-2">
                   Order Items
                 </div>
                 <div className="space-y-3 mb-8">
                   {selectedOrder.items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex justify-between items-center py-1 border-b border-white/5"
+                      className="flex justify-between items-center py-2 border-b border-zinc-100"
                     >
                       <div>
-                        <div className="text-sm font-bold text-[#FAF7F2]">
+                        <div className="text-sm font-bold text-black">
                           {item.name}
                         </div>
                         {item.desc && (
-                          <div className="text-[10px] text-[#B8B5AE] font-medium">
+                          <div className="text-xs text-black font-medium">
                             {item.desc}
                           </div>
                         )}
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-bold text-[#FAF7F2]">
+                        <div className="text-sm font-bold text-black">
                           ₹{(item.price * item.qty).toLocaleString()}
                         </div>
-                        <div className="text-[10px] text-[#B8B5AE] font-medium">
+                        <div className="text-xs text-black font-semibold">
                           {item.qty} x ₹{item.price.toLocaleString()}
                         </div>
                       </div>
@@ -8705,21 +8677,21 @@ export default function POSBilling() {
                   ))}
                 </div>
 
-                <div className="border-t border-[#C5A059]/20 pt-4 space-y-2">
+                <div className="border-t border-zinc-200 pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#B8B5AE] font-semibold">
+                    <span className="text-black font-bold">
                       Subtotal
                     </span>
-                    <span className="text-[#FAF7F2] font-bold">
+                    <span className="text-black font-black">
                       ₹{selectedOrder.subtotal.toLocaleString()}
                     </span>
                   </div>
                   {selectedOrder.discount > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#B8B5AE] font-semibold">
+                      <span className="text-black font-bold">
                         Discount
                       </span>
-                      <span className="text-[#E5C378] font-bold">
+                      <span className="text-black font-black">
                         -₹{selectedOrder.discount.toLocaleString()}
                       </span>
                     </div>
@@ -8727,18 +8699,18 @@ export default function POSBilling() {
                   {(selectedOrder.gstAmount ?? 0) > 0 && (
                     <>
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#B8B5AE] font-semibold">
+                        <span className="text-black font-bold">
                           CGST ({((selectedOrder.gstPercentage ?? 0) / 2).toFixed(1).replace(/\.0$/, "")}%)
                         </span>
-                        <span className="text-[#FAF7F2] font-bold">
+                        <span className="text-black font-black">
                           ₹{((selectedOrder.gstAmount ?? 0) / 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#B8B5AE] font-semibold">
+                        <span className="text-black font-bold">
                           SGST ({((selectedOrder.gstPercentage ?? 0) / 2).toFixed(1).replace(/\.0$/, "")}%)
                         </span>
-                        <span className="text-[#FAF7F2] font-bold">
+                        <span className="text-black font-black">
                           ₹{((selectedOrder.gstAmount ?? 0) / 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
@@ -8746,19 +8718,19 @@ export default function POSBilling() {
                   )}
                   {selectedOrder.deliveryFee > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#B8B5AE] font-semibold">
+                      <span className="text-black font-bold">
                         Delivery Fee
                       </span>
-                      <span className="text-[#FAF7F2] font-bold">
+                      <span className="text-black font-black">
                         ₹{selectedOrder.deliveryFee.toLocaleString()}
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between text-lg pt-2 mt-2 border-t border-[#C5A059]/20">
-                    <span className="text-[#FAF7F2] font-black uppercase tracking-tight">
+                  <div className="flex justify-between text-lg pt-3 mt-2 border-t-2 border-black">
+                    <span className="text-black font-black uppercase tracking-tight">
                       Total{" "}
                     </span>
-                    <span className="text-[var(--accent)] font-black">
+                    <span className="text-black font-black text-xl">
                       ₹{selectedOrder.grandTotal.toLocaleString()}
                     </span>
                   </div>
@@ -8766,11 +8738,19 @@ export default function POSBilling() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 bg-[#181820] border-t border-[#C5A059]/20 flex justify-end">
+              <div className="p-4 bg-white border-t border-zinc-200 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => openPrintModal({ id: selectedOrder.id, type: "invoice" })}
+                  className="px-5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center gap-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Receipt
+                </button>
                 <button
                   type="button"
                   onClick={() => setSelectedOrder(null)}
-                  className="px-5 py-2.5 rounded-xl border border-zinc-300 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
+                  className="px-6 py-2.5 rounded-xl border border-zinc-300 bg-zinc-100 hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
                 >
                   Close Window
                 </button>
@@ -8910,7 +8890,7 @@ export default function POSBilling() {
                     window.open(`${baseUrl}?print=true&paper=${printPrefs.paper}&size=${printPrefs.size}`, "_blank");
                     setPrintModalData(null);
                   }}
-                  className="px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] hover:opacity-90 text-[#0C0C0E] shadow-md transition-all cursor-pointer flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] shadow-md transition-all cursor-pointer flex items-center gap-2"
                 >
                   <Printer className="w-4 h-4" />
                   Print Now
@@ -8924,13 +8904,7 @@ export default function POSBilling() {
           <LowStockAlarm items={lowStockItems} onClose={() => setShowLowStockAlarm(false)} />
         )}
 
-        {/* ── Birthdays tab ────────────────────────────────────────── */}
-        {activeTab === "birthdays" && (
-          <BirthdayPanel
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={() => setIsSidebarOpen(true)}
-          />
-        )}
+
 
         {/* ── Coupons tab ──────────────────────────────────────────── */}
         {activeTab === "coupons" && (
@@ -8956,7 +8930,7 @@ export default function POSBilling() {
                       setCouponError("");
                       setShowAddCouponModal(true);
                     }}
-                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black text-xs uppercase tracking-wider shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] font-black text-xs uppercase tracking-wider shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
                   >
                     <Plus className="w-4 h-4" /> Add Coupon
                   </button>
@@ -9098,7 +9072,7 @@ export default function POSBilling() {
                           onClick={() => setNewCouponType("percent")}
                           className={`py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider border cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
                             newCouponType === "percent"
-                              ? "bg-[#D4AF37] border-[#C5A02E] text-[#171717] font-black shadow-xs"
+                              ? "bg-[var(--accent)] border-[var(--accent-strong)] text-[var(--accent-on)] font-black shadow-xs"
                               : "bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100"
                           }`}
                         >
@@ -9109,7 +9083,7 @@ export default function POSBilling() {
                           onClick={() => setNewCouponType("fixed")}
                           className={`py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider border cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
                             newCouponType === "fixed"
-                              ? "bg-[#D4AF37] border-[#C5A02E] text-[#171717] font-black shadow-xs"
+                              ? "bg-[var(--accent)] border-[var(--accent-strong)] text-[var(--accent-on)] font-black shadow-xs"
                               : "bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100"
                           }`}
                         >
@@ -9160,7 +9134,7 @@ export default function POSBilling() {
                       </button>
                       <button
                         type="submit"
-                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--accent)] via-[#D4AF37] to-[var(--accent)] text-[#0C0C0E] font-black text-xs uppercase tracking-wider shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                        className="px-5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] font-black text-xs uppercase tracking-wider shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
                       >
                         <Plus className="w-4 h-4" /> Save Coupon
                       </button>
@@ -9172,9 +9146,7 @@ export default function POSBilling() {
           </div>
         )}
 
-        {/* ── Attendance tab (admin: full panel, staff: punch in/out) ── */}
-        {activeTab === "attendance" &&
-          (role === "admin" ? <AttendancePanel /> : role === "staff" ? <StaffPunch /> : null)}
+
 
         {/* ── Settings tab (admin only) ─────────────────────────────── */}
         {role === "admin" && activeTab === "settings" && (

@@ -64,6 +64,11 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content={shop.shop_name} />
         <link rel="apple-touch-icon" href={logo} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var c=localStorage.getItem("nidhulan_accent_color");if(c&&/^#[0-9A-Fa-f]{3,6}$/.test(c)){var r=document.documentElement;r.style.setProperty("--accent",c);r.style.setProperty("--accent-strong","color-mix(in srgb, "+c+" 82%, #000000)");r.style.setProperty("--accent-soft","color-mix(in srgb, "+c+" 22%, #FFFFFF)");r.style.setProperty("--accent-softer","color-mix(in srgb, "+c+" 10%, #FFFFFF)");r.style.setProperty("--accent-wash","color-mix(in srgb, "+c+" 12%, #FFFFFF)");var h=c.replace("#","");if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];var n=parseInt(h,16);var lum=(0.2126*(n>>16)+0.7152*((n>>8)&255)+0.0722*(n&255))/255;r.style.setProperty("--accent-on",lum>0.45?"#1C1917":"#FFFFFF");}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
