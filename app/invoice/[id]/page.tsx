@@ -143,7 +143,9 @@ export default async function InvoicePage({
       ? "Split · Cash + GPay"
       : order.payment_mode === "GPAY"
         ? "GPay"
-        : "Cash";
+        : order.payment_mode === "CARD"
+          ? "Card"
+          : "Cash";
 
   // Bills saved before GST became exclusive have GST embedded in the subtotal
   // (grand total = subtotal - discount + delivery). Newer bills add it on top.
@@ -557,7 +559,11 @@ export default async function InvoicePage({
                 ) : (
                   <div>
                     <span className="text-zinc-400">
-                      {order.payment_mode === "GPAY" ? "Paid via GPay: " : "Cash Received: "}
+                      {order.payment_mode === "GPAY"
+                        ? "Paid via GPay: "
+                        : order.payment_mode === "CARD"
+                          ? "Paid via Card: "
+                          : "Cash Received: "}
                     </span>
                     <span className="font-mono font-medium text-zinc-800">
                       ₹{cashReceivedNum.toLocaleString("en-IN", { minimumFractionDigits: 2 })}

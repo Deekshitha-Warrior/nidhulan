@@ -108,9 +108,9 @@ const EXPENSE_PAYMENT_MODES = ["CASH", "UPI", "CARD", "BANK", "OTHER"] as const;
 // Payment options available at the point of sale.
 // ORDER_PAYMENT_MODES is used for single-mode contexts (advance deposit / balance).
 // POS_PAYMENT_MODES adds Split for full sales at the billing counter.
-const ORDER_PAYMENT_MODES = ["CASH", "GPAY"] as const;
-const POS_PAYMENT_MODES = ["CASH", "GPAY", "SPLIT"] as const;
-type OrderPaymentMode = "CASH" | "GPAY" | "SPLIT";
+const ORDER_PAYMENT_MODES = ["CASH", "GPAY", "CARD"] as const;
+const POS_PAYMENT_MODES = ["CASH", "GPAY", "CARD", "SPLIT"] as const;
+type OrderPaymentMode = "CASH" | "GPAY" | "CARD" | "SPLIT";
 
 // Shared date-window test reused by the Expenses tab and the analytics dashboard.
 type PeriodKey = "all" | "today" | "week" | "month" | "year" | "custom";
@@ -1818,8 +1818,8 @@ export default function POSBilling() {
       splitCashVal = Number(splitCash) || 0;
       splitGpayVal = Number(splitGpay) || 0;
       receivedAmount = splitCashVal + splitGpayVal;
-    } else if (paymentMode === "GPAY") {
-      // GPay is an exact digital transfer — no change to return.
+    } else if (paymentMode === "GPAY" || paymentMode === "CARD") {
+      // GPay and Card are exact digital/terminal transfers — no change to return.
       receivedAmount = cashReceived > 0 ? cashReceived : localGrandTotal;
     }
 
@@ -1973,8 +1973,18 @@ export default function POSBilling() {
     const checkEmoji = String.fromCodePoint(0x2705);
     const moneyEmoji = String.fromCodePoint(0x1f4b0);
     const receiptEmoji = String.fromCodePoint(0x1f4e6);
+    const foldedHandsEmoji = String.fromCodePoint(0x1f64f);
+    const customerGreeting =
+      order.customerName &&
+      order.customerName !== "Walk-in Customer" &&
+      order.customerName !== "Guest"
+        ? `Dear ${order.customerName},\n`
+        : "";
+
     let message = `${shopEmoji} *${shopSettings.shop_name}* ${shopEmoji}\n\n`;
-    message += `${checkEmoji} Here are your ${order.isGst ? "GST invoice" : "bill"} details!\n\n`;
+    message += `${customerGreeting}${foldedHandsEmoji} *Thank you for shopping with us!* We truly appreciate your patronage.\n\n`;
+    message += `${checkEmoji} Here are your ${order.isGst ? "GST invoice" : "bill"} details:\n`;
+    message += `Invoice #${order.id}\n\n`;
 
     const offerSavings = order.items.reduce(
       (sum, i) =>
@@ -2013,7 +2023,8 @@ export default function POSBilling() {
 
     message += `\n${moneyEmoji} *Total Amount: ₹${order.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}*\n`;
     message += `Payment: ${order.paymentMode}\n\n`;
-    message += `${receiptEmoji} View and download your detailed digital receipt here:\n${invoiceUrl}`;
+    message += `${receiptEmoji} View and download your detailed digital receipt here:\n${invoiceUrl}\n\n`;
+    message += `${foldedHandsEmoji} Thank you once again! Visit us again soon.`;
     const encodedMessage = encodeURIComponent(message);
     const cleanPhone = order.customerPhone.replace(/\D/g, "").slice(-10);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodedMessage}`;
@@ -2048,12 +2059,22 @@ export default function POSBilling() {
       n.toLocaleString(undefined, { minimumFractionDigits: 2 });
     const shopEmoji = String.fromCodePoint(0x2728);
     const receiptEmoji = String.fromCodePoint(0x1f4e6);
+    const foldedHandsEmoji = String.fromCodePoint(0x1f64f);
+    const customerGreeting =
+      receipt.customerName &&
+      receipt.customerName !== "Walk-in Customer" &&
+      receipt.customerName !== "Guest"
+        ? `Dear ${receipt.customerName},\n`
+        : "";
+
     let message = `${shopEmoji} *${shopSettings.shop_name}* ${shopEmoji}\n\n`;
-    message += `Advance order confirmed!\n\n`;
+    message += `${customerGreeting}${foldedHandsEmoji} *Thank you for placing your advance order with us!*\n\n`;
+    message += `Advance Order #${receipt.id} confirmed.\n\n`;
     message += `Order Total: ₹${fmt(receipt.total)}\n`;
     message += `Deposit Paid: ₹${fmt(receipt.deposit)}\n`;
     message += `Balance Due: ₹${fmt(receipt.balance)}\n\n`;
-    message += `${receiptEmoji} View your advance receipt here:\n${receiptUrl}`;
+    message += `${receiptEmoji} View your advance receipt here:\n${receiptUrl}\n\n`;
+    message += `${foldedHandsEmoji} We look forward to fulfilling your order!`;
     const encoded = encodeURIComponent(message);
     const cleanPhone = (receipt.customerPhone || "").replace(/\D/g, "").slice(-10);
     const url = cleanPhone
@@ -4142,7 +4163,9 @@ export default function POSBilling() {
                       ? "Split · Cash + GPay"
                       : completedBillData.paymentMode === "GPAY"
                         ? "GPay"
-                        : "Cash"}
+                        : completedBillData.paymentMode === "CARD"
+                          ? "Card"
+                          : "Cash"}
                   </span>
                 </div>
 
@@ -4189,9 +4212,11 @@ export default function POSBilling() {
                   <span className="font-semibold text-[#B8B5AE]">
                     {completedBillData.paymentMode === "GPAY"
                       ? "Paid via GPay"
-                      : completedBillData.paymentMode === "SPLIT"
-                        ? "Total Received"
-                        : "Amount Received"}
+                      : completedBillData.paymentMode === "CARD"
+                        ? "Paid via Card"
+                        : completedBillData.paymentMode === "SPLIT"
+                          ? "Total Received"
+                          : "Amount Received"}
                   </span>
                   <span className="text-sm font-black text-[#FAF7F2]">
                     ₹
@@ -4203,7 +4228,7 @@ export default function POSBilling() {
                 </div>
 
                 {/* Balance Returned Box — cash change only */}
-                {completedBillData.paymentMode !== "GPAY" && (
+                {completedBillData.paymentMode !== "GPAY" && completedBillData.paymentMode !== "CARD" && (
                   <div className="bg-[#1F1F28] border border-[#C5A059]/25 rounded-lg p-3 sm:p-3.5 flex justify-between items-center mt-1">
                     <span className="text-xs font-bold text-[#FAF7F2]">
                       Balance Returned
@@ -5255,19 +5280,19 @@ export default function POSBilling() {
                         <span className="block text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
                           Payment Method
                         </span>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                           {POS_PAYMENT_MODES.map((mode) => (
                             <button
                               key={mode}
                               type="button"
                               onClick={() => setPaymentMode(mode)}
-                              className={`py-2 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all cursor-pointer border ${
+                              className={`py-2 px-1 rounded-xl text-[10px] sm:text-[11px] font-bold tracking-wider uppercase transition-all cursor-pointer border ${
                                 paymentMode === mode
                                   ? "bg-[var(--accent)] text-[var(--accent-on)] font-black border-[var(--accent-strong)] shadow-xs"
                                   : "bg-zinc-100 text-zinc-800 border-zinc-200 hover:bg-zinc-200 hover:text-black"
                               }`}
                             >
-                              {mode === "GPAY" ? "GPay" : mode === "SPLIT" ? "Split" : mode}
+                              {mode === "GPAY" ? "GPay" : mode === "CARD" ? "Card" : mode === "SPLIT" ? "Split" : "Cash"}
                             </button>
                           ))}
                         </div>
@@ -5365,7 +5390,11 @@ export default function POSBilling() {
                       ) : (
                         <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 mt-2 space-y-1.5 shadow-xs">
                           <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider">
-                            {paymentMode === "CASH" ? "Amount Received (₹)" : "GPay Amount (₹)"}
+                            {paymentMode === "CASH"
+                              ? "Amount Received (₹)"
+                              : paymentMode === "CARD"
+                              ? "Card Amount (₹)"
+                              : "GPay Amount (₹)"}
                           </label>
                           <input
                             type="number"
@@ -5495,7 +5524,7 @@ export default function POSBilling() {
 
                 <div>
                   <label className="block text-[10px] font-bold text-[#B8B5AE] uppercase tracking-wider mb-1.5">Deposit Payment Mode</label>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {ORDER_PAYMENT_MODES.map((mode) => (
                       <button
                         key={mode}
@@ -5504,7 +5533,7 @@ export default function POSBilling() {
                           advDepositPaymentMode === mode ? "bg-[var(--accent)] text-[var(--accent-on)] font-black border-[var(--accent)]" : "bg-[#181820] text-[#B8B5AE] border-[#C5A059]/20 hover:border-[var(--accent)]"
                         }`}
                       >
-                        {mode === "GPAY" ? "GPay" : mode}
+                        {mode === "GPAY" ? "GPay" : mode === "CARD" ? "Card" : mode}
                       </button>
                     ))}
                   </div>
@@ -5716,7 +5745,7 @@ export default function POSBilling() {
                   <div className="pt-3 border-t border-[#C5A059]/20 space-y-3">
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1.5">Payment Method</label>
-                      <div className="grid grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-3 gap-1.5">
                         {ORDER_PAYMENT_MODES.map((mode) => (
                           <button
                             key={mode}
@@ -5725,7 +5754,7 @@ export default function POSBilling() {
                               receivePaymentMode === mode ? "bg-[var(--accent)] text-[var(--accent-on)] font-black border-[var(--accent-strong)] shadow-xs" : "bg-zinc-100 text-zinc-700 border-zinc-200 hover:border-zinc-300"
                             }`}
                           >
-                            {mode === "GPAY" ? "GPay" : mode}
+                            {mode === "GPAY" ? "GPay" : mode === "CARD" ? "Card" : mode}
                           </button>
                         ))}
                       </div>

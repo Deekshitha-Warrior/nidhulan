@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS orders (
   split_cash       NUMERIC NOT NULL DEFAULT 0,
   split_gpay       NUMERIC NOT NULL DEFAULT 0,
   payment_mode     TEXT NOT NULL DEFAULT 'CASH'
-                   CHECK (payment_mode IN ('CASH', 'GPAY', 'SPLIT')),
+                   CHECK (payment_mode IN ('CASH', 'GPAY', 'CARD', 'SPLIT')),
 
   bill_date        DATE NOT NULL DEFAULT CURRENT_DATE,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS advance_orders (
   total_amount         NUMERIC NOT NULL DEFAULT 0,
   deposit_amount       NUMERIC NOT NULL DEFAULT 0,
   deposit_payment_mode TEXT NOT NULL DEFAULT 'CASH'
-                       CHECK (deposit_payment_mode IN ('CASH', 'GPAY', 'SPLIT')),
+                       CHECK (deposit_payment_mode IN ('CASH', 'GPAY', 'CARD', 'SPLIT')),
   delivery_date        DATE,
   notes                TEXT,
   -- bill-level charges at booking (NULL on orders booked before they were stored)
@@ -319,7 +319,27 @@ BEGIN
 
   ALTER TABLE public.orders
     ADD CONSTRAINT orders_payment_mode_check
-    CHECK (payment_mode IN ('CASH', 'GPAY', 'SPLIT'));
+    CHECK (payment_mode IN ('CASH', 'GPAY', 'CARD', 'SPLIT'));
+END
+$$;
+
+DO $$
+DECLARE
+  adv_constraint TEXT;
+BEGIN
+  FOR adv_constraint IN
+    SELECT conname
+    FROM pg_constraint
+    WHERE conrelid = 'public.advance_orders'::regclass
+      AND contype = 'c'
+      AND pg_get_constraintdef(oid) ILIKE '%payment_mode%'
+  LOOP
+    EXECUTE format('ALTER TABLE public.advance_orders DROP CONSTRAINT %I', adv_constraint);
+  END LOOP;
+
+  ALTER TABLE public.advance_orders
+    ADD CONSTRAINT advance_orders_deposit_payment_mode_check
+    CHECK (deposit_payment_mode IN ('CASH', 'GPAY', 'CARD', 'SPLIT'));
 END
 $$;
 

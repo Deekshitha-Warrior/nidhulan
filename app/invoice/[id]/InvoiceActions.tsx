@@ -53,7 +53,21 @@ export function InvoiceActions({
       const currentUrl = window.location.href;
       const cleanPhone = (customerPhone || "").replace(/\D/g, "").slice(-10);
       const invoiceType = isGst ? "Tax Invoice" : "Invoice";
-      const text = `*${shopName || "NIDHULAN"}*\n${invoiceType} #${orderId}\nCustomer: ${customerName || "Counter Sale"}\nTotal: ₹${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}\n\nInvoice Link:\n${currentUrl}`;
+      const customerGreeting =
+        customerName &&
+        customerName !== "Counter Sale" &&
+        customerName !== "Walk-in Customer" &&
+        customerName !== "Guest"
+          ? `Dear ${customerName},\n`
+          : "";
+      const text =
+        `✨ *${shopName || "NIDHULAN"}* ✨\n\n` +
+        `${customerGreeting}🙏 *Thank you for shopping with us!* We truly appreciate your visit.\n\n` +
+        `Here are your ${invoiceType} details:\n` +
+        `Invoice #${orderId}\n` +
+        `Total: ₹${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}\n\n` +
+        `📦 View and download your invoice:\n${currentUrl}\n\n` +
+        `🙏 Thank you once again! Visit us again soon.`;
       const encoded = encodeURIComponent(text);
 
       const url = cleanPhone

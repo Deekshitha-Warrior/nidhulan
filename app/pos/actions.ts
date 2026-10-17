@@ -131,7 +131,7 @@ export async function submitOrder(payload: {
       message,
     );
     const schemaMismatch =
-      /column .* does not exist|could not find the table|schema cache/i.test(message);
+      /column .* does not exist|could not find the table|schema cache|violates check constraint/i.test(message);
     return {
       error: schemaMismatch
         ? "The database schema is out of date. Run the latest schema.sql in Supabase SQL Editor, then retry."

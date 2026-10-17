@@ -54,7 +54,7 @@ export default async function AdvanceReceiptPage({
   const halfGstRateStr = Number.isInteger(halfGstRate) ? halfGstRate.toString() : halfGstRate.toFixed(1);
   const halfGstAmount = charges.gstAmount / 2;
   const modeLabel = (mode: string | null | undefined) =>
-    mode === "SPLIT" ? "Cash + GPay" : mode === "GPAY" ? "GPay" : "Cash";
+    mode === "SPLIT" ? "Cash + GPay" : mode === "GPAY" ? "GPay" : mode === "CARD" ? "Card" : "Cash";
   const depositLabel = modeLabel(advance.deposit_payment_mode);
 
   // A completed advance is billed as paid in full. The final invoice holds what

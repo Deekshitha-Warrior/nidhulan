@@ -75,7 +75,7 @@ export type BirthdayLog = {
   status: string;
 };
 
-export type PaymentMode = 'CASH' | 'GPAY' | 'SPLIT';
+export type PaymentMode = 'CASH' | 'GPAY' | 'CARD' | 'SPLIT';
 
 export type OrderRow = {
   id: string;

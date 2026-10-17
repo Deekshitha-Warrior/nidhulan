@@ -42,13 +42,21 @@ export function AdvanceReceiptActions({
     const cleanPhone = (customerPhone || "").replace(/\D/g, "").slice(-10);
     const fmt = (n: number) =>
       n.toLocaleString("en-IN", { minimumFractionDigits: 2 });
+    const customerGreeting =
+      customerName &&
+      customerName !== "Counter Customer" &&
+      customerName !== "Walk-in Customer" &&
+      customerName !== "Guest"
+        ? `Dear ${customerName},\n`
+        : "";
     const text =
-      `*${shopName || "NIDHULAN"}*\nAdvance Order Receipt #${advanceId}\n` +
-      `Customer: ${customerName || "Counter Customer"}\n\n` +
+      `✨ *${shopName || "NIDHULAN"}* ✨\n\n` +
+      `${customerGreeting}🙏 *Thank you for your order!* Advance Order #${advanceId} is confirmed.\n\n` +
       `Order Total: ₹${fmt(total)}\n` +
       `Deposit Paid: ₹${fmt(deposit)}\n` +
       `Balance Due: ₹${fmt(balance)}\n\n` +
-      `Receipt Link:\n${currentUrl}`;
+      `📦 View your advance receipt:\n${currentUrl}\n\n` +
+      `🙏 We look forward to fulfilling your order!`;
     const encoded = encodeURIComponent(text);
     const url = cleanPhone
       ? `https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encoded}`
