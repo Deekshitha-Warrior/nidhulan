@@ -899,33 +899,9 @@ export default function POSBilling() {
   const [couponInput, setCouponInput] = useState<string>("");
   const [couponMessage, setCouponMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
-  // Dynamic coupons with localStorage persistence
+  // Dynamic coupons with localStorage persistence (Clean slate - no demo coupons)
   const [coupons, setCoupons] = useState<CouponItem[]>([
     { code: "none", label: "No Coupon", type: "fixed", value: 0, isActive: true },
-    {
-      code: "WELCOME10",
-      label: "WELCOME10 (10% Off)",
-      type: "percent",
-      value: 10,
-      description: "Welcome discount for new customers",
-      isActive: true,
-    },
-    {
-      code: "SUPERPOS",
-      label: "SUPERPOS (₹100 Off)",
-      type: "fixed",
-      value: 100,
-      description: "Special ₹100 flat instant voucher",
-      isActive: true,
-    },
-    {
-      code: "FESTIVE15",
-      label: "FESTIVE15 (15% Off)",
-      type: "percent",
-      value: 15,
-      description: "Festive season celebration discount",
-      isActive: true,
-    },
   ]);
   const [showAddCouponModal, setShowAddCouponModal] = useState<boolean>(false);
   const [newCouponCode, setNewCouponCode] = useState<string>("");
@@ -939,12 +915,25 @@ export default function POSBilling() {
       const saved = localStorage.getItem("nidhulan_pos_coupons");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const hasNone = parsed.some((c: CouponItem) => c.code === "none");
+        if (Array.isArray(parsed)) {
+          // Purge demo coupons (WELCOME10, SUPERPOS, FESTIVE15) if present from previous demo runs
+          const cleaned = parsed.filter(
+            (c: CouponItem) =>
+              c &&
+              c.code !== "WELCOME10" &&
+              c.code !== "SUPERPOS" &&
+              c.code !== "FESTIVE15"
+          );
+          const hasNone = cleaned.some((c: CouponItem) => c.code === "none");
           const merged = hasNone
-            ? parsed
-            : [{ code: "none", label: "No Coupon", type: "fixed", value: 0, isActive: true }, ...parsed];
+            ? cleaned
+            : [{ code: "none", label: "No Coupon", type: "fixed", value: 0, isActive: true }, ...cleaned];
           setCoupons(merged);
+
+          // Update localStorage if any demo coupon was purged
+          if (cleaned.length !== parsed.length) {
+            localStorage.setItem("nidhulan_pos_coupons", JSON.stringify(merged));
+          }
         }
       }
     } catch (e) {
@@ -9145,7 +9134,7 @@ export default function POSBilling() {
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. FESTIVE20, SAVE100"
+                        placeholder="e.g. SAVE50, FLAT100"
                         value={newCouponCode}
                         onChange={(e) => {
                           setNewCouponCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""));
@@ -9156,7 +9145,7 @@ export default function POSBilling() {
                         className="w-full h-10 bg-white border border-zinc-300 hover:border-[#D4AF37] focus:border-[#D4AF37] rounded-lg px-3.5 text-sm font-bold text-zinc-900 uppercase placeholder:normal-case placeholder:font-normal placeholder:text-zinc-400 focus:outline-none transition-colors shadow-xs"
                       />
                       <p className="text-[10px] text-zinc-500 font-medium mt-1">
-                        Use uppercase letters and numbers (e.g., FESTIVE15, DIWALI500)
+                        Use uppercase letters and numbers (e.g., SAVE50, DIWALI200)
                       </p>
                     </div>
 
