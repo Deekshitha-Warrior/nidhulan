@@ -79,6 +79,12 @@ aside.pos-sidebar header,
 aside.pos-sidebar header *,
 aside.pos-sidebar footer,
 aside.pos-sidebar footer *,
+aside.pos-sidebar .sidebar-admin-footer,
+aside.pos-sidebar .sidebar-admin-footer *,
+.pos-dashboard aside.pos-sidebar footer,
+.pos-dashboard aside.pos-sidebar footer *,
+.pos-dashboard aside.pos-sidebar .sidebar-admin-footer,
+.pos-dashboard aside.pos-sidebar .sidebar-admin-footer *,
 aside.pos-sidebar button:not([data-active="true"]),
 aside.pos-sidebar button:not([data-active="true"]) *,
 .pos-dashboard aside.pos-sidebar button:not([data-active="true"]),
@@ -143,6 +149,14 @@ aside.pos-sidebar button[data-active="true"] svg,
 }
 .pos-sidebar-nav::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.6);
+}
+
+/* Move Next dev badge to bottom-right so it never covers the sidebar footer */
+nextjs-portal,
+[data-nextjs-toast-wrapper],
+[data-nextjs-dev-indicator] {
+  left: auto !important;
+  right: 16px !important;
 }
 
 /* Headings */
@@ -742,14 +756,21 @@ a[class~="bg-black"] * {
   color: var(--accent-on);
 }
 
-@layer utilities {
-  .minimal-input {
-    @apply w-full bg-transparent border-b border-[#C5A059]/25 py-2 text-[#FAF7F2] transition-colors placeholder:text-[#B8B5AE]/50;
-    &:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-  }
+.minimal-input {
+  width: 100%;
+  background-color: transparent;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.25);
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  color: #FAF7F2;
+  transition: all 0.2s ease;
+}
+.minimal-input::placeholder {
+  color: rgba(184, 181, 174, 0.5);
+}
+.minimal-input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 /*
@@ -769,33 +790,40 @@ a[class~="bg-black"] * {
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 input[type="number"] {
+  appearance: textfield;
   -moz-appearance: textfield;
+  -webkit-appearance: none;
 }
 
-@theme inline {
-  --color-primary: var(--accent);
-  --color-secondary: var(--accent);
-  --color-tertiary: #9e8e7a;
-  --animate-float: float 3s ease-in-out infinite;
-  --animate-swing: swing 2.5s ease-in-out infinite;
-  --animate-pop: pop 2s ease-in-out infinite;
-  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Animations */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+.animate-swing {
+  animation: swing 2.5s ease-in-out infinite;
+}
+.animate-pop {
+  animation: pop 2s ease-in-out infinite;
+}
+.animate-pulse-slow {
+  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-  }
-  @keyframes swing {
-    0%, 100% { transform: rotate(-5deg); }
-    50% { transform: rotate(5deg); }
-  }
-  @keyframes pop {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-  }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes swing {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+@keyframes pop {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 

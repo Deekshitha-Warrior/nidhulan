@@ -3997,19 +3997,31 @@ export default function POSBilling() {
           </nav>
 
           {/* Footer branding (shrink-0) */}
-          <div className="p-3.5 border-t border-white/15 bg-black/15 flex items-center gap-3 shrink-0">
-            <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-black text-xs uppercase shrink-0">
+          <footer
+            className="sidebar-admin-footer p-3.5 border-t border-white/15 bg-black/15 flex items-center gap-3 shrink-0"
+            style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+          >
+            <div
+              className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center font-black text-xs uppercase shrink-0"
+              style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+            >
               {role === "admin" ? "A" : "S"}
             </div>
             <div className="min-w-0">
-              <span className="text-xs font-bold text-white block uppercase tracking-wider truncate">
+              <span
+                className="text-xs font-bold block uppercase tracking-wider truncate"
+                style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+              >
                 {role === "admin" ? "Admin Access" : "Staff Access"}
               </span>
-              <span className="text-[9px] text-white/75 font-bold tracking-wider block truncate">
+              <span
+                className="text-[9px] font-bold tracking-wider block truncate"
+                style={{ color: "rgba(255, 255, 255, 0.85)", WebkitTextFillColor: "rgba(255, 255, 255, 0.85)" }}
+              >
                 NIDHULAN • TERMINAL
               </span>
             </div>
-          </div>
+          </footer>
         </div>
       </aside>
       {/* Main Content Area */}
@@ -4512,49 +4524,59 @@ export default function POSBilling() {
                   </div>
 
                   {/* Order Items Ledger */}
-                  <div className="flex-1 bg-[#131317] border border-[#C5A059]/25 rounded-xl shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-all duration-300 flex flex-col overflow-visible">
-                    <div className="flex-shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b border-transparent gap-4">
-                      <h2 className="text-base font-black flex items-center gap-3 text-[#FAF7F2] tracking-tight">
-                        <Receipt className="w-4 h-4 text-[var(--accent)]" />
-                        Order Items
-                      </h2>
-                      <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-start sm:justify-end">
+                  <div className="flex-1 bg-white border border-[#C5A059]/30 rounded-xl shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex flex-col overflow-visible">
+                    <div className="flex-shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 sm:px-6 pt-4 sm:pt-5 pb-3 border-b border-zinc-200/70 gap-3">
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent-strong)] shrink-0">
+                          <Receipt className="w-4 h-4 text-[var(--accent-strong)]" />
+                        </div>
+                        <h2 className="text-base font-black text-zinc-900 tracking-tight whitespace-nowrap">
+                          Order Items
+                        </h2>
+                      </div>
+                      <div className="grid grid-cols-3 sm:flex sm:flex-nowrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0">
                         <button
+                          type="button"
                           onClick={clearOrder}
-                          className="text-[10px] font-bold text-[#FAF7F2]/80 bg-[#181820] hover:bg-[#202028] border border-[#C5A059]/25 px-4 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                          className="text-[10px] font-bold text-zinc-700 hover:text-red-600 bg-white hover:bg-red-50 border border-zinc-300 hover:border-red-300 px-2 sm:px-2.5 py-1.5 rounded-lg uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
                         >
-                          <Trash2 className="w-3.5 h-3.5 text-[#EF4444]" /> Clear Order
+                          <Trash2 className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                          <span>Clear<span className="hidden xl:inline"> Order</span></span>
                         </button>
                         <button
+                          type="button"
                           onClick={() => {
                             resetCatalogForm();
                             setNewCatType("PRODUCT");
                             setCatalogTargetRowId(null);
                             setShowCatalogModal(true);
                           }}
-                          className="text-[10px] font-bold text-[#FAF7F2] bg-[#181820] hover:bg-[#202028] border border-[#C5A059]/25 px-4 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                          className="text-[10px] font-bold text-zinc-800 hover:text-black bg-white hover:bg-zinc-50 border border-zinc-300 px-2 sm:px-2.5 py-1.5 rounded-lg uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
                         >
-                          <PackagePlus className="w-3.5 h-3.5 text-[var(--accent)]" />{" "}
-                          Add To Catalog
+                          <PackagePlus className="w-3.5 h-3.5 text-[var(--accent-strong)] shrink-0" />
+                          <span><span className="hidden xl:inline">Add To </span>Catalog</span>
                         </button>
                         <button
+                          type="button"
                           onClick={addItem}
-                          className="text-[10px] font-black text-[var(--accent-on)] bg-[var(--accent)] hover:bg-[var(--accent-strong)] border border-[var(--accent-strong)] px-4 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                          style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+                          className="text-[10px] font-black bg-[var(--accent)] hover:bg-[var(--accent-strong)] border border-[var(--accent-strong)] px-2.5 sm:px-3 py-1.5 rounded-lg uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
                         >
-                          <Plus className="w-3.5 h-3.5" /> Add Custom Item
+                          <Plus className="w-3.5 h-3.5 shrink-0" style={{ color: "#ffffff", stroke: "#ffffff" }} />
+                          <span>Add <span className="hidden xl:inline">Custom </span>Item</span>
                         </button>
                       </div>
                     </div>
 
                     <div className="flex-1 px-4 sm:px-6 pb-4 sm:pb-6 overflow-visible">
                       {/* Table Header */}
-                      <div className="hidden sm:grid grid-cols-12 gap-4 pb-3 border-b border-[#C5A059]/20 text-[9px] font-black text-[#FAF7F2]/70 uppercase tracking-[0.15em] mt-4 mb-2">
-                        <div className="col-span-7 pl-2">
+                      <div className="hidden sm:grid grid-cols-12 gap-3 sm:gap-4 pb-2.5 border-b border-zinc-200 text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-3 mb-2">
+                        <div className="col-span-7 pl-1">
                           Item Name / Description
                         </div>
                         <div className="col-span-2 text-center">Price (₹)</div>
                         <div className="col-span-2 text-center">Qty</div>
-                        <div className="col-span-1"></div>
+                        <div className="col-span-1 text-center"></div>
                       </div>
 
                       {/* Items List */}
@@ -4562,43 +4584,35 @@ export default function POSBilling() {
                         {items.map((item) => (
                           <div
                             key={item.id}
-                            className="flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-4 items-stretch sm:items-center group border-b border-transparent pb-4 pt-1 overflow-visible relative"
+                            className="flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-4 items-stretch sm:items-start group border-b border-transparent pb-4 pt-1 overflow-visible relative"
                           >
                             {/* Item Name / Description Input + Catalog Button */}
-                            <div className="col-span-7 relative flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
-                              <input
-                                type="text"
-                                placeholder="Type custom item name..."
-                                className="flex-1 bg-[#181820] border border-[#C5A059]/30 focus:border-[var(--accent)] rounded-lg px-4 py-2 text-xs font-semibold text-[#FAF7F2] focus:outline-none transition-colors placeholder:text-[#FAF7F2]/30 min-w-0"
-                                value={item.name}
-                                onChange={(e) =>
-                                  updateItem(item.id, "name", e.target.value)
-                                }
-                              />
-                              <button
-                                onClick={() => {
-                                  setActiveCatalogRowId(
-                                    activeCatalogRowId === item.id
-                                      ? null
-                                      : item.id,
-                                  );
-                                  setCatalogSearch("");
-                                }}
-                                className="flex items-center justify-center gap-1.5 border border-[var(--accent)]/40 bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20 px-3 py-2 rounded-lg text-[10px] font-bold transition-colors uppercase tracking-wider shrink-0 cursor-pointer w-full sm:w-auto"
-                              >
-                                <List className="w-3.5 h-3.5" />
-                                Catalog
-                              </button>
-
-                              {/* Automatic offer applied to this line */}
-                              {(item.offerPct ?? 0) > 0 && (
-                                <span className="absolute -top-1 right-0 sm:right-[calc(100%+0.5rem)] text-[9px] font-black uppercase tracking-widest text-[#10B981] bg-[#10B981]/15 border border-[#10B981]/35 px-1.5 py-0.5 rounded">
-                                  Offer −{item.offerPct}%
-                                  {item.originalPrice
-                                    ? ` · ₹${item.originalPrice.toLocaleString("en-IN")} → ₹${item.price.toLocaleString("en-IN")}`
-                                    : " applied"}
-                                </span>
-                              )}
+                            <div className="col-span-7 relative flex flex-col gap-1.5 w-full">
+                              <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+                                <input
+                                  type="text"
+                                  placeholder="Type custom item name..."
+                                  className="flex-1 bg-white border border-zinc-300 focus:border-[var(--accent)] rounded-lg px-4 py-2 text-xs font-semibold text-zinc-900 focus:outline-none transition-colors placeholder:text-zinc-400 min-w-0 shadow-xs"
+                                  value={item.name}
+                                  onChange={(e) =>
+                                    updateItem(item.id, "name", e.target.value)
+                                  }
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveCatalogRowId(
+                                      activeCatalogRowId === item.id
+                                        ? null
+                                        : item.id,
+                                    );
+                                    setCatalogSearch("");
+                                  }}
+                                  className="flex items-center justify-center gap-1.5 border border-[var(--accent)]/40 bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20 px-3 py-2 rounded-lg text-[10px] font-bold transition-colors uppercase tracking-wider shrink-0 cursor-pointer w-full sm:w-auto"
+                                >
+                                  <List className="w-3.5 h-3.5" />
+                                  Catalog
+                                </button>
 
                               {/* Catalog Dropdown Popover */}
                               {activeCatalogRowId === item.id && (
@@ -4795,16 +4809,34 @@ export default function POSBilling() {
                               )}
                             </div>
 
+                            {/* Automatic offer applied to this line */}
+                            {(item.offerPct ?? 0) > 0 && (
+                              <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300/80 px-2.5 py-1 rounded-md w-fit shadow-2xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span className="uppercase tracking-wider font-extrabold text-[9px] text-emerald-800">
+                                  Offer −{item.offerPct}%
+                                </span>
+                                {item.originalPrice ? (
+                                  <span className="text-emerald-700 font-medium">
+                                    · <span className="line-through text-zinc-400">₹{item.originalPrice.toLocaleString("en-IN")}</span> → <span className="font-extrabold text-emerald-900">₹{item.price.toLocaleString("en-IN")}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-emerald-700 font-medium">· applied</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
                             {/* Price, Qty, and Trash (Grid on mobile to prevent overflow, grid on desktop) */}
                             <div className="col-span-5 grid grid-cols-[minmax(0,1fr)_auto_auto] sm:grid-cols-5 gap-2 sm:gap-4 w-full items-center">
                               {/* Price Input */}
                               <div className="sm:col-span-2 flex items-center gap-1.5 sm:gap-2 sm:block min-w-0 w-full">
-                                <span className="text-[10px] font-bold text-[#FAF7F2]/75 uppercase sm:hidden shrink-0">
+                                <span className="text-[10px] font-bold text-zinc-600 uppercase sm:hidden shrink-0">
                                   Price:
                                 </span>
                                 <input
                                   type="number"
-                                  className="w-full min-w-0 text-center bg-[#181820] border border-[#C5A059]/30 focus:border-[var(--accent)] rounded-lg px-2 sm:px-3 py-2 text-xs font-semibold text-[#FAF7F2] focus:outline-none transition-colors"
+                                  className="w-full min-w-0 text-center bg-white border border-zinc-300 focus:border-[var(--accent)] rounded-lg px-2 sm:px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none transition-colors shadow-xs"
                                   value={item.price || ""}
                                   onChange={(e) =>
                                     updateItem(
@@ -4819,24 +4851,26 @@ export default function POSBilling() {
                               </div>
 
                               {/* Quantity Counter */}
-                              <div className="sm:col-span-2 flex items-center justify-end gap-1.5 sm:gap-2 sm:block shrink-0">
-                                <span className="text-[10px] font-bold text-[#FAF7F2]/75 uppercase sm:hidden shrink-0">
+                              <div className="sm:col-span-2 flex items-center justify-center sm:justify-center gap-1.5 sm:gap-2 shrink-0">
+                                <span className="text-[10px] font-bold text-zinc-600 uppercase sm:hidden shrink-0">
                                   Qty:
                                 </span>
-                                <div className="flex items-center border border-[#C5A059]/30 bg-[#181820] rounded-lg overflow-hidden h-[36px] max-w-[90px] shrink-0">
+                                <div className="flex items-center border border-zinc-300 bg-white rounded-lg overflow-hidden h-[36px] w-[88px] shrink-0 shadow-xs">
                                   <button
-                                    className="w-7 h-full flex items-center justify-center text-[#FAF7F2]/80 hover:bg-[#252530] hover:text-[#FAF7F2] font-bold text-xs transition-colors cursor-pointer"
+                                    type="button"
+                                    className="w-7 h-full flex items-center justify-center text-zinc-700 hover:bg-zinc-100 hover:text-black font-bold text-xs transition-colors cursor-pointer"
                                     onClick={() =>
                                       handleQtyChange(item.id, item.qty - 1)
                                     }
                                   >
                                     −
                                   </button>
-                                  <span className="flex-1 text-center font-bold text-xs text-[#FAF7F2] min-w-[18px]">
+                                  <span className="flex-1 text-center font-bold text-xs text-zinc-900 min-w-[18px]">
                                     {item.qty}
                                   </span>
                                   <button
-                                    className="w-7 h-full flex items-center justify-center text-[#FAF7F2]/80 hover:bg-[#252530] hover:text-[#FAF7F2] font-bold text-xs transition-colors cursor-pointer"
+                                    type="button"
+                                    className="w-7 h-full flex items-center justify-center text-zinc-700 hover:bg-zinc-100 hover:text-black font-bold text-xs transition-colors cursor-pointer"
                                     onClick={() =>
                                       handleQtyChange(item.id, item.qty + 1)
                                     }
@@ -4847,10 +4881,11 @@ export default function POSBilling() {
                               </div>
 
                               {/* Trash Button */}
-                              <div className="sm:col-span-1 flex justify-end shrink-0">
+                              <div className="sm:col-span-1 flex items-center justify-center shrink-0">
                                 <button
+                                  type="button"
                                   onClick={() => removeItem(item.id)}
-                                  className="text-zinc-400 hover:text-red-600 hover:bg-zinc-100 p-2 rounded-lg border border-zinc-200 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-red-600 hover:bg-red-50 border border-zinc-200 hover:border-red-200 transition-colors cursor-pointer shadow-xs"
                                   title="Remove Item"
                                 >
                                   <Trash2 className="w-4 h-4" />
