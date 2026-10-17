@@ -387,7 +387,9 @@ function getLocalDate(): string {
 
 function readPrintPrefs(): PrintPrefs {
   try {
-    const raw = localStorage.getItem("shalistone_print_prefs");
+    const raw =
+      localStorage.getItem("nidhulan_print_prefs") ||
+      localStorage.getItem("shalistone_print_prefs");
     if (raw) {
       const parsed: unknown = JSON.parse(raw);
       if (
@@ -8948,10 +8950,42 @@ export default function POSBilling() {
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
-                    localStorage.setItem("shalistone_print_prefs", JSON.stringify(printPrefs));
+                    localStorage.setItem("nidhulan_print_prefs", JSON.stringify(printPrefs));
                     const baseUrl = printModalData.type === "invoice" ? `/invoice/${printModalData.id}` : `/advance/${printModalData.id}`;
-                    window.open(`${baseUrl}?print=true&paper=${printPrefs.paper}&size=${printPrefs.size}`, "_blank");
+                    const targetUrl = `${baseUrl}?print=true&paper=${printPrefs.paper}&size=${printPrefs.size}`;
+                    const printWin = window.open(targetUrl, "_blank");
+
+                    // If popup blocker blocked the new tab, print seamlessly using a hidden iframe
+                    if (!printWin || printWin.closed || typeof printWin.closed === "undefined") {
+                      try {
+                        const existing = document.getElementById("pos-print-frame");
+                        if (existing) existing.remove();
+                        const iframe = document.createElement("iframe");
+                        iframe.id = "pos-print-frame";
+                        iframe.style.position = "fixed";
+                        iframe.style.right = "0";
+                        iframe.style.bottom = "0";
+                        iframe.style.width = "0";
+                        iframe.style.height = "0";
+                        iframe.style.border = "0";
+                        iframe.src = `${baseUrl}?embed=true&paper=${printPrefs.paper}&size=${printPrefs.size}`;
+                        document.body.appendChild(iframe);
+                        iframe.onload = () => {
+                          setTimeout(() => {
+                            try {
+                              iframe.contentWindow?.focus();
+                              iframe.contentWindow?.print();
+                            } catch {
+                              window.location.href = targetUrl;
+                            }
+                          }, 400);
+                        };
+                      } catch {
+                        window.location.href = targetUrl;
+                      }
+                    }
                     setPrintModalData(null);
                   }}
                   className="px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-[var(--accent-on)] shadow-md transition-all cursor-pointer flex items-center gap-2"
