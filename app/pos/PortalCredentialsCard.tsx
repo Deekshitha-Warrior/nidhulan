@@ -5,6 +5,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   KeyRound,
+  Key,
   Lock,
   Unlock,
   Eye,
@@ -229,7 +230,7 @@ export default function PortalCredentialsCard() {
   };
 
   return (
-    <div className="bg-white border border-[#C5A059]/30 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col gap-5 relative">
+    <div className="bg-white border border-zinc-200/90 rounded-[2rem] p-6 sm:p-7 shadow-xs flex flex-col gap-5 relative">
       {/* Toast Notification Banner */}
       {toastMessage && (
         <div
@@ -248,259 +249,201 @@ export default function PortalCredentialsCard() {
         </div>
       )}
 
-      {/* Card Header & Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-[#C5A059]/20">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent-strong)]">
-              <KeyRound className="w-4 h-4" />
-            </div>
-            <h3
-              className="text-xs font-black uppercase tracking-widest text-black"
-              style={{ color: "#000000", WebkitTextFillColor: "#000000" }}
-            >
-              Portal Access &amp; Passwords
+      {/* Top Header Row */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <Key className="w-6 h-6 text-zinc-800 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-base sm:text-lg font-black tracking-wider uppercase text-zinc-900 leading-tight">
+              PORTAL ACCESS &amp;<br className="sm:hidden" /> PASSWORDS
             </h3>
+            <p className="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed mt-1.5">
+              In-app changeable terminal credentials<br className="hidden sm:inline" /> stored securely in your database.
+            </p>
           </div>
-          <p className="text-[10px] text-zinc-600 font-semibold mt-1">
-            Zero-trust credential manager for Administrator and Staff terminal access.
-          </p>
         </div>
 
-        {/* Toolbar Controls */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Security Status Badge */}
+        {/* Reveal / Hide Button */}
+        <button
+          type="button"
+          onClick={handleToggleReveal}
+          className="border border-[#7F1D1D]/20 hover:border-[#7F1D1D]/40 bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#7F1D1D] px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-2 transition-all cursor-pointer shadow-2xs shrink-0"
+        >
           {isRevealed ? (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-300 text-[10px] font-black uppercase tracking-wider">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              Credentials Unmasked
-            </span>
+            <>
+              <EyeOff className="w-4 h-4 text-[#7F1D1D]" />
+              Hide
+            </>
           ) : (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-black uppercase tracking-wider">
-              <Lock className="w-3.5 h-3.5 text-amber-600" />
-              Protected by Admin Password
-            </span>
+            <>
+              <Eye className="w-4 h-4 text-[#7F1D1D]" />
+              Reveal
+            </>
           )}
+        </button>
+      </div>
 
-          {/* Reveal / Hide Button */}
+      {/* Status Pill Strip */}
+      <div className="bg-zinc-50/80 border border-zinc-100 rounded-2xl p-4 sm:p-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Lock className="w-5 h-5 text-emerald-600 shrink-0" />
+          <div className="text-xs sm:text-sm font-bold text-zinc-800 leading-tight">
+            Protected by Admin<br />Password
+          </div>
+        </div>
+        <div className="text-[10px] sm:text-xs font-extrabold tracking-wider uppercase text-zinc-400 text-right leading-tight">
+          ENCRYPTED &amp;<br />{isRevealed ? "UNMASKED" : "MASKED"}
+        </div>
+      </div>
+
+      {/* Admin Terminal Access Card */}
+      <div className="bg-white border border-zinc-200/90 rounded-2xl p-5 sm:p-6 shadow-2xs flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-zinc-800">
+            <User className="w-4 h-4 text-zinc-600" />
+            <span>ADMIN TERMINAL ACCESS</span>
+          </div>
           <button
             type="button"
-            onClick={handleToggleReveal}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs border ${
-              isRevealed
-                ? "bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border-zinc-300"
-                : "bg-[var(--accent)] hover:bg-[var(--accent-strong)] text-white border-[var(--accent-strong)]"
-            }`}
+            onClick={() => handleEditClick("admin")}
+            className="px-3.5 py-1.5 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
           >
-            {isRevealed ? (
-              <>
-                <EyeOff className="w-3.5 h-3.5" />
-                Hide Credentials
-              </>
-            ) : (
-              <>
-                <Eye className="w-3.5 h-3.5" />
-                Reveal Credentials
-              </>
-            )}
+            <Edit3 className="w-3.5 h-3.5 text-zinc-700" />
+            Edit
           </button>
         </div>
-      </div>
 
-      {/* 4-Box Grid Partitioned by Role */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* ── ADMIN BLOCK ── */}
-        <div className="bg-[#FAF7F2] border border-[#C5A059]/30 rounded-xl p-4 flex flex-col justify-between gap-3.5 shadow-2xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <div className="flex items-center justify-between pb-2 mb-3 border-b border-[#C5A059]/20">
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#8A6815]" />
-                <span className="text-[11px] font-black uppercase tracking-wider text-black">
-                  Admin Credentials
-                </span>
-              </div>
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest bg-white border border-[#C5A059]/30 px-2 py-0.5 rounded-md">
-                Full POS &amp; Settings
+            <label className="block text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-zinc-400 mb-1.5">
+              ADMIN LOGIN ID
+            </label>
+            <div className="w-full bg-zinc-50/70 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-mono text-zinc-900 tracking-widest flex items-center justify-between shadow-2xs">
+              <span className="truncate">
+                {isRevealed && credentials ? credentials.admin.login_id : "••••••••"}
               </span>
-            </div>
-
-            {/* Boxes 1 & 2 */}
-            <div className="space-y-2.5">
-              {/* Box 1: Admin Login ID */}
-              <div className="bg-white border border-[#C5A059]/30 rounded-lg p-2.5 flex items-center justify-between">
-                <div>
-                  <span className="block text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                    Admin Login ID
-                  </span>
-                  <span className="text-xs font-mono font-bold text-black">
-                    {isRevealed && credentials ? credentials.admin.login_id : adminLoginId}
-                  </span>
-                </div>
-                {isRevealed && credentials && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(credentials.admin.login_id, "admin_id")}
-                    className="p-1 text-zinc-400 hover:text-black rounded transition-colors"
-                    title="Copy Login ID"
-                  >
-                    {copiedField === "admin_id" ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                )}
-              </div>
-
-              {/* Box 2: Admin Password */}
-              <div className="bg-white border border-[#C5A059]/30 rounded-lg p-2.5 flex items-center justify-between">
-                <div className="min-w-0 pr-2">
-                  <span className="block text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                    Admin Password
-                  </span>
-                  <span className="text-xs font-mono font-bold text-black tracking-wider truncate block">
-                    {isRevealed && credentials?.admin.password
-                      ? credentials.admin.password
-                      : "••••••••••••"}
-                  </span>
-                </div>
-                {isRevealed && credentials?.admin.password && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(credentials.admin.password || "", "admin_pass")}
-                    className="p-1 text-zinc-400 hover:text-black rounded transition-colors"
-                    title="Copy Password"
-                  >
-                    {copiedField === "admin_pass" ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                )}
-              </div>
+              {isRevealed && credentials && (
+                <button
+                  type="button"
+                  onClick={() => handleCopy(credentials.admin.login_id, "admin_id")}
+                  className="p-1 text-zinc-400 hover:text-black rounded transition-colors ml-2"
+                  title="Copy Login ID"
+                >
+                  {copiedField === "admin_id" ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Action: Edit Admin */}
-          <div className="pt-2 flex items-center justify-between border-t border-[#C5A059]/15">
-            <span className="text-[9px] text-zinc-500 font-semibold">
-              {isRevealed && credentials?.admin.updated_at
-                ? `Updated: ${new Date(credentials.admin.updated_at).toLocaleDateString()}`
-                : "Secured with bcrypt"}
-            </span>
-            <button
-              type="button"
-              onClick={() => handleEditClick("admin")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer transition-colors shadow-2xs"
-            >
-              <Edit3 className="w-3 h-3 text-white" />
-              Edit Admin
-            </button>
-          </div>
-        </div>
-
-        {/* ── STAFF BLOCK ── */}
-        <div className="bg-[#FAF7F2] border border-[#C5A059]/30 rounded-xl p-4 flex flex-col justify-between gap-3.5 shadow-2xs">
           <div>
-            <div className="flex items-center justify-between pb-2 mb-3 border-b border-[#C5A059]/20">
-              <div className="flex items-center gap-1.5">
-                <UserCheck className="w-4 h-4 text-[#8A6815]" />
-                <span className="text-[11px] font-black uppercase tracking-wider text-black">
-                  Staff Credentials
-                </span>
-              </div>
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest bg-white border border-[#C5A059]/30 px-2 py-0.5 rounded-md">
-                Billing &amp; Counter Only
+            <label className="block text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-zinc-400 mb-1.5">
+              ADMIN PASSWORD
+            </label>
+            <div className="w-full bg-zinc-50/70 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-mono text-zinc-900 tracking-widest flex items-center justify-between shadow-2xs">
+              <span className="truncate">
+                {isRevealed && credentials?.admin.password
+                  ? credentials.admin.password
+                  : "••••••••••••"}
               </span>
+              {isRevealed && credentials?.admin.password && (
+                <button
+                  type="button"
+                  onClick={() => handleCopy(credentials.admin.password || "", "admin_pass")}
+                  className="p-1 text-zinc-400 hover:text-black rounded transition-colors ml-2"
+                  title="Copy Password"
+                >
+                  {copiedField === "admin_pass" ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              )}
             </div>
-
-            {/* Boxes 3 & 4 */}
-            <div className="space-y-2.5">
-              {/* Box 3: Staff Login ID */}
-              <div className="bg-white border border-[#C5A059]/30 rounded-lg p-2.5 flex items-center justify-between">
-                <div>
-                  <span className="block text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                    Staff Login ID
-                  </span>
-                  <span className="text-xs font-mono font-bold text-black">
-                    {isRevealed && credentials ? credentials.staff.login_id : "staff"}
-                  </span>
-                </div>
-                {isRevealed && credentials && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(credentials.staff.login_id, "staff_id")}
-                    className="p-1 text-zinc-400 hover:text-black rounded transition-colors"
-                    title="Copy Login ID"
-                  >
-                    {copiedField === "staff_id" ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                )}
-              </div>
-
-              {/* Box 4: Staff Password */}
-              <div className="bg-white border border-[#C5A059]/30 rounded-lg p-2.5 flex items-center justify-between">
-                <div className="min-w-0 pr-2">
-                  <span className="block text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                    Staff Password
-                  </span>
-                  <span className="text-xs font-mono font-bold text-black tracking-wider truncate block">
-                    {isRevealed && credentials?.staff.password
-                      ? credentials.staff.password
-                      : "••••••••••••"}
-                  </span>
-                </div>
-                {isRevealed && credentials?.staff.password && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(credentials.staff.password || "", "staff_pass")}
-                    className="p-1 text-zinc-400 hover:text-black rounded transition-colors"
-                    title="Copy Password"
-                  >
-                    {copiedField === "staff_pass" ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Action: Edit Staff */}
-          <div className="pt-2 flex items-center justify-between border-t border-[#C5A059]/15">
-            <span className="text-[9px] text-zinc-500 font-semibold">
-              {isRevealed && credentials?.staff.updated_at
-                ? `Updated: ${new Date(credentials.staff.updated_at).toLocaleDateString()}`
-                : "Secured with bcrypt"}
-            </span>
-            <button
-              type="button"
-              onClick={() => handleEditClick("staff")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer transition-colors shadow-2xs"
-            >
-              <Edit3 className="w-3 h-3 text-white" />
-              Edit Staff
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Security Notice Note */}
-      <div className="flex items-start gap-2 bg-[#FAF7F2] p-3 rounded-xl border border-[#C5A059]/20 text-[10px] text-zinc-600 font-medium">
-        <Info className="w-4 h-4 text-[#8A6815] shrink-0 mt-0.5" />
-        <p className="leading-relaxed">
-          <strong className="text-black">Brute-Force Guard:</strong> 5 consecutive incorrect
-          password attempts temporarily lock an account for 15 minutes. Passwords are encrypted
-          using Blowfish bcrypt (<code className="font-mono text-[9px]">pgcrypto</code>).
-        </p>
+      {/* Staff Terminal Access Card */}
+      <div className="bg-white border border-zinc-200/90 rounded-2xl p-5 sm:p-6 shadow-2xs flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-zinc-800">
+            <User className="w-4 h-4 text-zinc-600" />
+            <span>STAFF TERMINAL ACCESS</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleEditClick("staff")}
+            className="px-3.5 py-1.5 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-zinc-700" />
+            Edit
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-zinc-400 mb-1.5">
+              STAFF LOGIN ID
+            </label>
+            <div className="w-full bg-zinc-50/70 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-mono text-zinc-900 tracking-widest flex items-center justify-between shadow-2xs">
+              <span className="truncate">
+                {isRevealed && credentials ? credentials.staff.login_id : "••••••••"}
+              </span>
+              {isRevealed && credentials && (
+                <button
+                  type="button"
+                  onClick={() => handleCopy(credentials.staff.login_id, "staff_id")}
+                  className="p-1 text-zinc-400 hover:text-black rounded transition-colors ml-2"
+                  title="Copy Login ID"
+                >
+                  {copiedField === "staff_id" ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-zinc-400 mb-1.5">
+              STAFF PASSWORD
+            </label>
+            <div className="w-full bg-zinc-50/70 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-mono text-zinc-900 tracking-widest flex items-center justify-between shadow-2xs">
+              <span className="truncate">
+                {isRevealed && credentials?.staff.password
+                  ? credentials.staff.password
+                  : "••••••••••••"}
+              </span>
+              {isRevealed && credentials?.staff.password && (
+                <button
+                  type="button"
+                  onClick={() => handleCopy(credentials.staff.password || "", "staff_pass")}
+                  className="p-1 text-zinc-400 hover:text-black rounded transition-colors ml-2"
+                  title="Copy Password"
+                >
+                  {copiedField === "staff_pass" ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Safety Notice Underneath */}
+      <p className="text-xs text-zinc-400 font-medium leading-relaxed">
+        Switching to any other section or refreshing the page instantly returns all credentials to hidden mode for safety.
+      </p>
 
       {/* ── MODAL 1: ADMIN PASSWORD VERIFICATION MODAL ── */}
       {showVerifyModal && (
