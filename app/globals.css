@@ -22,9 +22,9 @@
 
 /* Keep gold actions and highlights solid instead of using gold gradients. */
 :where(
-  [class*="from-[var(--accent)]"],
-  [class*="via-[var(--accent)]"],
-  [class*="via-[#D4AF37]"]
+  button[class*="from-[var(--accent)]"],
+  button[class*="via-[var(--accent)]"],
+  button[class*="via-[#D4AF37]"]
 ) {
   background-image: none !important;
   background-color: var(--accent) !important;
@@ -438,38 +438,38 @@ select option {
    its text and icons MUST be black (#171717), NEVER white.
    ===================================================================== */
 /* Solid white buttons & outline buttons on light surfaces */
-button[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
-button[class*="bg-white"]:not([class*="hover:bg-white"]):not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]),
-button[class*="bg-[#FFFFFF]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
-button[class*="bg-[#ffffff]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
-a[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
-a[class*="bg-white"]:not([class*="hover:bg-white"]):not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+button[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]):not([class*="hover:bg-[var(--accent)"]:hover):not([class*="hover:bg-[#DC2626]"]:hover):not([class*="hover:bg-red-"]:hover):not([class*="hover:bg-[#16A34A]"]:hover):not([class*="hover:bg-emerald-"]:hover):not([class*="hover:bg-black"]:hover),
+button[class*="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]):not([class*="hover:bg-[var(--accent)"]:hover):not([class*="hover:bg-[#DC2626]"]:hover):not([class*="hover:bg-red-"]:hover):not([class*="hover:bg-[#16A34A]"]:hover):not([class*="hover:bg-emerald-"]:hover):not([class*="hover:bg-black"]:hover),
+button[class*="bg-[#FFFFFF]"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover):not([class*="hover:bg-[#DC2626]"]:hover):not([class*="hover:bg-red-"]:hover):not([class*="hover:bg-[#16A34A]"]:hover):not([class*="hover:bg-emerald-"]:hover):not([class*="hover:bg-black"]:hover),
+button[class*="bg-[#ffffff]"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover):not([class*="hover:bg-[#DC2626]"]:hover):not([class*="hover:bg-red-"]:hover):not([class*="hover:bg-[#16A34A]"]:hover):not([class*="hover:bg-emerald-"]:hover):not([class*="hover:bg-black"]:hover),
+a[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]),
+a[class*="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]),
 a[class*="bg-[#FFFFFF]"],
 a[class*="bg-[#ffffff]"],
-button[class*="bg-zinc-50"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
-button[class*="bg-zinc-100"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
-button[class*="bg-zinc-200"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
-button[class*="bg-gray-50"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
-button[class*="bg-gray-100"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
-button[class*="bg-[#FAF8F5]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
-button[class*="bg-[#FAF7F2]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) {
+button[class*="bg-zinc-50"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover),
+button[class*="bg-zinc-100"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover),
+button[class*="bg-zinc-200"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover),
+button[class*="bg-gray-50"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover),
+button[class*="bg-gray-100"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover),
+button[class*="bg-[#FAF8F5]"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover),
+button[class*="bg-[#FAF7F2]"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover) {
   color: #171717 !important;
   -webkit-text-fill-color: #171717 !important;
 }
 
-button[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-button[class*="bg-white"]:not([class*="hover:bg-white"]):not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]) *,
-button[class*="bg-[#FFFFFF]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-button[class*="bg-[#ffffff]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-a[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-a[class*="bg-white"]:not([class*="hover:bg-white"]):not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-button[class*="bg-zinc-50"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-button[class*="bg-zinc-100"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-button[class*="bg-zinc-200"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-button[class*="bg-gray-50"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-button[class*="bg-gray-100"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-button[class*="bg-[#FAF8F5]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
-button[class*="bg-[#FAF7F2]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) * {
+button[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]):not([class*="hover:bg-[var(--accent)"]:hover):not([class*="hover:bg-[#DC2626]"]:hover):not([class*="hover:bg-red-"]:hover):not([class*="hover:bg-[#16A34A]"]:hover):not([class*="hover:bg-emerald-"]:hover):not([class*="hover:bg-black"]:hover) *,
+button[class*="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]):not([class*="hover:bg-[var(--accent)"]:hover):not([class*="hover:bg-[#DC2626]"]:hover):not([class*="hover:bg-red-"]:hover):not([class*="hover:bg-[#16A34A]"]:hover):not([class*="hover:bg-emerald-"]:hover):not([class*="hover:bg-black"]:hover) *,
+button[class*="bg-[#FFFFFF]"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover):not([class*="hover:bg-[#DC2626]"]:hover):not([class*="hover:bg-red-"]:hover):not([class*="hover:bg-[#16A34A]"]:hover):not([class*="hover:bg-emerald-"]:hover):not([class*="hover:bg-black"]:hover) *,
+button[class*="bg-[#ffffff]"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover):not([class*="hover:bg-[#DC2626]"]:hover):not([class*="hover:bg-red-"]:hover):not([class*="hover:bg-[#16A34A]"]:hover):not([class*="hover:bg-emerald-"]:hover):not([class*="hover:bg-black"]:hover) *,
+a[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]) *,
+a[class*="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]) *,
+button[class*="bg-zinc-50"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover) *,
+button[class*="bg-zinc-100"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover) *,
+button[class*="bg-zinc-200"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover) *,
+button[class*="bg-gray-50"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover) *,
+button[class*="bg-gray-100"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover) *,
+button[class*="bg-[#FAF8F5]"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover) *,
+button[class*="bg-[#FAF7F2]"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="hover:bg-[var(--accent)"]:hover) * {
   color: #171717 !important;
   -webkit-text-fill-color: #171717 !important;
 }

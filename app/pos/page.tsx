@@ -7748,17 +7748,17 @@ export default function POSBilling() {
             {/* Header */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
               <div>
-                <h2 className="text-[28px] font-black text-[#FAF7F2] tracking-tight flex items-center gap-3">
+                <h2 className="text-[28px] font-black text-black tracking-tight flex items-center gap-3">
                   <Wallet className="w-7 h-7 text-[var(--accent)]" />
                   Expense Tracker
                 </h2>
-                <p className="text-xs text-[#B8B5AE] font-semibold mt-1">
+                <p className="text-xs text-zinc-600 font-semibold mt-1">
                   Record what the shop spends. Expenses are offset against sales
                   to show your real Net Profit on the dashboard.
                 </p>
               </div>
               {/* Period filter */}
-              <div className="flex flex-wrap items-center gap-1.5 bg-[#181820] border border-[#C5A059]/20 rounded-xl p-1">
+              <div className="flex flex-wrap items-center gap-1.5 bg-white border border-zinc-200 rounded-xl p-1 shadow-xs">
                 {(
                   [
                     ["today", "Today"],
@@ -7784,8 +7784,8 @@ export default function POSBilling() {
                     }}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
                       expensePeriod === key
-                        ? "bg-[var(--accent)] text-[var(--accent-on)] font-black shadow-sm"
-                        : "text-[#B8B5AE] hover:text-[#FAF7F2] hover:bg-white/5"
+                        ? "bg-[var(--accent)] text-white font-black shadow-sm"
+                        : "text-zinc-700 hover:text-black hover:bg-zinc-100"
                     }`}
                   >
                     {label}
@@ -7794,9 +7794,9 @@ export default function POSBilling() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-end gap-3 mb-6 bg-[#131317] border border-[#C5A059]/20 rounded-xl p-4">
+            <div className="flex flex-wrap items-end gap-3 mb-6 bg-white border border-[#C5A059]/30 rounded-2xl p-4 shadow-sm">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE] mb-1">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-600 mb-1">
                   From
                 </label>
                 <input
@@ -7807,11 +7807,11 @@ export default function POSBilling() {
                     setExpensePeriod("custom");
                     setExpenseStartDate(e.target.value);
                   }}
-                  className="bg-[#181820] border border-[#C5A059]/30 rounded-lg px-3 py-2 text-sm text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)]"
+                  className="bg-white border border-zinc-300 rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:border-[var(--accent)] shadow-xs"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE] mb-1">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-600 mb-1">
                   To
                 </label>
                 <input
@@ -7822,13 +7822,13 @@ export default function POSBilling() {
                     setExpensePeriod("custom");
                     setExpenseEndDate(e.target.value);
                   }}
-                  className="bg-[#181820] border border-[#C5A059]/30 rounded-lg px-3 py-2 text-sm text-[#FAF7F2] focus:outline-none focus:border-[var(--accent)]"
+                  className="bg-white border border-zinc-300 rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:border-[var(--accent)] shadow-xs"
                 />
               </div>
               <p
                 aria-live="polite"
                 className={`basis-full text-[10px] font-semibold ${
-                  expenseDateRange.valid ? "text-[#B8B5AE]" : "text-red-400"
+                  expenseDateRange.valid ? "text-zinc-600" : "text-red-500"
                 }`}
               >
                 {expenseDateRangeLabel}
@@ -7837,29 +7837,29 @@ export default function POSBilling() {
 
             {/* Summary cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="rounded-2xl p-5 shadow-sm text-white bg-gradient-to-br from-[var(--accent)] to-[#181820] border border-[#C5A059]/30">
+              <div className="bg-white border border-[#C5A059]/30 rounded-2xl p-5 shadow-sm hover:border-[#C5A059]/50 transition-all">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/90">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                     Total Expenses
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
-                    <Coins className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center">
+                    <Coins className="w-4 h-4 text-[var(--accent-strong)]" />
                   </div>
                 </div>
-                <div className="text-2xl font-black">
+                <div className="text-2xl font-black text-black">
                   ₹
                   {expenseStats.total.toLocaleString("en-IN", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
                 </div>
-                <div className="text-[9px] text-white/80 font-semibold mt-1 uppercase tracking-wider">
+                <div className="text-[9px] text-zinc-500 font-semibold mt-1 uppercase tracking-wider">
                   {expenseDateRangeLabel}
                 </div>
               </div>
-              <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl p-5 shadow-sm hover:border-[#C5A059]/40 transition-all">
+              <div className="bg-white border border-[#C5A059]/30 rounded-2xl p-5 shadow-sm hover:border-[#C5A059]/50 transition-all">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                     Entries
                   </span>
                   <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center">
@@ -7873,9 +7873,9 @@ export default function POSBilling() {
                   Expenses recorded
                 </div>
               </div>
-              <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl p-5 shadow-sm hover:border-[#C5A059]/40 transition-all">
+              <div className="bg-white border border-[#C5A059]/30 rounded-2xl p-5 shadow-sm hover:border-[#C5A059]/50 transition-all">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#B8B5AE]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                     Top Category
                   </span>
                   <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center">
@@ -7883,7 +7883,7 @@ export default function POSBilling() {
                   </div>
                 </div>
                 <div className="text-lg font-black text-black truncate">
-                  {expenseStats.topCategory}
+                  {expenseStats.topCategory || "None"}
                 </div>
                 <div className="text-[9px] text-zinc-500 font-semibold mt-1">
                   Highest spend
@@ -8035,20 +8035,20 @@ export default function POSBilling() {
               </div>
 
               {/* Category breakdown */}
-              <div className="lg:col-span-3 bg-[#131317] border border-[#C5A059]/20 rounded-2xl p-5 shadow-sm">
-                <h3 className="text-sm font-black text-[#FAF7F2] uppercase tracking-wider flex items-center gap-2 mb-4">
+              <div className="lg:col-span-3 bg-white border border-[#C5A059]/30 rounded-2xl p-5 shadow-sm">
+                <h3 className="text-sm font-black text-black uppercase tracking-wider flex items-center gap-2 mb-4">
                   <span className="w-1.5 h-6 bg-[var(--accent)] rounded-full" />
                   Spend by Category
                 </h3>
                 {expenseStats.categoryBreakdown.length === 0 ? (
                   <div className="py-12 text-center">
-                    <div className="w-14 h-14 rounded-full bg-[#C5A059]/15 flex items-center justify-center mx-auto mb-4">
-                      <PiggyBank className="w-7 h-7 text-[#C5A059]" />
+                    <div className="w-14 h-14 rounded-full bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center mx-auto mb-4">
+                      <PiggyBank className="w-7 h-7 text-[var(--accent-strong)]" />
                     </div>
-                    <p className="text-sm font-bold text-[#FAF7F2]">
+                    <p className="text-sm font-bold text-black">
                       No expenses in this period yet.
                     </p>
-                    <p className="text-xs font-semibold text-[#B8B5AE] mt-1">
+                    <p className="text-xs font-semibold text-zinc-500 mt-1">
                       Add your first expense to see the breakdown.
                     </p>
                   </div>
@@ -8092,7 +8092,7 @@ export default function POSBilling() {
             </div>
 
             {/* Expenses list */}
-            <div className="bg-[#131317] border border-[#C5A059]/20 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white border border-[#C5A059]/30 rounded-2xl shadow-sm overflow-hidden">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 border-b border-[#C5A059]/20">
                 <h3 className="text-sm font-black text-black uppercase tracking-wider flex items-center gap-2">
                   <List className="w-4 h-4 text-[#8A6815]" />
@@ -8126,37 +8126,37 @@ export default function POSBilling() {
 
               {expenseStats.filtered.length === 0 ? (
                 <div className="py-12 text-center">
-                  <div className="w-14 h-14 rounded-full bg-[#C5A059]/15 flex items-center justify-center mx-auto mb-4">
-                    <Wallet className="w-7 h-7 text-[#C5A059]" />
+                  <div className="w-14 h-14 rounded-full bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center mx-auto mb-4">
+                    <Wallet className="w-7 h-7 text-[var(--accent-strong)]" />
                   </div>
-                  <p className="text-sm font-bold text-[#FAF7F2]">
+                  <p className="text-sm font-bold text-black">
                     No expenses found.
                   </p>
-                  <p className="text-xs font-semibold text-[#B8B5AE] mt-1">
+                  <p className="text-xs font-semibold text-zinc-500 mt-1">
                     Try a different period or add a new expense.
                   </p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[720px]">
-                    <thead className="bg-[#181820]/80 border-b border-[#C5A059]/20 select-none">
+                    <thead className="bg-zinc-50 border-b border-zinc-200 select-none">
                       <tr>
-                        <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider">
+                        <th className="p-3 text-[10px] font-black text-zinc-700 uppercase tracking-wider">
                           Date
                         </th>
-                        <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider">
+                        <th className="p-3 text-[10px] font-black text-zinc-700 uppercase tracking-wider">
                           Expense
                         </th>
-                        <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider">
+                        <th className="p-3 text-[10px] font-black text-zinc-700 uppercase tracking-wider">
                           Category
                         </th>
-                        <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider">
+                        <th className="p-3 text-[10px] font-black text-zinc-700 uppercase tracking-wider">
                           Paid via
                         </th>
-                        <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider text-right">
+                        <th className="p-3 text-[10px] font-black text-zinc-700 uppercase tracking-wider text-right">
                           Amount
                         </th>
-                        <th className="p-3 text-[10px] font-black text-[#C5A059] uppercase tracking-wider text-center">
+                        <th className="p-3 text-[10px] font-black text-zinc-700 uppercase tracking-wider text-center">
                           Action
                         </th>
                       </tr>
@@ -8208,10 +8208,10 @@ export default function POSBilling() {
                               <button
                                 onClick={() => startEditExpense(e)}
                                 title="Edit expense"
-                                className={`inline-flex items-center justify-center w-8 h-8 rounded-md transition-colors cursor-pointer ${
+                                className={`inline-flex items-center justify-center w-8 h-8 rounded-md transition-colors cursor-pointer shadow-2xs ${
                                   editingExpenseId === e.id
                                     ? "bg-[var(--accent)] text-white font-bold"
-                                    : "bg-white/5 hover:bg-white/10 text-[#FAF7F2]"
+                                    : "bg-white hover:bg-zinc-100 text-zinc-800 border border-zinc-200"
                                 }`}
                               >
                                 <Pencil className="w-3.5 h-3.5" />
@@ -8219,7 +8219,7 @@ export default function POSBilling() {
                               <button
                                 onClick={() => handleDeleteExpense(e.id)}
                                 title="Delete expense"
-                                className="inline-flex items-center justify-center w-8 h-8 bg-[#EF4444]/15 hover:bg-[#EF4444]/25 text-[#EF4444] rounded-md transition-colors cursor-pointer"
+                                className="inline-flex items-center justify-center w-8 h-8 bg-white hover:bg-red-50 text-[#DC2626] border border-[#DC2626]/30 rounded-md transition-colors cursor-pointer shadow-2xs"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
