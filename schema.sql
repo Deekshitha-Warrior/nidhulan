@@ -410,3 +410,204 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
   public.birthday_settings,
   public.birthday_logs
 TO service_role;
+
+-- =====================================================================
+--  PORTAL CREDENTIALS & ZERO-TRUST PASSWORDS MANAGEMENT
+-- =====================================================================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS public.portal_logins (
+  role          TEXT PRIMARY KEY CHECK (role IN ('admin', 'staff')),
+  login_id      TEXT NOT NULL UNIQUE,
+  password      TEXT,
+  password_hash TEXT,
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.portal_login_attempts (
+  login_id      TEXT PRIMARY KEY,
+  failed_count  INTEGER NOT NULL DEFAULT 0,
+  locked_until  TIMESTAMPTZ
+);
+
+ALTER TABLE public.portal_logins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.portal_login_attempts ENABLE ROW LEVEL SECURITY;
+
+INSERT INTO public.portal_logins (role, login_id, password, password_hash)
+VALUES
+  ('admin', 'admin', 'admin123', crypt('admin123', gen_salt('bf'))),
+  ('staff', 'staff', 'staff123', crypt('staff123', gen_salt('bf')))
+ON CONFLICT (role) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION public.portal_login(p_id TEXT, p_password TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_lookup_id TEXT;
+  v_role TEXT;
+  v_actual_login_id TEXT;
+  v_stored_hash TEXT;
+  v_stored_plain TEXT;
+  v_locked_until TIMESTAMPTZ;
+  v_matched BOOLEAN := FALSE;
+BEGIN
+  IF p_id IS NULL OR trim(p_id) = '' OR p_password IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  v_lookup_id := lower(trim(p_id));
+
+  SELECT role, login_id, password_hash, password
+  INTO v_role, v_actual_login_id, v_stored_hash, v_stored_plain
+  FROM public.portal_logins
+  WHERE lower(login_id) = v_lookup_id OR role = v_lookup_id
+  LIMIT 1;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT locked_until
+  INTO v_locked_until
+  FROM public.portal_login_attempts
+  WHERE lower(login_id) = lower(v_actual_login_id);
+
+  IF v_locked_until IS NOT NULL AND v_locked_until > now() THEN
+    RETURN NULL;
+  END IF;
+
+  IF v_stored_hash IS NOT NULL AND v_stored_hash <> '' THEN
+    IF v_stored_hash = crypt(p_password, v_stored_hash) THEN
+      v_matched := TRUE;
+    END IF;
+  END IF;
+
+  IF NOT v_matched AND v_stored_plain IS NOT NULL AND v_stored_plain <> '' THEN
+    IF v_stored_plain = p_password THEN
+      v_matched := TRUE;
+    END IF;
+  END IF;
+
+  IF v_matched THEN
+    DELETE FROM public.portal_login_attempts
+    WHERE lower(login_id) = lower(v_actual_login_id);
+
+    RETURN v_role;
+  ELSE
+    INSERT INTO public.portal_login_attempts (login_id, failed_count, locked_until)
+    VALUES (v_actual_login_id, 1, NULL)
+    ON CONFLICT (login_id) DO UPDATE SET
+      failed_count = public.portal_login_attempts.failed_count + 1,
+      locked_until = CASE
+        WHEN public.portal_login_attempts.failed_count + 1 >= 5 THEN now() + interval '15 minutes'
+        ELSE NULL
+      END;
+
+    RETURN NULL;
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.portal_get_credentials(p_admin_id TEXT, p_admin_password TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_caller_role TEXT;
+  v_result JSONB;
+BEGIN
+  v_caller_role := public.portal_login(p_admin_id, p_admin_password);
+
+  IF v_caller_role IS NULL OR v_caller_role <> 'admin' THEN
+    RAISE EXCEPTION 'Authentication failed or account locked. Please check your admin password.';
+  END IF;
+
+  SELECT jsonb_object_agg(
+    role,
+    jsonb_build_object(
+      'role', role,
+      'login_id', login_id,
+      'password', COALESCE(password, ''),
+      'updated_at', updated_at
+    )
+  )
+  INTO v_result
+  FROM public.portal_logins;
+
+  RETURN v_result;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.portal_update_credential(
+  p_admin_id TEXT,
+  p_admin_password TEXT,
+  p_target_role TEXT,
+  p_new_login_id TEXT,
+  p_new_password TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_caller_role TEXT;
+  v_clean_login_id TEXT;
+  v_old_login_id TEXT;
+BEGIN
+  v_caller_role := public.portal_login(p_admin_id, p_admin_password);
+
+  IF v_caller_role IS NULL OR v_caller_role <> 'admin' THEN
+    RAISE EXCEPTION 'Authentication failed or account locked. Please check your admin password.';
+  END IF;
+
+  IF p_target_role NOT IN ('admin', 'staff') THEN
+    RAISE EXCEPTION 'Invalid target role. Must be either admin or staff.';
+  END IF;
+
+  v_clean_login_id := trim(p_new_login_id);
+  IF length(v_clean_login_id) < 3 THEN
+    RAISE EXCEPTION 'Login ID must be at least 3 characters long.';
+  END IF;
+
+  IF length(p_new_password) < 6 THEN
+    RAISE EXCEPTION 'Password must be at least 6 characters long.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.portal_logins
+    WHERE lower(login_id) = lower(v_clean_login_id) AND role <> p_target_role
+  ) THEN
+    RAISE EXCEPTION 'Login ID "%" is already taken by another role.', v_clean_login_id;
+  END IF;
+
+  SELECT login_id INTO v_old_login_id FROM public.portal_logins WHERE role = p_target_role;
+
+  UPDATE public.portal_logins
+  SET
+    login_id = v_clean_login_id,
+    password = p_new_password,
+    password_hash = crypt(p_new_password, gen_salt('bf')),
+    updated_at = now()
+  WHERE role = p_target_role;
+
+  IF v_old_login_id IS NOT NULL THEN
+    DELETE FROM public.portal_login_attempts WHERE lower(login_id) = lower(v_old_login_id);
+  END IF;
+  DELETE FROM public.portal_login_attempts WHERE lower(login_id) = lower(v_clean_login_id);
+
+  RETURN TRUE;
+END;
+$$;
+
+GRANT USAGE ON SCHEMA public TO service_role, anon, authenticated;
+GRANT ALL ON TABLE public.portal_logins, public.portal_login_attempts TO service_role;
+GRANT EXECUTE ON FUNCTION public.portal_login(TEXT, TEXT) TO service_role, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.portal_get_credentials(TEXT, TEXT) TO service_role, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.portal_update_credential(TEXT, TEXT, TEXT, TEXT, TEXT) TO service_role, anon, authenticated;
+

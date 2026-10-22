@@ -29,6 +29,7 @@ import {
   accentCssVars,
   normalizeHex,
 } from "@/lib/shopProfile";
+import PortalCredentialsCard from "./PortalCredentialsCard";
 
 const MAX_LOGO_EDGE = 512;
 
@@ -522,26 +523,32 @@ export default function SettingsPanel({
 
       {/* Main 2-column balanced responsive grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* Appearance / Theme */}
-        <div className="bg-white border border-[#C5A059]/30 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col gap-5">
-          <div>
-            <h3
-              className="text-xs font-black uppercase tracking-widest text-black flex items-center gap-2 mb-1"
-              style={{ color: "#000000", WebkitTextFillColor: "#000000" }}
-            >
-              <Palette className="w-4 h-4 text-black" /> Appearance &amp; Brand Theme
-            </h3>
-            <p className="text-[10px] text-zinc-600 font-semibold">
-              Select or customize the primary accent colour used across the POS terminal, buttons, totals, receipts, and printed invoices.
-            </p>
+        {/* Left Column: Appearance + Portal Access & Passwords */}
+        <div className="flex flex-col gap-6">
+          {/* Appearance / Theme */}
+          <div className="bg-white border border-[#C5A059]/30 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col gap-5">
+            <div>
+              <h3
+                className="text-xs font-black uppercase tracking-widest text-black flex items-center gap-2 mb-1"
+                style={{ color: "#000000", WebkitTextFillColor: "#000000" }}
+              >
+                <Palette className="w-4 h-4 text-black" /> Appearance &amp; Brand Theme
+              </h3>
+              <p className="text-[10px] text-zinc-600 font-semibold">
+                Select or customize the primary accent colour used across the POS terminal, buttons, totals, receipts, and printed invoices.
+              </p>
+            </div>
+
+            <ThemePicker
+              value={form.accent_color}
+              onChange={handleColorSave}
+              onSave={handleColorSave}
+              colorStatus={colorStatus}
+            />
           </div>
 
-          <ThemePicker
-            value={form.accent_color}
-            onChange={handleColorSave}
-            onSave={handleColorSave}
-            colorStatus={colorStatus}
-          />
+          {/* Portal Access & Passwords Manager */}
+          <PortalCredentialsCard />
         </div>
 
         {/* Shop profile & Brand details (Right Side Card) */}

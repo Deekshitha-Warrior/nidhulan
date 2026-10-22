@@ -78,8 +78,8 @@ export function accentCssVars(accent: string): Record<string, string> {
     '--accent-softer': `color-mix(in srgb, ${hex} 10%, #FFFFFF)`,
     // Translucent wash for highlights behind text.
     '--accent-wash': `color-mix(in srgb, ${hex} 12%, #FFFFFF)`,
-    // Readable text colour on top of a solid accent fill.
-    '--accent-on': isLightColor(hex) ? '#1C1917' : '#FFFFFF',
+    // Readable text colour on top of a solid accent fill - always white for high-contrast action buttons.
+    '--accent-on': '#FFFFFF',
   };
 }
 

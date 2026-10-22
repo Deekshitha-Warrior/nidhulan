@@ -6180,7 +6180,7 @@ export default function POSBilling() {
 
                   <button
                     onClick={handleExportCSV}
-                    className="flex items-center gap-1.5 px-3.5 py-2 border-2 border-[var(--accent)] bg-transparent text-[var(--accent)] hover:bg-[var(--accent)] hover:text-[#0C0C0E] rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-sm shrink-0"
+                    className="flex items-center gap-1.5 px-3.5 py-2 border-2 border-[var(--accent)] bg-transparent text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-sm shrink-0"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Export CSV
@@ -8210,7 +8210,7 @@ export default function POSBilling() {
                                 title="Edit expense"
                                 className={`inline-flex items-center justify-center w-8 h-8 rounded-md transition-colors cursor-pointer ${
                                   editingExpenseId === e.id
-                                    ? "bg-[var(--accent)] text-[#0C0C0E] font-bold"
+                                    ? "bg-[var(--accent)] text-white font-bold"
                                     : "bg-white/5 hover:bg-white/10 text-[#FAF7F2]"
                                 }`}
                               >
@@ -8375,7 +8375,7 @@ export default function POSBilling() {
                                     }}
                                     className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center transition-all shrink-0 cursor-pointer ${
                                       isExpanded
-                                        ? "bg-[var(--accent)] text-[#0C0C0E] shadow-xs"
+                                        ? "bg-[var(--accent)] text-white shadow-xs"
                                         : "bg-white/5 hover:bg-white/10 text-[#B8B5AE] hover:text-[#FAF7F2]"
                                     }`}
                                     title={
@@ -8387,7 +8387,7 @@ export default function POSBilling() {
                                   >
                                     <ChevronDown
                                       className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                                        isExpanded ? "rotate-180 text-[#0C0C0E]" : ""
+                                        isExpanded ? "rotate-180 text-white" : ""
                                       }`}
                                     />
                                   </button>
@@ -8476,7 +8476,7 @@ export default function POSBilling() {
                                     onClick={() => setExpandedProductId(isExpanded ? null : p.id)}
                                     className={`text-[10px] font-bold px-2.5 py-1.5 rounded uppercase tracking-wider transition-all cursor-pointer inline-flex items-center gap-1 ${
                                       isExpanded
-                                        ? "bg-[var(--accent)] text-[#0C0C0E] shadow-xs"
+                                        ? "bg-[var(--accent)] text-white shadow-xs"
                                         : "text-[var(--accent)] hover:bg-[var(--accent)]/10 border border-[var(--accent)]/30"
                                     }`}
                                     title={
@@ -8494,7 +8494,7 @@ export default function POSBilling() {
                                   </button>
                                   <button
                                     onClick={() => openEditCatalog(p)}
-                                    className="text-[10px] font-bold text-[var(--accent)] hover:text-[#0C0C0E] hover:bg-[var(--accent)] border border-[var(--accent)]/30 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1"
+                                    className="text-[10px] font-bold text-[var(--accent)] hover:text-white hover:bg-[var(--accent)] border border-[var(--accent)]/30 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1"
                                   >
                                     <Pencil className="w-3 h-3" /> Edit
                                   </button>
@@ -8545,7 +8545,7 @@ export default function POSBilling() {
                                         {p.itemType !== "SERVICE" && (
                                           <button
                                             onClick={() => openStockAdjust(p)}
-                                            className="text-[10px] font-bold text-zinc-800 bg-white hover:bg-[var(--accent)] hover:text-[#0C0C0E] border border-[#C5A059]/40 px-3 py-1.5 rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 shadow-xs"
+                                            className="text-[10px] font-bold text-zinc-800 bg-white hover:bg-[var(--accent)] hover:text-white border border-[#C5A059]/40 px-3 py-1.5 rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 shadow-xs"
                                             title="Adjust stock — restock, return, loss or reconcile"
                                           >
                                             <SlidersHorizontal className="w-3 h-3" /> Adjust Stock

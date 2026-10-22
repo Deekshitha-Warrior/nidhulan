@@ -5,6 +5,7 @@ import {
   checkDatabaseConnection,
   getSanitizedSupabaseUrl,
   isDatabaseConfigured,
+  getSupabaseClient,
 } from "@/lib/db";
 import { Product, OrderWithRelations, CartItem, Expense, PaymentMode, Category, AdvanceOrderWithRelations, AdvanceOrderStatus, ShopSettings, ItemType, Staff, AttendanceRecord, AttendanceStatus, Customer, Offer, BirthdaySettings, BirthdayLog } from "@/lib/types";
 import { getShopSettings, saveShopSettings, normalizeHex, DEFAULT_ACCENT } from "@/lib/shopSettings";
@@ -15,16 +16,59 @@ function serialize<T>(data: T): T {
   return JSON.parse(JSON.stringify(data));
 }
 
-export async function verifyPasscode(enteredPasscode: string): Promise<{ success: boolean; role?: 'staff' | 'admin' }> {
+export async function verifyPasscode(enteredPasscode: string): Promise<{ success: boolean; role?: 'staff' | 'admin'; error?: string }> {
+  const normalizedEntered = enteredPasscode.trim();
+  if (!normalizedEntered) return { success: false };
+
+  // 1. Try Supabase portal_login RPC first for dynamic database-managed credentials
+  if (isDatabaseConfigured()) {
+    try {
+      const supabase = getSupabaseClient();
+      
+      // Check if entered string is in "username:password" format
+      if (normalizedEntered.includes(":")) {
+        const [uId, ...pRest] = normalizedEntered.split(":");
+        const pWord = pRest.join(":");
+        const { data: role, error } = await supabase.rpc("portal_login", {
+          p_id: uId.trim(),
+          p_password: pWord.trim(),
+        });
+        if (!error && (role === "admin" || role === "staff")) {
+          return { success: true, role: role as "admin" | "staff" };
+        }
+      }
+
+      // Check against admin account
+      const { data: adminRole } = await supabase.rpc("portal_login", {
+        p_id: "admin",
+        p_password: normalizedEntered,
+      });
+      if (adminRole === "admin") {
+        return { success: true, role: "admin" };
+      }
+
+      // Check against staff account
+      const { data: staffRole } = await supabase.rpc("portal_login", {
+        p_id: "staff",
+        p_password: normalizedEntered,
+      });
+      if (staffRole === "staff") {
+        return { success: true, role: "staff" };
+      }
+    } catch {
+      // If RPC or tables do not exist yet, seamlessly continue to env fallback below
+    }
+  }
+
+  // 2. Fallback to environment variables / defaults
   const adminPasscode = process.env.ADMIN_PASSCODE || "admin123";
   const staffPasscode = process.env.STAFF_PASSCODE || process.env.NEXT_PUBLIC_STAFF_PASSCODE || "staff123";
 
-  const normalizedEntered = enteredPasscode.replace(/\s/g, "");
-
-  if (normalizedEntered === adminPasscode) {
+  const cleanNoSpaces = normalizedEntered.replace(/\s/g, "");
+  if (cleanNoSpaces === adminPasscode) {
     return { success: true, role: 'admin' };
   }
-  if (normalizedEntered === staffPasscode) {
+  if (cleanNoSpaces === staffPasscode) {
     return { success: true, role: 'staff' };
   }
 
