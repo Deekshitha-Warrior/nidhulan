@@ -347,15 +347,15 @@ nextjs-portal,
 #pos-main [class*="text-gray-200"]:not(button):not(button *):not(a):not(a *),
 #pos-main [class*="text-slate-100"]:not(button):not(button *):not(a):not(a *),
 #pos-main [class*="text-slate-200"]:not(button):not(button *):not(a):not(a *),
-[class*="bg-white"] .text-white:not(button):not(button *):not(a):not(a *),
-[class*="bg-white"] [class*="text-white"]:not(button):not(button *):not(a):not(a *),
-[class*="bg-white"] [class*="text-[#FAF7F2]"]:not(button):not(button *):not(a):not(a *),
-[class*="bg-[#FFFFFF]"] .text-white:not(button):not(button *):not(a):not(a *),
-[class*="bg-[#FFFFFF]"] [class*="text-white"]:not(button):not(button *):not(a):not(a *),
-[class*="bg-[#FFFFFF]"] [class*="text-[#FAF7F2]"]:not(button):not(button *):not(a):not(a *),
-[class*="bg-[#FAF8F5]"] .text-white:not(button):not(button *):not(a):not(a *),
-[class*="bg-[#FAF8F5]"] [class*="text-white"]:not(button):not(button *):not(a):not(a *),
-[class*="bg-[#FAF8F5]"] [class*="text-[#FAF7F2]"]:not(button):not(button *):not(a):not(a *) {
+[class*="bg-white"] .text-white:not([class*="bg-"]):not([class*="bg-[var(--accent)"]),
+[class*="bg-white"] [class*="text-white"]:not([class*="bg-"]):not([class*="bg-[var(--accent)"]),
+[class*="bg-white"] [class*="text-[#FAF7F2]"]:not([class*="bg-"]):not([class*="bg-[var(--accent)"]),
+[class*="bg-[#FFFFFF]"] .text-white:not([class*="bg-"]):not([class*="bg-[var(--accent)"]),
+[class*="bg-[#FFFFFF]"] [class*="text-white"]:not([class*="bg-"]):not([class*="bg-[var(--accent)"]),
+[class*="bg-[#FFFFFF]"] [class*="text-[#FAF7F2]"]:not([class*="bg-"]):not([class*="bg-[var(--accent)"]),
+[class*="bg-[#FAF8F5]"] .text-white:not([class*="bg-"]):not([class*="bg-[var(--accent)"]),
+[class*="bg-[#FAF8F5]"] [class*="text-white"]:not([class*="bg-"]):not([class*="bg-[var(--accent)"]),
+[class*="bg-[#FAF8F5]"] [class*="text-[#FAF7F2]"]:not([class*="bg-"]):not([class*="bg-[var(--accent)"]) {
   color: #171717 !important;
 }
 
@@ -420,7 +420,9 @@ select option {
 .pos-dashboard table td p,
 #pos-main table td p,
 .pos-dashboard table td span:not([class*="bg-"]),
-#pos-main table td span:not([class*="bg-"]) {
+#pos-main table td span:not([class*="bg-"]),
+.pos-dashboard table td div:not([class*="bg-"]):not([class*="text-emerald-"]):not([class*="text-red-"]):not([class*="text-[var(--accent)"]),
+#pos-main table td div:not([class*="bg-"]):not([class*="text-emerald-"]):not([class*="text-red-"]):not([class*="text-[var(--accent)"]) {
   color: #171717 !important;
   border-color: #e5e7eb !important;
 }
@@ -431,114 +433,234 @@ select option {
 }
 
 /* =====================================================================
-   SOLID COLORED & ACCENT ACTION BUTTONS: ALL TEXT AND ICONS MUST BE PURE WHITE (#FFFFFF)
+   WHITE AND LIGHT BACKGROUND BUTTONS & ELEMENTS: ALL TEXT & ICONS MUST BE BLACK (#171717)
+   Whenever an element, card, table, or button has a white or light background,
+   its text and icons MUST be black (#171717), NEVER white.
    ===================================================================== */
-button[class*="bg-[var(--accent)]"],
-button[class*="bg-[var(--accent)]"] *,
-button[class*="bg-[var(--accent-strong)]"],
-button[class*="bg-[var(--accent-strong)]"] *,
-a[class*="bg-[var(--accent)]"],
-a[class*="bg-[var(--accent)]"] *,
-a[class*="bg-[var(--accent-strong)]"],
-a[class*="bg-[var(--accent-strong)]"] *,
-.pos-dashboard button[class*="bg-[var(--accent)"],
-.pos-dashboard button[class*="bg-[var(--accent)"] *,
-#pos-main button[class*="bg-[var(--accent)"],
-#pos-main button[class*="bg-[var(--accent)"] *,
-.pos-dashboard a[class*="bg-[var(--accent)"],
-.pos-dashboard a[class*="bg-[var(--accent)"] *,
-#pos-main a[class*="bg-[var(--accent)"],
-#pos-main a[class*="bg-[var(--accent)"] *,
-/* Solid accent elements (excluding transparent washes like bg-[var(--accent)]/15 and unselected sidebar) */
-.pos-dashboard [class*="bg-[var(--accent)]"]:not([class*="bg-[var(--accent)]/"]):not(aside):not(aside *):not(input):not(select),
-.pos-dashboard [class*="bg-[var(--accent)]"]:not([class*="bg-[var(--accent)]/"]):not(aside):not(aside *):not(input):not(select) *,
-#pos-main [class*="bg-[var(--accent)]"]:not([class*="bg-[var(--accent)]/"]):not(aside):not(aside *):not(input):not(select),
-#pos-main [class*="bg-[var(--accent)]"]:not([class*="bg-[var(--accent)]/"]):not(aside):not(aside *):not(input):not(select) *,
-.pos-dashboard [class*="from-[var(--accent)]"]:not(aside):not(aside *):not(input):not(select),
-.pos-dashboard [class*="from-[var(--accent)]"]:not(aside):not(aside *):not(input):not(select) *,
-#pos-main [class*="from-[var(--accent)]"]:not(aside):not(aside *):not(input):not(select),
-#pos-main [class*="from-[var(--accent)]"]:not(aside):not(aside *):not(input):not(select) *,
-/* Red buttons */
-button[class*="bg-red-"],
-button[class*="bg-red-"] *,
-button[class*="bg-[#DC2626]"],
-button[class*="bg-[#DC2626]"] *,
-button[class*="bg-[#EF4444]"],
-button[class*="bg-[#EF4444]"] *,
-button[class*="bg-[#B91C1C]"],
-button[class*="bg-[#B91C1C]"] *,
-button[class*="bg-[#8A1515]"],
-button[class*="bg-[#8A1515]"] *,
-/* Green / Emerald buttons */
-button[class*="bg-emerald-"],
-button[class*="bg-emerald-"] *,
-button[class*="bg-green-"],
-button[class*="bg-green-"] *,
-button[class*="bg-[#16A34A]"],
-button[class*="bg-[#16A34A]"] *,
-button[class*="bg-[#15803D]"],
-button[class*="bg-[#15803D]"] *,
-button[class*="bg-[#10B981]"],
-button[class*="bg-[#10B981]"] *,
-/* Blue / Indigo buttons */
-button[class*="bg-blue-"],
-button[class*="bg-blue-"] *,
-button[class*="bg-indigo-"],
-button[class*="bg-indigo-"] *,
-button[class*="bg-[#2563EB]"],
-button[class*="bg-[#2563EB]"] *,
-button[class*="bg-[#1D4ED8]"],
-button[class*="bg-[#1D4ED8]"] *,
-/* Amber / Orange / Purple buttons */
-button[class*="bg-amber-"],
-button[class*="bg-amber-"] *,
-button[class*="bg-orange-"],
-button[class*="bg-orange-"] *,
-button[class*="bg-purple-"],
-button[class*="bg-purple-"] *,
-button[class*="bg-[#D97706]"],
-button[class*="bg-[#D97706]"] *,
-/* Black / Zinc dark buttons */
-button[class*="bg-black"],
-button[class*="bg-black"] *,
-button[class*="bg-zinc-900"],
-button[class*="bg-zinc-900"] *,
-button[class*="bg-zinc-800"],
-button[class*="bg-zinc-800"] *,
-a[class*="bg-black"],
-a[class*="bg-black"] *,
-a[class*="bg-zinc-900"],
-a[class*="bg-zinc-900"] *,
-a[class*="bg-zinc-800"],
-a[class*="bg-zinc-800"] *,
-/* Hover states on buttons */
+/* Solid white buttons & outline buttons on light surfaces */
+button[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+button[class*="bg-white"]:not([class*="hover:bg-white"]):not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]),
+button[class*="bg-[#FFFFFF]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+button[class*="bg-[#ffffff]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+a[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+a[class*="bg-white"]:not([class*="hover:bg-white"]):not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+a[class*="bg-[#FFFFFF]"],
+a[class*="bg-[#ffffff]"],
+button[class*="bg-zinc-50"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+button[class*="bg-zinc-100"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+button[class*="bg-zinc-200"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+button[class*="bg-gray-50"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+button[class*="bg-gray-100"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+button[class*="bg-[#FAF8F5]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]),
+button[class*="bg-[#FAF7F2]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) {
+  color: #171717 !important;
+  -webkit-text-fill-color: #171717 !important;
+}
+
+button[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+button[class*="bg-white"]:not([class*="hover:bg-white"]):not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]) *,
+button[class*="bg-[#FFFFFF]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+button[class*="bg-[#ffffff]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+a[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+a[class*="bg-white"]:not([class*="hover:bg-white"]):not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+button[class*="bg-zinc-50"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+button[class*="bg-zinc-100"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+button[class*="bg-zinc-200"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+button[class*="bg-gray-50"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+button[class*="bg-gray-100"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+button[class*="bg-[#FAF8F5]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) *,
+button[class*="bg-[#FAF7F2]"]:not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) * {
+  color: #171717 !important;
+  -webkit-text-fill-color: #171717 !important;
+}
+
+button[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]) svg,
+button[class*="bg-white"]:not([class*="hover:bg-white"]):not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]) svg,
+button[class*="bg-[#FFFFFF]"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]) svg,
+button[class*="bg-[#ffffff]"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]) svg,
+a[class~="bg-white"]:not([class*="text-[#DC2626]"]):not([class*="text-red-"]) svg,
+a[class*="bg-white"]:not([class*="hover:bg-white"]):not(:hover):not([class*="text-[#DC2626]"]):not([class*="text-red-"]) svg,
+button[class*="bg-zinc-50"] svg,
+button[class*="bg-zinc-100"] svg,
+button[class*="bg-zinc-200"] svg,
+button[class*="bg-gray-50"] svg,
+button[class*="bg-gray-100"] svg,
+button[class*="bg-[#FAF8F5]"] svg,
+button[class*="bg-[#FAF7F2]"] svg {
+  color: #171717 !important;
+  stroke: #171717 !important;
+}
+
+/* Explicit danger/red action buttons on white background (e.g. Delete buttons) keep red text & stroke */
+button[class*="bg-white"][class*="text-[#DC2626]"],
+button[class*="bg-white"][class*="text-[#DC2626]"] *,
+button[class*="bg-white"][class*="text-red-"],
+button[class*="bg-white"][class*="text-red-"] *,
+button[class*="text-[#DC2626]"]:not([class*="bg-red-"]):not([class*="bg-[#DC2626]"]):not([class*="bg-[#EF4444]"]),
+button[class*="text-[#DC2626]"]:not([class*="bg-red-"]):not([class*="bg-[#DC2626]"]):not([class*="bg-[#EF4444]"]) * {
+  color: #DC2626 !important;
+  -webkit-text-fill-color: #DC2626 !important;
+}
+button[class*="bg-white"][class*="text-[#DC2626]"] svg,
+button[class*="bg-white"][class*="text-red-"] svg,
+button[class*="text-[#DC2626]"]:not([class*="bg-red-"]):not([class*="bg-[#DC2626]"]):not([class*="bg-[#EF4444]"]) svg {
+  color: #DC2626 !important;
+  stroke: #DC2626 !important;
+}
+
+/* Table action buttons in tbody default to black text unless explicitly solid colored */
+.pos-dashboard table td button:not([class~="bg-[var(--accent)]"]):not([class~="bg-red-600"]):not([class~="bg-[#DC2626]"]):not([class~="bg-emerald-600"]):not([class~="bg-black"]):not([class~="bg-zinc-900"]):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]),
+.pos-dashboard table td button:not([class~="bg-[var(--accent)]"]):not([class~="bg-red-600"]):not([class~="bg-[#DC2626]"]):not([class~="bg-emerald-600"]):not([class~="bg-black"]):not([class~="bg-zinc-900"]):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]) *,
+#pos-main table td button:not([class~="bg-[var(--accent)]"]):not([class~="bg-red-600"]):not([class~="bg-[#DC2626]"]):not([class~="bg-emerald-600"]):not([class~="bg-black"]):not([class~="bg-zinc-900"]):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]),
+#pos-main table td button:not([class~="bg-[var(--accent)]"]):not([class~="bg-red-600"]):not([class~="bg-[#DC2626]"]):not([class~="bg-emerald-600"]):not([class~="bg-black"]):not([class~="bg-zinc-900"]):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]) * {
+  color: #171717 !important;
+  -webkit-text-fill-color: #171717 !important;
+}
+.pos-dashboard table td button:not([class~="bg-[var(--accent)]"]):not([class~="bg-red-600"]):not([class~="bg-[#DC2626]"]):not([class~="bg-emerald-600"]):not([class~="bg-black"]):not([class~="bg-zinc-900"]):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]) svg,
+#pos-main table td button:not([class~="bg-[var(--accent)]"]):not([class~="bg-red-600"]):not([class~="bg-[#DC2626]"]):not([class~="bg-emerald-600"]):not([class~="bg-black"]):not([class~="bg-zinc-900"]):not([class*="text-[#DC2626]"]):not([class*="text-red-"]):not([class*="bg-[var(--accent)"]) svg {
+  color: #171717 !important;
+  stroke: #171717 !important;
+}
+
+/* =====================================================================
+   SOLID COLORED & ACCENT ACTION BUTTONS: ALL TEXT AND ICONS MUST BE PURE WHITE (#FFFFFF)
+   Strictly applies ONLY to buttons with real solid colored backgrounds.
+   Never applies to white, transparent, or unhovered outline buttons.
+   ===================================================================== */
+/* Solid Accent Buttons */
+button[class~="bg-[var(--accent)]"]:not([class*="bg-white"]):not([class*="bg-transparent"]),
+button[class~="bg-[var(--accent)]"]:not([class*="bg-white"]):not([class*="bg-transparent"]) *,
+button[class~="bg-[var(--accent-strong)]"]:not([class*="bg-white"]):not([class*="bg-transparent"]),
+button[class~="bg-[var(--accent-strong)]"]:not([class*="bg-white"]):not([class*="bg-transparent"]) *,
+a[class~="bg-[var(--accent)]"]:not([class*="bg-white"]):not([class*="bg-transparent"]),
+a[class~="bg-[var(--accent)]"]:not([class*="bg-white"]):not([class*="bg-transparent"]) *,
+a[class~="bg-[var(--accent-strong)]"]:not([class*="bg-white"]):not([class*="bg-transparent"]),
+a[class~="bg-[var(--accent-strong)]"]:not([class*="bg-white"]):not([class*="bg-transparent"]) *,
+/* Solid Red / Danger buttons */
+button[class~="bg-[#DC2626]"]:not([class*="bg-white"]),
+button[class~="bg-[#DC2626]"]:not([class*="bg-white"]) *,
+button[class~="bg-[#EF4444]"]:not([class*="bg-white"]),
+button[class~="bg-[#EF4444]"]:not([class*="bg-white"]) *,
+button[class~="bg-[#B91C1C]"]:not([class*="bg-white"]),
+button[class~="bg-[#B91C1C]"]:not([class*="bg-white"]) *,
+button[class~="bg-[#8A1515]"]:not([class*="bg-white"]),
+button[class~="bg-[#8A1515]"]:not([class*="bg-white"]) *,
+button[class~="bg-red-500"]:not([class*="bg-white"]),
+button[class~="bg-red-500"]:not([class*="bg-white"]) *,
+button[class~="bg-red-600"]:not([class*="bg-white"]),
+button[class~="bg-red-600"]:not([class*="bg-white"]) *,
+button[class~="bg-red-700"]:not([class*="bg-white"]),
+button[class~="bg-red-700"]:not([class*="bg-white"]) *,
+button[class~="bg-red-800"]:not([class*="bg-white"]),
+button[class~="bg-red-800"]:not([class*="bg-white"]) *,
+a[class~="bg-[#DC2626]"]:not([class*="bg-white"]),
+a[class~="bg-[#DC2626]"]:not([class*="bg-white"]) *,
+a[class~="bg-red-600"]:not([class*="bg-white"]),
+a[class~="bg-red-600"]:not([class*="bg-white"]) *,
+/* Solid Green / Emerald buttons */
+button[class~="bg-[#16A34A]"]:not([class*="bg-white"]),
+button[class~="bg-[#16A34A]"]:not([class*="bg-white"]) *,
+button[class~="bg-[#15803D]"]:not([class*="bg-white"]),
+button[class~="bg-[#15803D]"]:not([class*="bg-white"]) *,
+button[class~="bg-[#10B981]"]:not([class*="bg-white"]),
+button[class~="bg-[#10B981]"]:not([class*="bg-white"]) *,
+button[class~="bg-emerald-500"]:not([class*="bg-white"]),
+button[class~="bg-emerald-500"]:not([class*="bg-white"]) *,
+button[class~="bg-emerald-600"]:not([class*="bg-white"]),
+button[class~="bg-emerald-600"]:not([class*="bg-white"]) *,
+button[class~="bg-emerald-700"]:not([class*="bg-white"]),
+button[class~="bg-emerald-700"]:not([class*="bg-white"]) *,
+button[class~="bg-green-600"]:not([class*="bg-white"]),
+button[class~="bg-green-600"]:not([class*="bg-white"]) *,
+button[class~="bg-green-700"]:not([class*="bg-white"]),
+button[class~="bg-green-700"]:not([class*="bg-white"]) *,
+a[class~="bg-[#16A34A]"]:not([class*="bg-white"]),
+a[class~="bg-[#16A34A]"]:not([class*="bg-white"]) *,
+a[class~="bg-emerald-600"]:not([class*="bg-white"]),
+a[class~="bg-emerald-600"]:not([class*="bg-white"]) *,
+/* Solid Blue / Indigo buttons */
+button[class~="bg-[#2563EB]"]:not([class*="bg-white"]),
+button[class~="bg-[#2563EB]"]:not([class*="bg-white"]) *,
+button[class~="bg-[#1D4ED8]"]:not([class*="bg-white"]),
+button[class~="bg-[#1D4ED8]"]:not([class*="bg-white"]) *,
+button[class~="bg-blue-600"]:not([class*="bg-white"]),
+button[class~="bg-blue-600"]:not([class*="bg-white"]) *,
+button[class~="bg-blue-700"]:not([class*="bg-white"]),
+button[class~="bg-blue-700"]:not([class*="bg-white"]) *,
+button[class~="bg-indigo-600"]:not([class*="bg-white"]),
+button[class~="bg-indigo-600"]:not([class*="bg-white"]) *,
+/* Solid Amber / Orange / Purple buttons */
+button[class~="bg-[#D97706]"]:not([class*="bg-white"]),
+button[class~="bg-[#D97706]"]:not([class*="bg-white"]) *,
+button[class~="bg-amber-600"]:not([class*="bg-white"]),
+button[class~="bg-amber-600"]:not([class*="bg-white"]) *,
+button[class~="bg-orange-600"]:not([class*="bg-white"]),
+button[class~="bg-orange-600"]:not([class*="bg-white"]) *,
+button[class~="bg-purple-600"]:not([class*="bg-white"]),
+button[class~="bg-purple-600"]:not([class*="bg-white"]) *,
+/* Solid Black / Zinc dark buttons */
+button[class~="bg-black"]:not([class*="bg-white"]),
+button[class~="bg-black"]:not([class*="bg-white"]) *,
+button[class~="bg-zinc-900"]:not([class*="bg-white"]),
+button[class~="bg-zinc-900"]:not([class*="bg-white"]) *,
+button[class~="bg-zinc-800"]:not([class*="bg-white"]),
+button[class~="bg-zinc-800"]:not([class*="bg-white"]) *,
+a[class~="bg-black"]:not([class*="bg-white"]),
+a[class~="bg-black"]:not([class*="bg-white"]) *,
+a[class~="bg-zinc-900"]:not([class*="bg-white"]),
+a[class~="bg-zinc-900"]:not([class*="bg-white"]) *,
+a[class~="bg-zinc-800"]:not([class*="bg-white"]),
+a[class~="bg-zinc-800"]:not([class*="bg-white"]) *,
+/* Active hover states that turn the background solid colored */
 button[class*="hover:bg-[var(--accent)]"]:hover,
 button[class*="hover:bg-[var(--accent)]"]:hover *,
 button[class*="hover:bg-[var(--accent-strong)]"]:hover,
 button[class*="hover:bg-[var(--accent-strong)]"]:hover *,
-button[class*="hover:bg-red-"]:hover,
-button[class*="hover:bg-red-"]:hover *,
-button[class*="hover:bg-emerald-"]:hover,
-button[class*="hover:bg-emerald-"]:hover *,
-button[class*="hover:bg-green-"]:hover,
-button[class*="hover:bg-green-"]:hover *,
+button[class*="hover:bg-red-600"]:hover,
+button[class*="hover:bg-red-600"]:hover *,
+button[class*="hover:bg-red-700"]:hover,
+button[class*="hover:bg-red-700"]:hover *,
 button[class*="hover:bg-[#DC2626]"]:hover,
-button[class*="hover:bg-[#DC2626]"]:hover * {
+button[class*="hover:bg-[#DC2626]"]:hover *,
+button[class*="hover:bg-[#B91C1C]"]:hover,
+button[class*="hover:bg-[#B91C1C]"]:hover *,
+button[class*="hover:bg-[#EF4444]"]:hover,
+button[class*="hover:bg-[#EF4444]"]:hover *,
+button[class*="hover:bg-[#16A34A]"]:hover,
+button[class*="hover:bg-[#16A34A]"]:hover *,
+button[class*="hover:bg-emerald-600"]:hover,
+button[class*="hover:bg-emerald-600"]:hover *,
+button[class*="hover:bg-green-600"]:hover,
+button[class*="hover:bg-green-600"]:hover * {
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
 }
 
-button[class*="bg-[var(--accent)]"] svg,
-button[class*="bg-[var(--accent-strong)]"] svg,
-button[class*="bg-red-"] svg,
-button[class*="bg-emerald-"] svg,
-button[class*="bg-green-"] svg,
-button[class*="bg-blue-"] svg,
-button[class*="bg-black"] svg,
-button[class*="bg-zinc-900"] svg,
-button[class*="bg-zinc-800"] svg,
-a[class*="bg-[var(--accent)]"] svg,
-a[class*="bg-black"] svg {
+/* White SVGs for solid colored buttons */
+button[class~="bg-[var(--accent)]"]:not([class*="bg-white"]) svg,
+button[class~="bg-[var(--accent-strong)]"]:not([class*="bg-white"]) svg,
+button[class~="bg-[#DC2626]"]:not([class*="bg-white"]) svg,
+button[class~="bg-[#EF4444]"]:not([class*="bg-white"]) svg,
+button[class~="bg-[#B91C1C]"]:not([class*="bg-white"]) svg,
+button[class~="bg-[#8A1515]"]:not([class*="bg-white"]) svg,
+button[class~="bg-red-600"]:not([class*="bg-white"]) svg,
+button[class~="bg-red-700"]:not([class*="bg-white"]) svg,
+button[class~="bg-[#16A34A]"]:not([class*="bg-white"]) svg,
+button[class~="bg-[#15803D]"]:not([class*="bg-white"]) svg,
+button[class~="bg-[#10B981]"]:not([class*="bg-white"]) svg,
+button[class~="bg-emerald-600"]:not([class*="bg-white"]) svg,
+button[class~="bg-green-600"]:not([class*="bg-white"]) svg,
+button[class~="bg-[#2563EB]"]:not([class*="bg-white"]) svg,
+button[class~="bg-blue-600"]:not([class*="bg-white"]) svg,
+button[class~="bg-black"]:not([class*="bg-white"]) svg,
+button[class~="bg-zinc-900"]:not([class*="bg-white"]) svg,
+button[class~="bg-zinc-800"]:not([class*="bg-white"]) svg,
+a[class~="bg-[var(--accent)]"]:not([class*="bg-white"]) svg,
+a[class~="bg-black"]:not([class*="bg-white"]) svg,
+button[class*="hover:bg-[var(--accent)]"]:hover svg,
+button[class*="hover:bg-red-600"]:hover svg,
+button[class*="hover:bg-[#DC2626]"]:hover svg,
+button[class*="hover:bg-[#16A34A]"]:hover svg {
   color: #ffffff !important;
   stroke: #ffffff !important;
 }

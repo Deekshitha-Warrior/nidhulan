@@ -6389,7 +6389,7 @@ export default function POSBilling() {
                                     onClick={() => setActiveInvoiceId(order.id)}
                                     title="View invoice"
                                     aria-label="View invoice"
-                                    className="flex items-center justify-center w-8 h-8 bg-white/5 hover:bg-white/10 text-[#FAF7F2] rounded-md transition-colors cursor-pointer border border-white/5"
+                                    className="flex items-center justify-center w-8 h-8 bg-white hover:bg-zinc-100 text-zinc-800 rounded-md transition-colors cursor-pointer border border-zinc-200 shadow-2xs"
                                   >
                                     <svg
                                       className="w-4 h-4"
@@ -6410,7 +6410,7 @@ export default function POSBilling() {
                                     onClick={() => setSelectedOrder(order)}
                                     title="Order details"
                                     aria-label="Order details"
-                                    className="flex items-center justify-center w-8 h-8 bg-white/5 hover:bg-white/10 text-[#FAF7F2] rounded-md transition-colors cursor-pointer border border-white/5"
+                                    className="flex items-center justify-center w-8 h-8 bg-white hover:bg-zinc-100 text-zinc-800 rounded-md transition-colors cursor-pointer border border-zinc-200 shadow-2xs"
                                   >
                                     <svg
                                       className="w-4 h-4"
@@ -8376,7 +8376,7 @@ export default function POSBilling() {
                                     className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center transition-all shrink-0 cursor-pointer ${
                                       isExpanded
                                         ? "bg-[var(--accent)] text-white shadow-xs"
-                                        : "bg-white/5 hover:bg-white/10 text-[#B8B5AE] hover:text-[#FAF7F2]"
+                                        : "bg-white hover:bg-zinc-100 text-black border border-zinc-300 shadow-2xs"
                                     }`}
                                     title={
                                       isExpanded
@@ -8387,12 +8387,12 @@ export default function POSBilling() {
                                   >
                                     <ChevronDown
                                       className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                                        isExpanded ? "rotate-180 text-white" : ""
+                                        isExpanded ? "rotate-180 text-white" : "text-black"
                                       }`}
                                     />
                                   </button>
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-bold text-[#FAF7F2] flex items-center gap-2 flex-wrap">
+                                    <div className="text-sm font-bold text-zinc-900 flex items-center gap-2 flex-wrap">
                                       <span>{p.name}</span>
                                       <span
                                         onClick={(e) => {
@@ -8405,7 +8405,7 @@ export default function POSBilling() {
                                       </span>
                                     </div>
                                     {p.desc && (
-                                      <div className="text-[10px] font-semibold text-[#B8B5AE] mt-0.5">
+                                      <div className="text-[10px] font-semibold text-zinc-600 mt-0.5">
                                         {p.desc}
                                       </div>
                                     )}
@@ -8425,7 +8425,7 @@ export default function POSBilling() {
                               </td>
                               <td className="p-3 text-right">
                                 {p.itemType === "SERVICE" ? (
-                                  <span className="text-[10px] font-semibold text-[#B8B5AE]/40">
+                                  <span className="text-[10px] font-semibold text-zinc-400">
                                     —
                                   </span>
                                 ) : (
@@ -8439,7 +8439,7 @@ export default function POSBilling() {
                                     return (
                                       <span
                                         className={`text-sm font-black ${
-                                          isLow ? "text-[#EF4444]" : "text-[#FAF7F2]"
+                                          isLow ? "text-[#DC2626]" : "text-zinc-900"
                                         }`}
                                       >
                                         {stock}
@@ -8453,7 +8453,7 @@ export default function POSBilling() {
                                   })()
                                 )}
                               </td>
-                              <td className="p-3 text-right text-sm font-black text-[#FAF7F2]">
+                              <td className="p-3 text-right text-sm font-black text-zinc-900">
                                 ₹
                                 {(p.price ?? 0).toLocaleString(undefined, {
                                   minimumFractionDigits: 2,
@@ -8476,8 +8476,8 @@ export default function POSBilling() {
                                     onClick={() => setExpandedProductId(isExpanded ? null : p.id)}
                                     className={`text-[10px] font-bold px-2.5 py-1.5 rounded uppercase tracking-wider transition-all cursor-pointer inline-flex items-center gap-1 ${
                                       isExpanded
-                                        ? "bg-[var(--accent)] text-white shadow-xs"
-                                        : "text-[var(--accent)] hover:bg-[var(--accent)]/10 border border-[var(--accent)]/30"
+                                        ? "bg-[var(--accent)] text-white shadow-xs border border-[var(--accent)]"
+                                        : "bg-white text-black hover:bg-zinc-100 border border-zinc-300 shadow-2xs"
                                     }`}
                                     title={
                                       isExpanded
@@ -8487,24 +8487,24 @@ export default function POSBilling() {
                                   >
                                     <ChevronDown
                                       className={`w-3 h-3 transition-transform duration-200 ${
-                                        isExpanded ? "rotate-180" : ""
+                                        isExpanded ? "rotate-180 text-white" : "text-black"
                                       }`}
                                     />
                                     {isExpanded ? "Close" : "Details"}
                                   </button>
                                   <button
                                     onClick={() => openEditCatalog(p)}
-                                    className="text-[10px] font-bold text-[var(--accent)] hover:text-white hover:bg-[var(--accent)] border border-[var(--accent)]/30 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1"
+                                    className="text-[10px] font-bold text-black bg-white hover:bg-zinc-100 border border-zinc-300 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                                   >
-                                    <Pencil className="w-3 h-3" /> Edit
+                                    <Pencil className="w-3 h-3 text-black" /> Edit
                                   </button>
                                   {p.itemType !== "SERVICE" && (
                                     <button
                                       onClick={() => openStockAdjust(p)}
-                                      className="text-[10px] font-bold text-[#FAF7F2] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 border border-white/10 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1"
+                                      className="text-[10px] font-bold text-black bg-white hover:bg-zinc-100 border border-zinc-300 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                                       title="Adjust stock — restock, return, loss or reconcile"
                                     >
-                                      <SlidersHorizontal className="w-3 h-3" /> Stock
+                                      <SlidersHorizontal className="w-3 h-3 text-black" /> Stock
                                     </button>
                                   )}
                                   <button
@@ -8517,9 +8517,9 @@ export default function POSBilling() {
                                         deleteFromCatalog(p.id);
                                       }
                                     }}
-                                    className="text-[10px] font-bold text-[#EF4444] hover:text-white hover:bg-[#EF4444] border border-[#EF4444]/30 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1"
+                                    className="text-[10px] font-bold text-[#DC2626] bg-white hover:bg-red-50 border border-[#DC2626]/40 px-2.5 py-1.5 rounded uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                                   >
-                                    <Trash2 className="w-3 h-3" /> Delete
+                                    <Trash2 className="w-3 h-3 text-[#DC2626]" /> Delete
                                   </button>
                                 </div>
                               </td>
