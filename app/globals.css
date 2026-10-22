@@ -262,6 +262,22 @@ nextjs-portal,
   background-image: none !important;
 }
 
+/* Analytics Dashboard & Coupons Screens: all text, labels, amounts, table cells & headers, and icons in black */
+.analytics-dashboard-view,
+.coupons-promotions-view,
+.analytics-dashboard-view *:not([class*="bg-[var(--accent)]"]):not([class*="bg-[var(--accent)]"] *):not(button[class*="bg-[var(--accent)]"]):not(button[class*="bg-[var(--accent)]"] *),
+.coupons-promotions-view *:not([class*="bg-[var(--accent)]"]):not([class*="bg-[var(--accent)]"] *):not(button[class*="bg-[var(--accent)]"]):not(button[class*="bg-[var(--accent)]"] *):not([class*="text-red-500"]):not([class*="text-red-500"] *) {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+.analytics-dashboard-view svg:not([class*="bg-[var(--accent)]"] *),
+.coupons-promotions-view svg:not([class*="bg-[var(--accent)]"] *):not([class*="text-red-500"]) {
+  color: #000000 !important;
+  stroke: #000000 !important;
+}
+
+
 /* Form Inputs, Selects, and Textareas */
 .pos-dashboard input:not([type="checkbox"]):not([type="radio"]),
 .pos-dashboard select,
